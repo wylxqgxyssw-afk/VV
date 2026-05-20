@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>月度思维导图规划系统-可固定列</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Microsoft YaHei", sans-serif; }
+        body { background: #121212; color: #fff; overflow: hidden; transition: transform 0.15s ease; }
+        .zoom-wrap { width: 100vw; height: 100vh; transform-origin: center center; }
+        .mind-map-box { width: 100%; height: 100vh; display: flex; align-items: center; justify-content: center; position: relative; }
+        .map-center { width: 180px; height: 80px; background: #333; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; border: 2px solid #666; z-index: 10; }
+        .map-branch { position: absolute; padding: 10px 16px; background: #252525; border: 1px solid #444; border-radius: 8px; cursor: pointer; transition: all 0.2s; font-size: 14px; }
+        .map-branch:hover { background: #444; border-color: #888; }
+        .plan-popup { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); z-index: 9999; display: none; padding: 20px; overflow-y: auto; }
+        .plan-popup.show { display: block; }
+        .close-plan { position: fixed; top: 20px; right: 30px; padding: 6px 15px; background: #444; color: #fff; border: none; border-radius: 4px; cursor: pointer; z-index: 10000; }
+        .sync-status { position: fixed; top: 10px; right: 10px; padding: 4px 8px; border-radius: 4px; font-size: 12px; background: #2a2a2a; color: #ffffff; z-index: 1000; display: none; }
+        .section-title { font-size: 16px; color: #e0e0e0; margin: 20px 0 10px; font-weight: 600; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 12px; }
+        .title { font-size: 20px; color: #ffffff; }
+        .controls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+        .font-group { display: flex; gap: 10px; flex-wrap: wrap; flex-direction: column; }
+        .font-control { display: flex; align-items: center; gap: 4px; font-size: 12px; color: #cccccc; margin: 5px 0; }
+        .font-control input[type="range"] { width: 70px; accent-color: #666666; }
+        .color-controls { display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0; }
+        .color-btn { width: 22px; height: 22px; border: none; border-radius: 50%; cursor: pointer; box-shadow: 0 1px 2px rgba(255,255,255,0.1); }
+        .color-red { background: #888888; }
+        .color-blue { background: #aaaaaa; }
+        .color-yellow { background: #cccccc; }
+        .color-black { background: #ffffff; }
+        .color-light-green { background: #90EE90; }
+        .color-light-pink { background: #FFB6C1; }
+        .color-light-yellow { background: #FFFACD; }
+        .btn { padding: 5px 10px; border: none; border-radius: 4px; background: #333333; color: white; cursor: pointer; font-size: 13px; white-space: nowrap; }
+        .btn:hover { background: #555555; }
+        .fold-btn { background: #444444; }
+        .backup-btn { background: #555555; }
+        .add-item { display: flex; gap: 5px; }
+        input { padding: 5px 6px; border: 1px solid #444444; border-radius: 4px; outline: none; font-size: 13px; background: #222222; color: #ffffff; }
+        .view-tabs { display: flex; gap: 8px; margin-bottom: 12px; align-items: center; flex-wrap: wrap; }
+        .tab { padding: 6px 12px; border: 1px solid #444444; border-radius: 4px; cursor: pointer; background: #252525; font-size: 13px; color: #cccccc; }
+        .tab.active { background: #555555; color: white; border-color: #666666; }
+        .table-container { width: 100%; background: #1e1e1e; border-radius: 8px; padding: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.5); display: none; overflow-x: auto; }
+        .table-container.active { display: block; }
+        .track-table { width: 100%; border-collapse: collapse; }
+        .track-table th { border: 1px solid #333333; padding: 8px 4px; text-align: center; background: #2a2a2a; font-weight: bold; white-space: nowrap; font-size: inherit; color: #ffffff; cursor: default; position: relative; }
+        .track-table th.draggable-col { cursor: grab; }
+        .track-table th.draggable-col:active { cursor: grabbing; }
+        .track-table td { border: 1px solid #333333; padding: 6px 4px; text-align: left; vertical-align: top; min-height: 35px; font-size: inherit; color: #ffffff; }
+        .item-name-col { font-weight: bold; color: #cccccc; text-align: left; padding-left: 6px; min-width: 100px; white-space: nowrap; }
+        .editable { outline: none; min-height: 25px; cursor: text; line-height: 1.4; padding: 2px 3px; white-space: pre-wrap; color: #ffffff; }
+        .col-wrap { display: block; width: 100%; height: 100%; }
+        .del-btn { color: #aaaaaa; background: none; border: none; cursor: pointer; font-size: 11px; }
+        .time-morning { background: #222222; }
+        .time-afternoon { background: #282828; }
+        .time-night { background: #2d2d2d; }
+        #fileInput { display: none; }
+        .float-panel { position: fixed; top: 100px; right: 0; z-index: 999; transition: all 0.3s ease; }
+        .panel-toggle { position: absolute; left: -35px; top: 20px; width: 35px; height: 60px; background: #333; border: none; color: #fff; border-radius: 4px 0 0 4px; cursor: pointer; }
+        .panel-content { width: 180px; background: #1e1e1e; border: 1px solid #333; padding: 15px; border-radius: 8px 0 0 8px; }
+        .float-panel.hide .panel-content { transform: translateX(100%); }
+        .copy-btn { margin-left: 4px; padding: 2px 6px; font-size: 10px; background: #555; border: none; border-radius: 3px; color: #fff; cursor: pointer; }
+        .copy-btn:hover { background: #777; }
+        .col-name-text { display: inline-block; }
+        .col-name-input { width: 80px; background: #333; color: #fff; border: 1px solid #666; padding: 2px 4px; font-size: inherit; text-align: center; }
+        .delete-col-btn { position: absolute; top: 2px; right: 2px; width: 18px; height: 18px; background: #555; color: #fff; border: none; border-radius: 50%; cursor: pointer; font-size: 10px; line-height: 18px; text-align: center; display: none; z-index: 2; }
+        .draggable-col:hover .delete-col-btn { display: block; }
+        .pin-col-btn { position: absolute; bottom: 2px; right: 2px; width: 18px; height: 18px; background: #555; color: #fff; border: none; border-radius: 50%; cursor: pointer; font-size: 12px; line-height: 18px; text-align: center; display: none; z-index: 2; }
+        .draggable-col:hover .pin-col-btn { display: block; }
+        .pin-col-btn.pinned { background: #f0ad4e; color: #000; }
+        .add-col-th { cursor: pointer; background: #333; color: #aaa; }
+        .add-col-th:hover { background: #555; color: #fff; }
+        .notice-col { max-width: 120px; min-width: 60px; white-space: normal; word-break: break-word; }
+        .schedule-pin-btn { position: absolute; bottom: 2px; right: 2px; width: 18px; height: 18px; background: #555; color: #fff; border: none; border-radius: 50%; cursor: pointer; font-size: 12px; line-height: 18px; text-align: center; display: none; z-index: 2; }
+        .schedule-draggable-col:hover .schedule-pin-btn { display: block; }
+        .schedule-pin-btn.pinned { background: #f0ad4e; color: #000; }
+    </style>
+</head>
+<body>
+<div class="zoom-wrap" id="zoomWrap">
+    <div class="mind-map-box">
+        <div class="map-center">月度总规划</div>
+        <div class="map-branch" style="top:15%;left:25%;" onclick="openWeekPlan(1)">第一周规划</div>
+        <div class="map-branch" style="top:35%;left:18%;" onclick="openWeekPlan(2)">第二周规划</div>
+        <div class="map-branch" style="top:55%;left:18%;" onclick="openWeekPlan(3)">第三周规划</div>
+        <div class="map-branch" style="top:75%;left:25%;" onclick="openWeekPlan(4)">第四周规划</div>
+        <div class="map-branch" style="top:20%;right:25%;">月度目标</div>
+        <div class="map-branch" style="top:65%;right:25%;">月度复盘</div>
+    </div>
+</div>
+
+<div class="plan-popup" id="planPopup">
+    <button class="close-plan" onclick="closeWeekPlan()">关闭返回思维导图</button>
+    <div class="sync-status" id="syncStatus">同步中...</div>
+    <div class="float-panel" id="floatPanel">
+        <button class="panel-toggle" onclick="togglePanel()">收</button>
+        <div class="panel-content">
+            <div class="font-group">
+                <div class="font-control"><label>标题字体</label><input type="range" id="titleFontSlider" min="14" max="22" value="16"><span id="titleFontVal">16px</span></div>
+                <div class="font-control"><label>内容字体</label><input type="range" id="contentFontSlider" min="6" max="18" value="10"><span id="contentFontVal">10px</span></div>
+            </div>
+            <div class="color-controls">
+                <button class="color-btn color-red" onclick="changeTextColor('#888888')" title="灰色"></button>
+                <button class="color-btn color-blue" onclick="changeTextColor('#aaaaaa')" title="浅灰"></button>
+                <button class="color-btn color-yellow" onclick="changeTextColor('#cccccc')" title="亮灰"></button>
+                <button class="color-btn color-black" onclick="changeTextColor('#ffffff')" title="白色"></button>
+                <button class="color-btn color-light-green" onclick="changeTextColor('#90EE90')" title="淡绿"></button>
+                <button class="color-btn color-light-pink" onclick="changeTextColor('#FFB6C1')" title="粉红"></button>
+                <button class="color-btn color-light-yellow" onclick="changeTextColor('#FFFACD')" title="淡黄"></button>
+            </div>
+        </div>
+    </div>
+
+    <div class="header">
+        <h1 class="title" id="planTitle">周计划 暗黑云端同步版</h1>
+        <div class="controls">
+            <button class="btn backup-btn" onclick="exportData()">导出备份</button>
+            <button class="btn backup-btn" onclick="document.getElementById('fileInput').click()">导入备份</button>
+            <input type="file" id="fileInput" accept=".json" onchange="importData(event)">
+            <div class="add-item"><input type="text" id="new-item" placeholder="添加事项"><button class="btn" onclick="addItem()">添加</button></div>
+        </div>
+    </div>
+
+    <div class="section-title">一、周计划进度表</div>
+    <div class="view-tabs">
+        <div class="tab active" onclick="switchPlanView('horizontal')">横排</div>
+        <div class="tab" onclick="switchPlanView('vertical')">竖排</div>
+        <button class="btn fold-btn" id="planFoldBtn" onclick="togglePlanFold()">展开全部列</button>
+    </div>
+    <div id="plan-horizontal-view" class="table-container active">
+        <table class="track-table"><thead id="plan-horizontal-head"></thead><tbody id="plan-horizontal-body"></tbody></table>
+    </div>
+    <div id="plan-vertical-view" class="table-container">
+        <table class="track-table"><thead id="plan-vertical-head"></thead><tbody id="plan-vertical-body"></tbody></table>
+    </div>
+
+    <div class="section-title">二、周时段日程表</div>
+    <div class="view-tabs">
+        <div class="tab active" onclick="switchScheduleView('time-as-row')">时段为行</div>
+        <div class="tab" onclick="switchScheduleView('day-as-row')">周几为行</div>
+        <button class="btn fold-btn" id="scheduleFoldBtn" onclick="toggleScheduleFold()">展开全部周几</button>
+    </div>
+    <div id="schedule-time-view" class="table-container active">
+        <table class="track-table"><thead id="schedule-time-head"></thead><tbody id="schedule-time-body"></tbody></table>
+    </div>
+    <div id="schedule-day-view" class="table-container">
+        <table class="track-table"><thead id="schedule-day-head"></thead><tbody id="schedule-day-body"></tbody></table>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ========== 固定用户 ID ==========
+const FIX_USER_ID = "plan_week2_4zobqq44i";
+let userId = FIX_USER_ID;
+localStorage.setItem('planUserId', userId);
+
+// ========== Win键+滚轮全局缩放 ==========
+let scaleNum = 1;
+const zoomWrap = document.getElementById('zoomWrap');
+window.addEventListener('wheel',(e)=>{
+    if(e.metaKey){
+        e.preventDefault();
+        scaleNum += (e.deltaY < 0) ? 0.05 : -0.05;
+        scaleNum = Math.max(0.5, Math.min(scaleNum, 2));
+        zoomWrap.style.transform = `scale(${scaleNum})`;
+    }
+});
+
+// ========== 思维导图弹窗 ==========
+let nowWeekNum = 1;
+function openWeekPlan(num){
+    nowWeekNum = num;
+    document.getElementById('planTitle').innerText = `第${num}周计划 暗黑云端同步版`;
+    document.getElementById('planPopup').classList.add('show');
+    loadFromCloud();
+}
+function closeWeekPlan(){
+    document.getElementById('planPopup').classList.remove('show');
+}
+
+function copyDayContent(day) {
+    let copyText = '';
+    ALL_TIMES.forEach(time => {
+        const content = scheduleData[time + '|' + day] || '无';
+        copyText += `${time}：${content}\n`;
+    });
+    navigator.clipboard.writeText(copyText.trim()).then(() => {
+        alert(`✅ 已复制【${day}】全部时段内容！`);
+    }).catch(err => {
+        alert('❌ 复制失败：' + err);
+    });
+}
+
+const SUPABASE_URL = "https://vkeaimeytsymepgkizqk.supabase.co";
+const SUPABASE_KEY = "sb_publishable_R66fP0xmbxUZTeu7kjQYjQ_FHdXlRvm";
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const syncStatus = document.getElementById('syncStatus');
+
+// ========== 固定列定义 ==========
+const DAYS = ['周一','周二','周三','周四','周五','周六','周日'];
+const ALL_COL_KEYS = ['月计划', '周计划', '第三周周计划复盘', ...DAYS];
+const DEFAULT_COL_ORDER = [...ALL_COL_KEYS];
+const SYSTEM_COLS = ['月计划', '周计划', '第三周周计划复盘'];
+
+const TIME_BLOCKS = {
+    morning:['7点','8点','9点','10点','11点','12点','12点后空格'],
+    afternoon:['13点','14点','15点','16点','17点','18点','18点后空格'],
+    night:['19点','20点','21点','22点','22点后空格','23点','12点以后']
+};
+const ALL_TIMES = [...TIME_BLOCKS.morning,...TIME_BLOCKS.afternoon,...TIME_BLOCKS.night];
+
+let trackData = {
+    items: [],
+    records: {},
+    columnOrder: DEFAULT_COL_ORDER.slice(),
+    columnLabels: {},
+    pinnedColumns: ['周一']  // 第一张表固定列
+};
+let scheduleData = {
+    pinnedColumns: ['周一'],       // 第二张表自己的固定列
+    dayOrder: [...DAYS]          // 第二张表星期列的顺序
+};
+let titleFont = 16;
+let contentFont = 10;
+let planWeekFold = true;   // 第一张表折叠
+let scheduleWeekFold = true; // 第二张表折叠
+
+// 初始化默认标签
+ALL_COL_KEYS.forEach(k => {
+    trackData.columnLabels[k] = k === '周计划' ? '第二周周计划复盘' : k === '第三周周计划复盘' ? '第三周周计划复盘' : k;
+});
+
+function getColLabel(key) { return trackData.columnLabels[key] || key; }
+function isPlanPinned(key) { return trackData.pinnedColumns.includes(key); }
+function isSchedulePinned(key) { return scheduleData.pinnedColumns.includes(key); }
+
+function togglePlanPin(key) {
+    if (SYSTEM_COLS.includes(key)) return;
+    const pinned = trackData.pinnedColumns;
+    const idx = pinned.indexOf(key);
+    if (idx > -1) pinned.splice(idx, 1);
+    else pinned.push(key);
+    saveToCloud();
+    renderPlanHorizontal();
+}
+
+function toggleSchedulePin(key) {
+    const pinned = scheduleData.pinnedColumns;
+    const idx = pinned.indexOf(key);
+    if (idx > -1) pinned.splice(idx, 1);
+    else pinned.push(key);
+    saveToCloud();
+    renderScheduleTimeView();
+}
+
+function togglePanel() {
+    const panel = document.getElementById('floatPanel');
+    const btn = document.querySelector('.panel-toggle');
+    panel.classList.toggle('hide');
+    btn.textContent = panel.classList.contains('hide') ? '开' : '收';
+}
+
+async function loadFromCloud() {
+    showSync('加载中...');
+    try {
+        const { data, error } = await supabaseClient.from('user_plan_data').select('*').eq('id', userId).single();
+        if (data) {
+            trackData = data.track_data || { items:[], records:{} };
+            if (!trackData.columnOrder) trackData.columnOrder = DEFAULT_COL_ORDER.slice();
+            if (!trackData.columnLabels) trackData.columnLabels = {};
+            if (!trackData.pinnedColumns) trackData.pinnedColumns = ['周一'];
+            trackData.columnOrder.forEach(k => { if (!trackData.columnLabels[k]) trackData.columnLabels[k] = k; });
+
+            scheduleData = data.schedule_data || {};
+            if (!scheduleData.pinnedColumns) scheduleData.pinnedColumns = ['周一'];
+            if (!scheduleData.dayOrder) scheduleData.dayOrder = [...DAYS];
+
+            titleFont = data.font_data?.title || 16;
+            contentFont = data.font_data?.content || 10;
+        }
+        hideSync();
+    } catch (e) { hideSync(); }
+    renderAll();
+}
+
+async function saveToCloud() {
+    showSync('同步中...');
+    try {
+        await supabaseClient.from('user_plan_data').upsert({
+            id: userId, track_data: trackData, schedule_data: scheduleData,
+            font_data: { title: titleFont, content: contentFont }
+        });
+        showSync('同步完成');
+        setTimeout(hideSync, 1000);
+    } catch (e) { showSync('同步失败'); setTimeout(hideSync, 1500); }
+}
+
+function showSync(text) { syncStatus.textContent = text; syncStatus.style.display = 'block'; }
+function hideSync() { syncStatus.style.display = 'none'; }
+
+function renderAll(){
+    document.getElementById('titleFontSlider').value = titleFont;
+    document.getElementById('contentFontSlider').value = contentFont;
+    document.getElementById('titleFontVal').innerText = titleFont+'px';
+    document.getElementById('contentFontVal').innerText = contentFont+'px';
+    applyFontSize();
+    renderPlanHorizontal();
+    renderScheduleTimeView();
+}
+
+const titleSlider = document.getElementById('titleFontSlider');
+const contentSlider = document.getElementById('contentFontSlider');
+const titleFontVal = document.getElementById('titleFontVal');
+const contentFontVal = document.getElementById('contentFontVal');
+titleSlider.addEventListener('input',()=>{ titleFont=titleSlider.value; titleFontVal.innerText=titleFont+'px'; applyFontSize(); saveToCloud(); });
+contentSlider.addEventListener('input',()=>{ contentFont=contentSlider.value; contentFontVal.innerText=contentFont+'px'; applyFontSize(); saveToCloud(); });
+
+function applyFontSize(){
+    document.querySelectorAll('.track-table th').forEach(el=>el.style.fontSize=titleFont+'px');
+    document.querySelectorAll('.item-name-col').forEach(el=>el.style.fontSize=titleFont+'px');
+    document.querySelectorAll('.editable').forEach(el=>{
+        el.style.fontSize = contentFont+'px';
+        el.style.transform = contentFont<10 ? `scale(${contentFont/10})` : 'none';
+        el.style.transformOrigin = 'left top';
+    });
+}
+
+function changeTextColor(c){ document.execCommand('styleWithCSS',!1,!0); document.execCommand('foreColor',!1,c); }
+document.addEventListener('keydown',e=>{ if(e.key==='Enter'&&e.target.classList.contains('editable')) return !0; });
+
+// ========== 第一张表折叠按钮 ==========
+function togglePlanFold(){
+    planWeekFold = !planWeekFold;
+    document.getElementById('planFoldBtn').innerText = planWeekFold ? '展开全部列' : '收起多余列';
+    renderPlanHorizontal();
+}
+// ========== 第二张表折叠按钮 ==========
+function toggleScheduleFold(){
+    scheduleWeekFold = !scheduleWeekFold;
+    document.getElementById('scheduleFoldBtn').innerText = scheduleWeekFold ? '展开全部周几' : '收起多余周几';
+    renderScheduleTimeView();
+}
+
+function switchPlanView(t){
+    const tabs = document.querySelectorAll('.view-tabs')[0].querySelectorAll('.tab');
+    tabs.forEach(x=>x.classList.remove('active'));
+    tabs[t==='horizontal'?0:1].classList.add('active');
+    document.getElementById('plan-horizontal-view').classList.toggle('active',t==='horizontal');
+    document.getElementById('plan-vertical-view').classList.toggle('active',t==='vertical');
+    t==='horizontal' ? renderPlanHorizontal() : renderPlanVertical();
+}
+
+/* ========== 第一张表横排视图 ========== */
+function renderPlanHorizontal(){
+    const head = document.getElementById('plan-horizontal-head');
+    const body = document.getElementById('plan-horizontal-body');
+    body.innerHTML='';
+
+    let visibleKeys = trackData.columnOrder.filter(key => {
+        if (SYSTEM_COLS.includes(key)) return true;
+        if (!planWeekFold) return true;
+        return trackData.pinnedColumns.includes(key);
+    });
+
+    let h = `<tr><th class="item-name-col">跟踪事项</th>`;
+    visibleKeys.forEach(key => {
+        const label = getColLabel(key);
+        const pinnedClass = isPlanPinned(key) ? 'pinned' : '';
+        const pinBtn = SYSTEM_COLS.includes(key) ? '' : `<button class="pin-col-btn ${pinnedClass}" data-pin-key="${key}">📌</button>`;
+        h += `<th class="draggable-col" data-col-key="${key}" draggable="true">
+            <span class="col-name-text">${label}</span>
+            ${pinBtn}
+            <button class="delete-col-btn" data-delete-key="${key}">×</button>
+        </th>`;
+    });
+    h += `<th class="add-col-th" id="addColBtn">+ 添加列</th>`;
+    h += `<th>操作</th></tr>`;
+    head.innerHTML = h;
+
+    bindPlanColumnDrag(head);
+    bindPlanColumnEdit(head);
+    bindPlanDeleteColButtons(head);
+    bindPlanPinButtons(head);
+    document.getElementById('addColBtn').addEventListener('click', addNewColumn);
+
+    trackData.items.forEach((item, idx) => {
+        const tr = document.createElement('tr');
+        tr.draggable = true;
+        tr.dataset.index = idx;
+        let row = `<td class="item-name-col">${item}</td>`;
+        visibleKeys.forEach(key => {
+            row += `<td><div class="col-wrap"><div class="editable" contenteditable onblur="savePlanCell('${item}','${key}',this)">${trackData.records[item]?.[key]||''}</div></div></td>`;
+        });
+        row += `<td></td>`;
+        row += `<td><button class="del-btn" onclick="delItem('${item}')">删除</button></td>`;
+        tr.innerHTML = row;
+        body.appendChild(tr);
+    });
+    bindRowDrag();
+    applyFontSize();
+}
+
+/* 第一张表列拖拽 */
+function bindPlanColumnDrag(thead) {
+    let draggedTh = null;
+    thead.addEventListener('dragstart', (e) => {
+        if (e.target.classList.contains('delete-col-btn') || e.target.classList.contains('pin-col-btn') || e.target.closest('.add-col-th') || e.target.tagName === 'INPUT') {
+            e.preventDefault(); return;
+        }
+        draggedTh = e.target.closest('th.draggable-col');
+        if (!draggedTh) return;
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', '');
+        draggedTh.style.opacity = '0.5';
+    });
+    thead.addEventListener('dragend', (e) => {
+        if (draggedTh) { draggedTh.style.opacity = '1'; draggedTh = null; }
+    });
+    thead.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
+    thead.addEventListener('drop', (e) => {
+        e.preventDefault();
+        let targetTh = null;
+        const elemBelow = document.elementFromPoint(e.clientX, e.clientY);
+        if (elemBelow) targetTh = elemBelow.closest('th.draggable-col');
+        if (!targetTh) {
+            const allThs = [...thead.querySelectorAll('th.draggable-col')];
+            for (let th of allThs) {
+                const rect = th.getBoundingClientRect();
+                if (e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom) {
+                    targetTh = th; break;
+                }
+            }
+        }
+        if (!targetTh || !draggedTh || targetTh === draggedTh) return;
+        const fromKey = draggedTh.dataset.colKey;
+        const toKey = targetTh.dataset.colKey;
+        let order = trackData.columnOrder.slice();
+        const fromIndex = order.indexOf(fromKey);
+        if (fromIndex === -1) return;
+        const targetRect = targetTh.getBoundingClientRect();
+        const middleX = targetRect.left + targetRect.width / 2;
+        const insertAfter = e.clientX > middleX;
+        order.splice(fromIndex, 1);
+        let toIndex = order.indexOf(toKey);
+        if (toIndex === -1) return;
+        if (insertAfter) order.splice(toIndex + 1, 0, fromKey);
+        else order.splice(toIndex, 0, fromKey);
+        trackData.columnOrder = order;
+        saveToCloud();
+        renderPlanHorizontal();
+    });
+}
+
+function bindPlanColumnEdit(thead) {
+    thead.addEventListener('dblclick', (e) => {
+        const th = e.target.closest('th.draggable-col');
+        if (!th) return;
+        const key = th.dataset.colKey;
+        const currentLabel = getColLabel(key);
+        const input = document.createElement('input');
+        input.type = 'text'; input.value = currentLabel; input.className = 'col-name-input';
+        th.innerHTML = ''; th.appendChild(input); input.focus(); input.select();
+        const finishEdit = () => {
+            const newLabel = input.value.trim();
+            if (newLabel && newLabel !== key) trackData.columnLabels[key] = newLabel;
+            else delete trackData.columnLabels[key];
+            saveToCloud();
+            renderPlanHorizontal();
+        };
+        input.addEventListener('blur', finishEdit);
+        input.addEventListener('keydown', (ev) => {
+            if (ev.key === 'Enter') { ev.preventDefault(); input.blur(); }
+            if (ev.key === 'Escape') { input.value = currentLabel; input.blur(); }
+        });
+    });
+}
+
+function bindPlanDeleteColButtons(thead) {
+    thead.querySelectorAll('.delete-col-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const key = btn.dataset.deleteKey;
+            if (!confirm(`确定删除列“${getColLabel(key)}”吗？`)) return;
+            trackData.columnOrder = trackData.columnOrder.filter(k => k !== key);
+            for (let item of trackData.items) {
+                if (trackData.records[item]) delete trackData.records[item][key];
+            }
+            delete trackData.columnLabels[key];
+            trackData.pinnedColumns = trackData.pinnedColumns.filter(k => k !== key);
+            saveToCloud();
+            renderPlanHorizontal();
+        });
+    });
+}
+
+function bindPlanPinButtons(thead) {
+    thead.querySelectorAll('.pin-col-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const key = btn.dataset.pinKey;
+            togglePlanPin(key);
+        });
+    });
+}
+
+/* ========== 第二张表时段为行视图（独立固定+拖拽） ========== */
+function renderScheduleTimeView(){
+    const head = document.getElementById('schedule-time-head');
+    const body = document.getElementById('schedule-time-body');
+    body.innerHTML = '';
+
+    // 根据第二张表自己的 dayOrder 和 pinnedColumns 过滤
+    let allDayOrder = scheduleData.dayOrder || DAYS;
+    let visibleDays = allDayOrder.filter(d => {
+        if (!scheduleWeekFold) return true;
+        return scheduleData.pinnedColumns.includes(d);
+    });
+
+    let h = `<tr><th class="item-name-col notice-col">注意事项</th><th class="item-name-col">时段</th>`;
+    visibleDays.forEach(d => {
+        const pinnedClass = isSchedulePinned(d) ? 'pinned' : '';
+        h += `<th class="schedule-draggable-col" data-day="${d}" draggable="true">
+            <span class="col-name-text">${d}</span>
+            <button class="schedule-pin-btn ${pinnedClass}" data-pin-day="${d}">📌</button>
+            <button class="delete-col-btn" data-delete-day="${d}">×</button>
+        </th>`;
+    });
+    head.innerHTML = h + '</tr>';
+
+    bindScheduleColumnDrag(head);
+    bindSchedulePinButtons(head);
+    bindScheduleDeleteButtons(head);
+
+    ALL_TIMES.forEach(time => {
+        const tr = document.createElement('tr');
+        if(TIME_BLOCKS.morning.includes(time)) tr.className='time-morning';
+        if(TIME_BLOCKS.afternoon.includes(time)) tr.className='time-afternoon';
+        if(TIME_BLOCKS.night.includes(time)) tr.className='time-night';
+        let row = `<td class="notice-col"><div class="col-wrap"><div class="editable" contenteditable onblur="saveNoticeCell('${time}',this)">${scheduleData['notice|'+time]||''}</div></div></td><td class="item-name-col">${time}</td>`;
+        visibleDays.forEach(d => {
+            row += `<td><div class="col-wrap"><div class="editable" contenteditable onblur="saveSchCell('${time}','${d}',this)">${scheduleData[time+'|'+d]||''}</div></div></td>`;
+        });
+        tr.innerHTML = row;
+        body.appendChild(tr);
+    });
+    applyFontSize();
+}
+
+/* 第二张表列拖拽 */
+function bindScheduleColumnDrag(thead) {
+    let draggedTh = null;
+    thead.addEventListener('dragstart', (e) => {
+        if (e.target.classList.contains('delete-col-btn') || e.target.classList.contains('schedule-pin-btn') || e.target.tagName === 'INPUT') {
+            e.preventDefault(); return;
+        }
+        draggedTh = e.target.closest('th.schedule-draggable-col');
+        if (!draggedTh) return;
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', '');
+        draggedTh.style.opacity = '0.5';
+    });
+    thead.addEventListener('dragend', (e) => {
+        if (draggedTh) { draggedTh.style.opacity = '1'; draggedTh = null; }
+    });
+    thead.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
+    thead.addEventListener('drop', (e) => {
+        e.preventDefault();
+        let targetTh = null;
+        const elemBelow = document.elementFromPoint(e.clientX, e.clientY);
+        if (elemBelow) targetTh = elemBelow.closest('th.schedule-draggable-col');
+        if (!targetTh) {
+            const allThs = [...thead.querySelectorAll('th.schedule-draggable-col')];
+            for (let th of allThs) {
+                const rect = th.getBoundingClientRect();
+                if (e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom) {
+                    targetTh = th; break;
+                }
+            }
+        }
+        if (!targetTh || !draggedTh || targetTh === draggedTh) return;
+        const fromDay = draggedTh.dataset.day;
+        const toDay = targetTh.dataset.day;
+        let order = scheduleData.dayOrder.slice();
+        const fromIndex = order.indexOf(fromDay);
+        if (fromIndex === -1) return;
+        const targetRect = targetTh.getBoundingClientRect();
+        const middleX = targetRect.left + targetRect.width / 2;
+        const insertAfter = e.clientX > middleX;
+        order.splice(fromIndex, 1);
+        let toIndex = order.indexOf(toDay);
+        if (toIndex === -1) return;
+        if (insertAfter) order.splice(toIndex + 1, 0, fromDay);
+        else order.splice(toIndex, 0, fromDay);
+        scheduleData.dayOrder = order;
+        saveToCloud();
+        renderScheduleTimeView();
+    });
+}
+
+function bindSchedulePinButtons(thead) {
+    thead.querySelectorAll('.schedule-pin-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const day = btn.dataset.pinDay;
+            toggleSchedulePin(day);
+        });
+    });
+}
+
+function bindScheduleDeleteButtons(thead) {
+    thead.querySelectorAll('.delete-col-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const day = btn.dataset.deleteDay;
+            if (!confirm(`确定删除列“${day}”吗？这会把该列数据全部清除！`)) return;
+            // 从 dayOrder 中移除
+            scheduleData.dayOrder = scheduleData.dayOrder.filter(d => d !== day);
+            // 从 pinnedColumns 中移除
+            scheduleData.pinnedColumns = scheduleData.pinnedColumns.filter(d => d !== day);
+            // 清除 scheduleData 中所有该天的数据
+            ALL_TIMES.forEach(time => {
+                delete scheduleData[time + '|' + day];
+            });
+            saveToCloud();
+            renderScheduleTimeView();
+        });
+    });
+}
+
+/* 第二张表周几为行视图（同样按自己的固定和顺序渲染） */
+function renderScheduleDayView(){
+    const head = document.getElementById('schedule-day-head');
+    const body = document.getElementById('schedule-day-body');
+    let allDayOrder = scheduleData.dayOrder || DAYS;
+    let visibleDays = allDayOrder.filter(d => {
+        if (!scheduleWeekFold) return true;
+        return scheduleData.pinnedColumns.includes(d);
+    });
+
+    let h = `<tr><th class="notice-col">注意事项</th><th>分类</th>`;
+    visibleDays.forEach(d => h += `<th>${d}</th>`);
+    head.innerHTML = h + '</tr>';
+    body.innerHTML = '';
+    visibleDays.forEach(day => {
+        const tr = document.createElement('tr');
+        let row = `<td class="notice-col"></td><td class="item-name-col">${day}</td>`;
+        ALL_TIMES.forEach(time => {
+            let cls = '';
+            if(TIME_BLOCKS.morning.includes(time)) cls='time-morning';
+            if(TIME_BLOCKS.afternoon.includes(time)) cls='time-afternoon';
+            if(TIME_BLOCKS.night.includes(time)) cls='time-night';
+            row += `<td class="${cls}"><div class="col-wrap"><div class="editable" contenteditable onblur="saveSchCell('${time}','${day}',this)">${scheduleData[time+'|'+day]||''}</div></div></td>`;
+        });
+        tr.innerHTML = row;
+        body.appendChild(tr);
+    });
+    applyFontSize();
+}
+
+/* 其他功能保持不变 */
+function addNewColumn() {
+    const name = prompt('请输入新列名称：');
+    if (!name || !name.trim()) return;
+    const key = name.trim();
+    if (trackData.columnOrder.includes(key)) { alert('列名称已存在'); return; }
+    trackData.columnOrder.push(key);
+    trackData.columnLabels[key] = key;
+    trackData.items.forEach(item => {
+        if (!trackData.records[item]) trackData.records[item] = {};
+        trackData.records[item][key] = '';
+    });
+    saveToCloud();
+    renderPlanHorizontal();
+}
+
+function savePlanCell(item,key,el){
+    if(!trackData.records[item]) trackData.records[item]={};
+    trackData.records[item][key]=el.innerHTML.trim();
+    saveToCloud();
+}
+
+function addItem(){
+    const val=document.getElementById('new-item').value.trim();
+    if(!val||trackData.items.includes(val)) return alert('事项不能重复');
+    trackData.items.push(val);
+    trackData.records[val]={};
+    trackData.columnOrder.forEach(k=>trackData.records[val][k]='');
+    saveToCloud();
+    renderPlanHorizontal();
+    document.getElementById('new-item').value='';
+}
+
+function delItem(name){
+    if(!confirm('确定删除？')) return;
+    trackData.items=trackData.items.filter(x=>x!==name);
+    delete trackData.records[name];
+    saveToCloud();
+    renderPlanHorizontal();
+}
+
+function switchScheduleView(t){
+    const tabs=document.querySelectorAll('.view-tabs')[1].querySelectorAll('.tab');
+    tabs.forEach(x=>x.classList.remove('active'));
+    tabs[t==='time-as-row'?0:1].classList.add('active');
+    document.getElementById('schedule-time-view').classList.toggle('active',t==='time-as-row');
+    document.getElementById('schedule-day-view').classList.toggle('active',t==='day-as-row');
+    t==='time-as-row'?renderScheduleTimeView():renderScheduleDayView();
+}
+
+function saveNoticeCell(time,el){ scheduleData['notice|'+time] = el.innerHTML.trim(); saveToCloud(); }
+function saveSchCell(time,day,el){ scheduleData[time+'|'+day] = el.innerHTML.trim(); saveToCloud(); }
+
+function renderPlanVertical(){
+    const head=document.getElementById('plan-vertical-head');
+    const body=document.getElementById('plan-vertical-body');
+    const allKeys=trackData.columnOrder||DEFAULT_COL_ORDER;
+    let h=`<tr><th>分类</th>`;
+    allKeys.forEach(key=>{ h+=`<th>${getColLabel(key)}</th>`; });
+    head.innerHTML=h+'</tr>';
+    body.innerHTML='';
+    allKeys.forEach(key=>{
+        let row=`<tr><td class="item-name-col">${getColLabel(key)}</td>`;
+        trackData.items.forEach(planItem=>{
+            row+=`<td><div class="col-wrap"><div class="editable" contenteditable onblur="savePlanCell('${planItem}','${key}',this)">${trackData.records[planItem]?.[key]||''}</div></div></td>`;
+        });
+        body.innerHTML+=row+'</tr>';
+    });
+    applyFontSize();
+}
+
+function bindRowDrag(){
+    const body = document.getElementById('plan-horizontal-body');
+    let dragEl = null;
+    body.addEventListener('dragstart',e=>{ dragEl=e.target.closest('tr'); if(dragEl) dragEl.style.opacity='0.4'; });
+    body.addEventListener('dragend',e=>{ if(dragEl) dragEl.style.opacity='1'; dragEl=null; });
+    body.addEventListener('dragover',e=>e.preventDefault());
+    body.addEventListener('drop',e=>{
+        e.preventDefault();
+        const t=e.target.closest('tr');
+        if(!t||t===dragEl) return;
+        const rect=t.getBoundingClientRect();
+        e.clientY>rect.top+rect.height/2 ? t.after(dragEl) : t.before(dragEl);
+        const rows=[...body.querySelectorAll('tr')];
+        trackData.items=rows.map(r=>trackData.items[r.dataset.index]);
+        saveToCloud();
+    });
+}
+
+function exportData(){
+    const all={trackData,scheduleData,titleFont,contentFont,userId};
+    const blob=new Blob([JSON.stringify(all,null,2)]);
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='周计划备份.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    alert('备份已下载');
+}
+
+function importData(e){
+    const f=e.target.files[0];
+    if(!f) return;
+    const r=new FileReader();
+    r.onload=ev=>{
+        try{
+            const d=JSON.parse(ev.target.result);
+            trackData=d.trackData;
+            if(!trackData.columnOrder) trackData.columnOrder=DEFAULT_COL_ORDER.slice();
+            if(!trackData.columnLabels) trackData.columnLabels={};
+            if(!trackData.pinnedColumns) trackData.pinnedColumns=['周一'];
+            scheduleData=d.schedule_data||d.scheduleData||{};
+            if(!scheduleData.pinnedColumns) scheduleData.pinnedColumns=['周一'];
+            if(!scheduleData.dayOrder) scheduleData.dayOrder=[...DAYS];
+            titleFont=d.titleFont||16;
+            contentFont=d.contentFont||10;
+            saveToCloud();
+            location.reload();
+        }catch{alert('备份文件无效');}
+    };
+    r.readAsText(f);
+    e.target.value='';
+}
+
+window.onload=()=>{ loadFromCloud(); };
+</script>
+</body>
+</html>
