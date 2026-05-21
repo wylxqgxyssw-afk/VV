@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>黑色极简 · 云端逐字打字版</title>
+    <!-- PWA 支持 - 使用独立文件，不冲突 -->
+    <link rel="manifest" href="manifest-chat.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <meta name="theme-color" content="#000000">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        tailwind.config = {
+            theme: { extend: { colors: {
+                dark: '#000000',
+                darker: '#121212',
+                accent: '#165DFF',
+            }, fontFamily: { sans: ['Inter', 'sans-serif'] }
+            } }
+        }
+    </script>
+    <style>
+        :root {
+            --font-size: 16px;
+            --line-height: 1.6;
+            --user-bubble-color: #165DFF;
+            --ai-bubble-color: #2D3748;
+            --user-text-color: #FFFFFF;
+            --ai-text-color: #FFFFFF;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            background: #000; 
+            color: #fff; 
+            height: 100vh;
+            height: 100dvh;
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+        }
+        .layout-container { 
+            display: grid; 
+            grid-template-columns: 1fr 2fr; 
+            width: 100vw; 
+            height: 100dvh; 
+        }
+        @media (max-width: 768px) {
+            .layout-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: 1fr auto;
+            }
+            .left-set-panel {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                height: 45vh;
+                z-index: 50;
+                border-radius: 16px 16px 0 0;
+                transform: translateY(85%);
+                transition: transform 0.3s ease;
+            }
+            .left-set-panel.expand {
+                transform: translateY(0);
+            }
+            .chat-main-panel {
+                height: 100dvh !important;
+            }
+        }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .avatar-img, .avatar-placeholder { 
+            object-fit: cover; 
+            width: 100%; 
+            height: 100%; 
+            border-radius: 4px;
+        }
+        .chat-bubble-content {
+            word-wrap: break-word;
+            white-space: pre-wrap;
+            max-width: 100%;
+            overflow-wrap: break-word;
+            overflow: hidden;
+            font-size: var(--font-size);
+            line-height: var(--line-height);
+        }
+        .user-bubble {
+            background-color: var(--user-bubble-color);
+            color: var(--user-text-color);
+        }
+        .ai-bubble {
+            background-color: var(--ai-bubble-color);
+            color: var(--ai-text-color);
+        }
+        .katex { 
+            font-size: var(--font-size); 
+            line-height: var(--line-height); 
+            max-width: 100%;
+            display: inline;
+            white-space: normal !important;
+        }
+        .collapsible-settings { display: none; }
+        .phone-drag-bar {
+            display: none;
+        }
+        @media (max-width: 768px) {
+            .phone-drag-bar {
+                display: block;
+                width: 40px;
+                height: 4px;
+                background: #666;
+                border-radius: 2px;
+                margin: 8px auto;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="layout-container">
+    <div class="left-set-panel bg-darker border-r border-gray-800 flex flex-col h-full p-4">
+        <div class="phone-drag-bar"></div>
+        <h1 class="text-xl font-bold mb-4">剧本/人设设置</h1>
+        
+        <textarea 
+            class="flex-1 bg-dark border border-gray-800 rounded p-3 text-white outline-none resize-none mb-4" 
+            placeholder="在这里输入你的剧本/人设" 
+            id="agent-prompt"
+        ></textarea>
+
+        <button class="w-full bg-gray-800 rounded p-2 mb-3 text-sm" id="toggle-settings">
+            <i class="fa fa-cog mr-1"></i> 展开头像/样式设置
+        </button>
+        
+        <div class="collapsible-settings bg-dark border border-gray-800 rounded p-3 mb-3">
+            <div class="mb-3">
+                <h3 class="text-sm text-gray-400 mb-1">智能体名称</h3>
+                <input class="w-full bg-darker rounded p-2 text-white outline-none" placeholder="智能体名称" id="agent-name-set">
+            </div>
+            <div class="mb-3">
+                <h3 class="text-sm text-gray-400 mb-1">智能体头像</h3>
+                <button class="w-full bg-accent/20 rounded p-2 text-sm mb-2" id="agent-avatar-upload">上传头像</button>
+                <input type="file" id="agent-avatar-file" class="hidden" accept="image/*">
+                <div id="agent-avatar-preview" class="w-12 h-12 bg-accent/20 flex items-center justify-center overflow-hidden hidden mx-auto">
+                    <img class="avatar-img" src="" alt="智能体头像">
+                </div>
+            </div>
+            <div class="mb-3">
+                <h3 class="text-sm text-gray-400 mb-1">你的名称</h3>
+                <input class="w-full bg-darker rounded p-2 text-white outline-none" placeholder="你的名称" id="user-name">
+            </div>
+            <div class="mb-3">
+                <h3 class="text-sm text-gray-400 mb-1">你的头像</h3>
+                <button class="w-full bg-accent/20 rounded p-2 text-sm mb-2" id="user-avatar-upload">上传头像</button>
+                <input type="file" id="user-avatar-file" class="hidden" accept="image/*">
+                <div id="user-avatar-preview" class="w-12 h-12 bg-accent/20 flex items-center justify-center overflow-hidden hidden mx-auto">
+                    <img class="avatar-img" src="" alt="用户头像">
+                </div>
+            </div>
+            <div class="mb-3 border-t border-gray-700 pt-3">
+                <h3 class="text-sm text-gray-400 mb-2">聊天样式设置</h3>
+                <div class="grid grid-cols-2 gap-2 mb-2">
+                    <div>
+                        <label class="text-xs text-gray-400">字体大小</label>
+                        <input type="number" class="w-full bg-darker rounded p-2 text-white outline-none" id="font-size" value="16" min="12" max="24">
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-400">行间距</label>
+                        <input type="number" class="w-full bg-darker rounded p-2 text-white outline-none" id="line-height" value="1.6" min="1" max="3" step="0.1">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2 mb-2">
+                    <div>
+                        <label class="text-xs text-gray-400">我的气泡颜色</label>
+                        <input type="color" class="w-full h-8 rounded" id="user-bubble-color" value="#165DFF">
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-400">AI气泡颜色</label>
+                        <input type="color" class="w-full h-8 rounded" id="ai-bubble-color" value="#2D3748">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-xs text-gray-400">我的文字颜色</label>
+                        <input type="color" class="w-full h-8 rounded" id="user-text-color" value="#FFFFFF">
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-400">AI文字颜色</label>
+                        <input type="color" class="w-full h-8 rounded" id="ai-text-color" value="#FFFFFF">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button class="w-full bg-accent rounded p-3" id="save-set">保存所有设置</button>
+    </div>
+
+    <div class="chat-main-panel flex flex-col h-full bg-dark">
+        <div class="p-4 border-b border-gray-800 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div id="agent-avatar" class="w-9 h-9 bg-accent/20 flex items-center justify-center overflow-hidden">
+                    <span class="avatar-placeholder">AI</span>
+                </div>
+                <div>
+                    <div id="agent-name" class="font-medium">AI助手</div>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button class="text-gray-400 hover:text-white md:hidden" id="phone-open-set">
+                    <i class="fa fa-bars"></i>
+                </button>
+                <button class="text-gray-400 hover:text-white" id="clear-chat">清空对话</button>
+            </div>
+        </div>
+        <div class="flex-1 overflow-y-auto scrollbar-hide p-5" id="chat-box"></div>
+        <div class="p-4 border-t border-gray-800">
+            <div class="flex gap-2">
+                <input type="text" placeholder="输入消息..." class="flex-1 bg-darker border border-gray-800 rounded-lg p-3 text-white outline-none" id="msg-input">
+                <button class="bg-accent px-4 rounded-lg" id="send-btn"><i class="fa fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    if (typeof renderMathInElement !== 'function') {
+        window.renderMathInElement = (element, options) => {};
+    }
+
+    const SUPABASE_URL = "https://vkeaimeytsymepgkizqk.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_R66fP0xmbxUZTeu7kjQYjQ_FHdXlRvm";
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let currentAgent = { name: 'AI助手', avatar: 'AI', prompt: '', avatarImg: null };
+    let user = { name: '我', avatar: '我', avatarImg: null };
+    let styleSettings = {
+        fontSize: 16, lineHeight: 1.6,
+        userBubbleColor: '#165DFF', aiBubbleColor: '#2D3748',
+        userTextColor: '#FFFFFF', aiTextColor: '#FFFFFF'
+    };
+    let messages = [];
+
+    const chatBox = document.getElementById('chat-box');
+    const msgInput = document.getElementById('msg-input');
+    const sendBtn = document.getElementById('send-btn');
+    const clearChat = document.getElementById('clear-chat');
+    const saveSet = document.getElementById('save-set');
+    const toggleSettings = document.getElementById('toggle-settings');
+    const collapsibleSettings = document.querySelector('.collapsible-settings');
+    const leftSetPanel = document.querySelector('.left-set-panel');
+    const phoneOpenSet = document.getElementById('phone-open-set');
+
+    if(phoneOpenSet){
+        phoneOpenSet.onclick = () => leftSetPanel.classList.toggle('expand');
+        document.addEventListener('click',(e)=>{
+            if(window.innerWidth <=768 && !leftSetPanel.contains(e.target) && !phoneOpenSet.contains(e.target)){
+                leftSetPanel.classList.remove('expand');
+            }
+        });
+    }
+    toggleSettings.onclick = () => {
+        collapsibleSettings.style.display = collapsibleSettings.style.display === 'block' ? 'none' : 'block';
+    };
+
+    async function typeWriterEffect(elem, fullText, speed = 60) {
+        elem.innerHTML = '';
+        for(let i = 0; i < fullText.length; i++){
+            elem.innerHTML += fullText[i];
+            if (typeof renderMathInElement === 'function') {
+                renderMathInElement(elem, {
+                    delimiters: [{left: "\\(", right: "\\)", display: false},{left: "$", right: "$", display: false}]
+                });
+            }
+            chatBox.scrollTop = chatBox.scrollHeight;
+            await new Promise(res => setTimeout(res, speed));
+        }
+    }
+
+    function renderContent(text) {
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = text;
+        if (typeof renderMathInElement === 'function') {
+            renderMathInElement(tempDiv, { delimiters: [{left: "$", right: "$", display: false}] });
+        }
+        return tempDiv.innerHTML;
+    }
+
+    function renderChat() {
+        chatBox.innerHTML = '';
+        messages.forEach((msg) => {
+            const div = document.createElement('div');
+            div.className = `mb-4 ${msg.is_user ? 'text-right' : 'text-left'}`;
+
+            if (msg.is_user) {
+                div.innerHTML = `
+                    <div class="flex flex-row-reverse items-start gap-2">
+                        <div class="w-8 h-8 bg-accent/20 flex items-center justify-center overflow-hidden">
+                            ${user.avatarImg ? `<img class="avatar-img" src="${user.avatarImg}">` : `<span class="avatar-placeholder">${user.avatar}</span>`}
+                        </div>
+                        <div class="user-bubble p-3 rounded-lg inline-block max-w-[70%] chat-bubble-content">${renderContent(msg.text)}</div>
+                    </div>
+                `;
+            } else {
+                div.innerHTML = `
+                    <div class="flex items-start gap-2">
+                        <div class="w-8 h-8 bg-accent/20 flex items-center justify-center overflow-hidden">
+                            ${currentAgent.avatarImg ? `<img class="avatar-img" src="${currentAgent.avatarImg}">` : `<span class="avatar-placeholder">${currentAgent.avatar}</span>`}
+                        </div>
+                        <div class="ai-bubble p-3 rounded-lg inline-block max-w-[70%] chat-bubble-content type-write-box"></div>
+                    </div>
+                `;
+            }
+            chatBox.appendChild(div);
+        });
+
+        const typeBoxes = document.querySelectorAll('.type-write-box');
+        if(typeBoxes.length > 0){
+            const lastBox = typeBoxes[typeBoxes.length - 1];
+            const lastMsg = messages[messages.length - 1];
+            if(lastMsg && !lastMsg.is_user) typeWriterEffect(lastBox, lastMsg.text, 60);
+        }
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    async function addMsg(text, isUser) {
+        const msg = { text, is_user: isUser, created_at: new Date() };
+        messages.push(msg);
+        renderChat();
+        await sb.from('chat_messages').insert([{ text, is_user: isUser }]);
+    }
+
+    function generateAIReply(userMsg) {
+        const prompt = currentAgent.prompt || '';
+        let reply = prompt.match(/你:\s*([\s\S]*?)(?=\n我:|$)/)?.[1]?.trim() || prompt || "请先设置剧本~";
+        addMsg(reply, false);
+    }
+
+    function applyStyleSettings() {
+        document.documentElement.style.setProperty('--font-size', `${styleSettings.fontSize}px`);
+        document.documentElement.style.setProperty('--line-height', styleSettings.lineHeight);
+        document.documentElement.style.setProperty('--user-bubble-color', styleSettings.userBubbleColor);
+        document.documentElement.style.setProperty('--ai-bubble-color', styleSettings.aiBubbleColor);
+        document.documentElement.style.setProperty('--user-text-color', styleSettings.userTextColor);
+        document.documentElement.style.setProperty('--ai-text-color', styleSettings.aiTextColor);
+    }
+
+    async function syncSettingsToCloud() {
+        const settings = {
+            agent_name: currentAgent.name,
+            agent_avatar: currentAgent.avatarImg,
+            agent_prompt: currentAgent.prompt,
+            user_name: user.name,
+            user_avatar: user.avatarImg,
+            style_settings: styleSettings
+        };
+        const { data } = await sb.from('user_settings').select('*');
+        if (data && data.length > 0) {
+            await sb.from('user_settings').update(settings).eq('id', data[0].id);
+        } else {
+            await sb.from('user_settings').insert([settings]);
+        }
+    }
+
+    async function loadSettingsFromCloud() {
+        const { data } = await sb.from('user_settings').select('*');
+        if (data && data.length > 0) {
+            const config = data[0];
+            currentAgent.name = config.agent_name || 'AI助手';
+            currentAgent.avatarImg = config.agent_avatar || null;
+            currentAgent.prompt = config.agent_prompt || '';
+            user.name = config.user_name || '我';
+            user.avatarImg = config.user_avatar || null;
+            styleSettings = config.style_settings || styleSettings;
+            
+            document.getElementById('agent-name-set').value = currentAgent.name;
+            document.getElementById('agent-prompt').value = currentAgent.prompt;
+            document.getElementById('user-name').value = user.name;
+            document.getElementById('font-size').value = styleSettings.fontSize;
+            document.getElementById('line-height').value = styleSettings.lineHeight;
+            document.getElementById('user-bubble-color').value = styleSettings.userBubbleColor;
+            document.getElementById('ai-bubble-color').value = styleSettings.aiBubbleColor;
+            document.getElementById('user-text-color').value = styleSettings.userTextColor;
+            document.getElementById('ai-text-color').value = styleSettings.aiTextColor;
+        }
+        applyStyleSettings();
+        document.getElementById('agent-name').innerText = currentAgent.name;
+    }
+
+    sendBtn.onclick = function() {
+        const text = msgInput.value.trim();
+        if (!text) return;
+        addMsg(text, true);
+        msgInput.value = '';
+        setTimeout(() => generateAIReply(text), 500);
+    };
+
+    clearChat.onclick = async () => {
+        messages = [];
+        renderChat();
+        await sb.from('chat_messages').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    };
+
+    saveSet.onclick = async function() {
+        user.name = document.getElementById('user-name').value || '我';
+        currentAgent.name = document.getElementById('agent-name-set').value || 'AI助手';
+        currentAgent.prompt = document.getElementById('agent-prompt').value || '';
+        
+        styleSettings.fontSize = parseInt(document.getElementById('font-size').value);
+        styleSettings.lineHeight = parseFloat(document.getElementById('line-height').value);
+        styleSettings.userBubbleColor = document.getElementById('user-bubble-color').value;
+        styleSettings.aiBubbleColor = document.getElementById('ai-bubble-color').value;
+        styleSettings.userTextColor = document.getElementById('user-text-color').value;
+        styleSettings.aiTextColor = document.getElementById('ai-text-color').value;
+        
+        applyStyleSettings();
+        await syncSettingsToCloud();
+        document.getElementById('agent-name').innerText = currentAgent.name;
+        renderChat();
+        alert('✅ 设置保存成功！刷新/手机都同步！');
+    };
+
+    document.getElementById('user-avatar-upload').onclick = () => document.getElementById('user-avatar-file').click();
+    document.getElementById('user-avatar-file').onchange = async function(e) {
+        const file = e.target.files[0];
+        if(file) {
+            const reader = new FileReader();
+            reader.onload = async e => { 
+                user.avatarImg = e.target.result; 
+                await syncSettingsToCloud();
+                renderChat(); 
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    document.getElementById('agent-avatar-upload').onclick = () => document.getElementById('agent-avatar-file').click();
+    document.getElementById('agent-avatar-file').onchange = async function(e) {
+        const file = e.target.files[0];
+        if(file) {
+            const reader = new FileReader();
+            reader.onload = async e => { 
+                currentAgent.avatarImg = e.target.result; 
+                await syncSettingsToCloud();
+                renderChat(); 
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    async function init() {
+        await loadSettingsFromCloud();
+        const { data } = await sb.from('chat_messages').select('*').order('created_at', { ascending: true });
+        messages = data || [];
+        renderChat();
+    }
+
+    init();
+
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw-chat.js').then(reg => {
+                console.log('SW registered: ', reg);
+            }).catch(err => {
+                console.log('SW registration failed: ', err);
+            });
+        });
+    }
+</script>
+</body>
+</html>
