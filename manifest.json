@@ -1,0 +1,10 @@
+{
+  "name": "月度思维导图规划系统",
+  "short_name": "规划系统",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#121212",
+  "theme_color": "#121212",
+  "description": "个人月度规划与时间管理工具",
+  "icons": []
+}
