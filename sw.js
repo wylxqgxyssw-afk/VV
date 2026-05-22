@@ -1,41 +1,37 @@
-// 极简 Service Worker —— 让 PWA 获得全屏安装资格
-const CACHE_NAME = 'plan-pwa-v1';
-
-// 需要离线缓存的页面（这里只缓存首页）
-const urlsToCache = [
-  './',
-  './index.html'
+const CACHE_NAME = 'plan-static-v1';
+// 只缓存图标文件
+const STATIC_CACHE_URLS = [
+  './icon-192.png',
+  './icon-512.png'
 ];
 
-// 安装事件：预先缓存首页
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll(urlsToCache);
-    })
+    caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_CACHE_URLS))
   );
-  // 强制跳过等待，让新的 SW 立即激活
   self.skipWaiting();
 });
 
-// 激活事件：清理旧缓存
-self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.filter(name => name !== CACHE_NAME).map(name => caches.delete(name))
-      );
-    })
-  );
-  // 让 SW 立即控制所有客户端
-  self.clients.claim();
+self.addEventListener('fetch', event => {
+  const url = new URL(event.request.url);
+  // 对于图标请求，尝试从缓存返回
+  if (STATIC_CACHE_URLS.some(staticUrl => event.request.url.includes(staticUrl))) {
+    event.respondWith(
+      caches.match(event.request).then(response => response || fetch(event.request))
+    );
+    return;
+  }
+  // 其他所有请求（HTML、JS、JSON、API等）一律走网络，不缓存
+  event.respondWith(fetch(event.request));
 });
 
-// 请求拦截：网络优先，失败时回退到缓存
-self.addEventListener('fetch', event => {
-  event.respondWith(
-    fetch(event.request).catch(() => {
-      return caches.match(event.request);
-    })
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys().then(keys => Promise.all(
+      keys.map(key => {
+        if (key !== CACHE_NAME) return caches.delete(key);
+      })
+    ))
   );
-});
+  self.clients.claim();
+);

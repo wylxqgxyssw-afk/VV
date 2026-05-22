@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>月度思维导图规划系统-可固定列</title>
-    <link rel="manifest" href="./manifest.json">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <meta name="theme-color" content="#121212">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Microsoft YaHei", sans-serif; }
         body { background: #121212; color: #fff; overflow: hidden; transition: transform 0.15s ease; }
@@ -37,6 +39,7 @@
         .btn:hover { background: #555555; }
         .fold-btn { background: #444444; }
         .backup-btn { background: #555555; }
+        .refresh-btn { background: #2c6e9e; }
         .add-item { display: flex; gap: 5px; }
         input { padding: 5px 6px; border: 1px solid #444444; border-radius: 4px; outline: none; font-size: 13px; background: #222222; color: #ffffff; }
         .view-tabs { display: flex; gap: 8px; margin-bottom: 12px; align-items: center; flex-wrap: wrap; }
@@ -73,9 +76,6 @@
         .add-col-th { cursor: pointer; background: #333; color: #aaa; }
         .add-col-th:hover { background: #555; color: #fff; }
         .notice-col { max-width: 120px; min-width: 60px; white-space: normal; word-break: break-word; }
-        /* 复制列按钮样式 */
-        .copy-col-btn { position: absolute; bottom: 22px; right: 2px; width: 18px; height: 18px; background: #555; color: #fff; border: none; border-radius: 50%; cursor: pointer; font-size: 10px; line-height: 18px; text-align: center; display: none; z-index: 2; }
-        .schedule-draggable-col:hover .copy-col-btn { display: block; }
     </style>
 </head>
 <body>
@@ -116,6 +116,7 @@
     <div class="header">
         <h1 class="title" id="planTitle">周计划 暗黑云端同步版</h1>
         <div class="controls">
+            <button class="btn refresh-btn" onclick="location.reload(true)">🔄 刷新页面</button>
             <button class="btn backup-btn" onclick="exportData()">导出备份</button>
             <button class="btn backup-btn" onclick="document.getElementById('fileInput').click()">导入备份</button>
             <input type="file" id="fileInput" accept=".json" onchange="importData(event)">
@@ -146,7 +147,7 @@
         <table class="track-table"><thead id="schedule-time-head"></thead><tbody id="schedule-time-body"></tbody></table>
     </div>
     <div id="schedule-day-view" class="table-container">
-        <table class="track-table"><thead id="schedule-day-head"></thead><tbody id="schedule-day-body"></tbody></table>
+        <table class="track-table"><thead id="schedule-day-head"></thead><tbody id="schedule-day-body"></tbody></tr>
     </div>
 </div>
 
@@ -205,7 +206,6 @@ const ALL_COL_KEYS = ['月计划', '周计划', '第三周周计划复盘', ...D
 const DEFAULT_COL_ORDER = [...ALL_COL_KEYS];
 const SYSTEM_COLS = ['月计划', '周计划', '第三周周计划复盘'];
 
-// 第二张表默认不可删除的列
 const SCHEDULE_DEFAULT_DAYS = ['周一','周二','周三','周四','周五','周六','周日'];
 
 const TIME_BLOCKS = {
@@ -220,7 +220,8 @@ let trackData = {
     records: {},
     columnOrder: DEFAULT_COL_ORDER.slice(),
     columnLabels: {},
-    pinnedColumns: ['周一']
+    pinnedColumns: ['周一'],
+    version: 1       // 新增版本号字段
 };
 let scheduleData = {
     pinnedColumns: ['周一'],
@@ -232,7 +233,6 @@ let contentFont = 10;
 let planWeekFold = true;
 let scheduleWeekFold = true;
 
-// 初始化默认标签
 ALL_COL_KEYS.forEach(k => {
     trackData.columnLabels[k] = k === '周计划' ? '第二周周计划复盘' : k === '第三周周计划复盘' ? '第三周周计划复盘' : k;
 });
@@ -273,10 +273,11 @@ async function loadFromCloud() {
     try {
         const { data, error } = await supabaseClient.from('user_plan_data').select('*').eq('id', userId).single();
         if (data) {
-            trackData = data.track_data || { items:[], records:{} };
+            trackData = data.track_data || { items:[], records:{}, version:1 };
             if (!trackData.columnOrder) trackData.columnOrder = DEFAULT_COL_ORDER.slice();
             if (!trackData.columnLabels) trackData.columnLabels = {};
             if (!trackData.pinnedColumns) trackData.pinnedColumns = ['周一'];
+            if (trackData.version === undefined) trackData.version = 1;
             trackData.columnOrder.forEach(k => { if (!trackData.columnLabels[k]) trackData.columnLabels[k] = k; });
 
             scheduleData = data.schedule_data || {};
@@ -286,6 +287,9 @@ async function loadFromCloud() {
 
             titleFont = data.font_data?.title || 16;
             contentFont = data.font_data?.content || 10;
+        } else {
+            // 如果没有数据，初始化一条带版本号的记录
+            trackData.version = 1;
         }
         hideSync();
     } catch (e) { hideSync(); }
@@ -295,13 +299,37 @@ async function loadFromCloud() {
 async function saveToCloud() {
     showSync('同步中...');
     try {
-        await supabaseClient.from('user_plan_data').upsert({
-            id: userId, track_data: trackData, schedule_data: scheduleData,
-            font_data: { title: titleFont, content: contentFont }
-        });
+        // 乐观更新：本地 version 加 1 作为新版本，实际上需要数据库返回冲突检测
+        // 这里使用条件更新：只有当数据库中的 version 与本地 version 一致时才更新
+        const newVersion = (trackData.version || 0) + 1;
+        const { data, error } = await supabaseClient.from('user_plan_data')
+            .update({
+                track_data: trackData,
+                schedule_data: scheduleData,
+                font_data: { title: titleFont, content: contentFont },
+                version: newVersion
+            })
+            .eq('id', userId)
+            .eq('version', trackData.version);  // 条件：版本匹配
+
+        if (error) throw error;
+        if (data && data.length === 0) {
+            // 没有匹配的行，说明版本冲突
+            showSync('冲突！数据已被修改');
+            setTimeout(() => {
+                alert('检测到云端数据已被其他设备修改，即将刷新页面，请重新操作。');
+                location.reload();
+            }, 1000);
+            return;
+        }
+        // 更新成功，本地版本号增加
+        trackData.version = newVersion;
         showSync('同步完成');
         setTimeout(hideSync, 1000);
-    } catch (e) { showSync('同步失败'); setTimeout(hideSync, 1500); }
+    } catch (e) {
+        showSync('同步失败');
+        setTimeout(hideSync, 1500);
+    }
 }
 
 function showSync(text) { syncStatus.textContent = text; syncStatus.style.display = 'block'; }
@@ -342,7 +370,6 @@ function togglePlanFold(){
     document.getElementById('planFoldBtn').innerText = planWeekFold ? '展开全部列' : '收起多余列';
     renderPlanHorizontal();
 }
-
 function toggleScheduleFold(){
     scheduleWeekFold = !scheduleWeekFold;
     document.getElementById('scheduleFoldBtn').innerText = scheduleWeekFold ? '展开全部周几' : '收起多余周几';
@@ -358,6 +385,7 @@ function switchPlanView(t){
     t==='horizontal' ? renderPlanHorizontal() : renderPlanVertical();
 }
 
+/* ========== 第一张表横排视图 ========== */
 function renderPlanHorizontal(){
     const head = document.getElementById('plan-horizontal-head');
     const body = document.getElementById('plan-horizontal-body');
@@ -369,7 +397,7 @@ function renderPlanHorizontal(){
         return trackData.pinnedColumns.includes(key);
     });
 
-    let h = `<tr><th class="item-name-col">跟踪事项</th>`;
+    let h = `<th class="item-name-col">跟踪事项</th>`;
     visibleKeys.forEach(key => {
         const label = getColLabel(key);
         const pinnedClass = isPlanPinned(key) ? 'pinned' : '';
@@ -381,14 +409,16 @@ function renderPlanHorizontal(){
         </th>`;
     });
     h += `<th class="add-col-th" id="addColBtn">+ 添加列</th>`;
-    h += `<th>操作</th></tr>`;
+    h += `<th>操作</th>`;
     head.innerHTML = h;
 
     bindPlanColumnDrag(head);
     bindPlanColumnEdit(head);
     bindPlanDeleteColButtons(head);
     bindPlanPinButtons(head);
-    document.getElementById('addColBtn').addEventListener('click', addNewColumn);
+    const addBtn = document.getElementById('addColBtn');
+    if(addBtn) addBtn.addEventListener('click', addNewColumn);
+    else console.warn('addColBtn not found');
 
     trackData.items.forEach((item, idx) => {
         const tr = document.createElement('tr');
@@ -509,7 +539,6 @@ function bindPlanPinButtons(thead) {
     });
 }
 
-/* ========== 第二张表时段为行视图（带复制功能） ========== */
 function renderScheduleTimeView(){
     const head = document.getElementById('schedule-time-head');
     const body = document.getElementById('schedule-time-body');
@@ -521,7 +550,7 @@ function renderScheduleTimeView(){
         return scheduleData.pinnedColumns.includes(d);
     });
 
-    let h = `<tr><th class="item-name-col notice-col">注意事项</th><th class="item-name-col">时段</th>`;
+    let h = `<th class="item-name-col notice-col">注意事项</th><th class="item-name-col">时段</th>`;
     visibleDays.forEach(d => {
         const label = getScheduleDayLabel(d);
         const pinnedClass = isSchedulePinned(d) ? 'pinned' : '';
@@ -530,7 +559,6 @@ function renderScheduleTimeView(){
         h += `<th class="schedule-draggable-col" data-day="${d}" draggable="true">
             <span class="col-name-text">${label}</span>
             <button class="schedule-pin-btn ${pinnedClass}" data-pin-day="${d}">📌</button>
-            <button class="copy-col-btn" data-copy-day="${d}" title="复制整列内容">📋</button>
             ${deleteBtn}
         </th>`;
     });
@@ -541,8 +569,8 @@ function renderScheduleTimeView(){
     bindScheduleColumnEdit(head);
     bindSchedulePinButtons(head);
     bindScheduleDeleteButtons(head);
-    bindScheduleCopyButtons(head);   // 绑定复制按钮
-    document.getElementById('scheduleAddColBtn').addEventListener('click', addScheduleColumn);
+    const addScheduleBtn = document.getElementById('scheduleAddColBtn');
+    if(addScheduleBtn) addScheduleBtn.addEventListener('click', addScheduleColumn);
 
     ALL_TIMES.forEach(time => {
         const tr = document.createElement('tr');
@@ -563,7 +591,7 @@ function renderScheduleTimeView(){
 function bindScheduleColumnDrag(thead) {
     let draggedTh = null;
     thead.addEventListener('dragstart', (e) => {
-        if (e.target.classList.contains('delete-col-btn') || e.target.classList.contains('schedule-pin-btn') || e.target.classList.contains('copy-col-btn') || e.target.closest('.add-col-th') || e.target.tagName === 'INPUT') {
+        if (e.target.classList.contains('delete-col-btn') || e.target.classList.contains('schedule-pin-btn') || e.target.closest('.add-col-th') || e.target.tagName === 'INPUT') {
             e.preventDefault(); return;
         }
         draggedTh = e.target.closest('th.schedule-draggable-col');
@@ -621,11 +649,8 @@ function bindScheduleColumnEdit(thead) {
         th.innerHTML = ''; th.appendChild(input); input.focus(); input.select();
         const finishEdit = () => {
             const newLabel = input.value.trim();
-            if (newLabel && newLabel !== key) {
-                scheduleData.dayLabels[key] = newLabel;
-            } else {
-                delete scheduleData.dayLabels[key];
-            }
+            if (newLabel && newLabel !== key) scheduleData.dayLabels[key] = newLabel;
+            else delete scheduleData.dayLabels[key];
             saveToCloud();
             renderScheduleTimeView();
         };
@@ -683,52 +708,6 @@ function bindScheduleDeleteButtons(thead) {
     });
 }
 
-// 复制列功能
-function bindScheduleCopyButtons(thead) {
-    thead.querySelectorAll('.copy-col-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const day = btn.dataset.copyDay;
-            copyScheduleColumn(day);
-        });
-    });
-}
-
-function copyScheduleColumn(day) {
-    const label = getScheduleDayLabel(day);
-    let text = `【${label}】\n`;
-    ALL_TIMES.forEach(time => {
-        const content = scheduleData[time + '|' + day] || '';
-        text += `${time}：${content}\n`;
-    });
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text.trim()).then(() => {
-            alert(`✅ 已复制列“${label}”的全部内容`);
-        }).catch(() => {
-            fallbackCopy(text.trim());
-        });
-    } else {
-        fallbackCopy(text.trim());
-    }
-}
-
-function fallbackCopy(text) {
-    const textarea = document.createElement('textarea');
-    textarea.value = text;
-    textarea.style.position = 'fixed';
-    textarea.style.opacity = '0';
-    document.body.appendChild(textarea);
-    textarea.select();
-    try {
-        document.execCommand('copy');
-        alert('✅ 已复制（兼容模式）');
-    } catch (e) {
-        alert('❌ 复制失败，请手动复制');
-    }
-    document.body.removeChild(textarea);
-}
-
-/* 第二张表周几为行视图 */
 function renderScheduleDayView(){
     const head = document.getElementById('schedule-day-head');
     const body = document.getElementById('schedule-day-body');
@@ -738,7 +717,7 @@ function renderScheduleDayView(){
         return scheduleData.pinnedColumns.includes(d);
     });
 
-    let h = `<tr><th class="notice-col">注意事项</th><th>分类</th>`;
+    let h = `<th class="notice-col">注意事项</th><th>分类</th>`;
     visibleDays.forEach(d => h += `<th>${getScheduleDayLabel(d)}</th>`);
     head.innerHTML = h + '</tr>';
     body.innerHTML = '';
@@ -814,12 +793,12 @@ function renderPlanVertical(){
     const head=document.getElementById('plan-vertical-head');
     const body=document.getElementById('plan-vertical-body');
     const allKeys=trackData.columnOrder||DEFAULT_COL_ORDER;
-    let h=`<tr><th>分类</th>`;
+    let h=`<th>分类</th>`;
     allKeys.forEach(key=>{ h+=`<th>${getColLabel(key)}</th>`; });
-    head.innerHTML=h+'</tr>';
+    head.innerHTML=h+'<tr>';
     body.innerHTML='';
     allKeys.forEach(key=>{
-        let row=`<tr><td class="item-name-col">${getColLabel(key)}</td>`;
+        let row=`<td class="item-name-col">${getColLabel(key)}</td>`;
         trackData.items.forEach(planItem=>{
             row+=`<td><div class="col-wrap"><div class="editable" contenteditable onblur="savePlanCell('${planItem}','${key}',this)">${trackData.records[planItem]?.[key]||''}</div></div></td>`;
         });
@@ -868,6 +847,7 @@ function importData(e){
             if(!trackData.columnOrder) trackData.columnOrder=DEFAULT_COL_ORDER.slice();
             if(!trackData.columnLabels) trackData.columnLabels={};
             if(!trackData.pinnedColumns) trackData.pinnedColumns=['周一'];
+            if(trackData.version===undefined) trackData.version=1;
             scheduleData=d.schedule_data||d.scheduleData||{};
             if(!scheduleData.pinnedColumns) scheduleData.pinnedColumns=['周一'];
             if(!scheduleData.dayOrder) scheduleData.dayOrder=[...DAYS];
@@ -882,22 +862,24 @@ function importData(e){
     e.target.value='';
 }
 
-window.onload=()=>{ loadFromCloud(); };
-</script>
+window.onload=()=>{ 
+    loadFromCloud();
+    // 确保每次打开都刷新一次页面避免缓存残余（但因为我们SW不缓存HTML/JS，其实不需要，但保留安全）
+    if(location.search.indexOf('reload')===-1 && sessionStorage.getItem('firstLoad')===null){
+        sessionStorage.setItem('firstLoad','true');
+        // 不强制刷新，只做一次标记
+    }
+};
 
-<!-- Service Worker 注册 -->
-<script>
-  if ('serviceWorker' in navigator) {
+if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js')
-        .then(registration => {
-          console.log('Service Worker 注册成功:', registration.scope);
-        })
-        .catch(error => {
-          console.log('Service Worker 注册失败:', error);
+        navigator.serviceWorker.register('./sw.js').then(reg => {
+            console.log('SW registered: ', reg);
+        }).catch(err => {
+            console.log('SW registration failed: ', err);
         });
     });
-  }
+}
 </script>
 </body>
 </html>
