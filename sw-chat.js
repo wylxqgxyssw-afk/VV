@@ -1,31 +1,25 @@
-const CACHE_NAME = 'ai-chat-v1';
-const urlsToCache = [
-  './chat.html',
-  './manifest-chat.json',
-  './icon-192.png',
-  './icon-512.png'
-];
-
+const CACHE_NAME = 'chat-cache-v2';
 self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
-  );
+  console.log('SW 安装');
+  self.skipWaiting(); // 立即激活
 });
-
-self.addEventListener('fetch', event => {
-  event.respondWith(
-    caches.match(event.request).then(response => {
-      return response || fetch(event.request);
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    clients.claim().then(() => {
+      // 可清理旧缓存
+      return caches.keys().then(keys => {
+        return Promise.all(
+          keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
+        );
+      });
     })
   );
 });
-
-self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys().then(keys => Promise.all(
-      keys.map(key => {
-        if (key !== CACHE_NAME) return caches.delete(key);
-      })
-    ))
+// 网络优先，失败才用缓存
+self.addEventListener('fetch', event => {
+  event.respondWith(
+    fetch(event.request).catch(() => {
+      return caches.match(event.request);
+    })
   );
 });
