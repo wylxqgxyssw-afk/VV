@@ -15,85 +15,45 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         tailwind.config = {
-            theme: { extend: { colors: {
-                dark: '#000000', darker: '#121212', accent: '#165DFF',
-            }, fontFamily: { sans: ['Inter', 'sans-serif'] } } }
+            theme: { extend: { colors: { dark: '#000000', darker: '#121212', accent: '#165DFF', }, fontFamily: { sans: ['Inter', 'sans-serif'] } } }
         }
     </script>
     <style>
         :root {
-            --font-size: 16px;
-            --line-height: 1.6;
-            --user-bubble-color: #165DFF;
-            --ai-bubble-color: #2D3748;
-            --user-text-color: #FFFFFF;
-            --ai-text-color: #FFFFFF;
+            --font-size: 16px; --line-height: 1.6; --user-bubble-color: #165DFF;
+            --ai-bubble-color: #2D3748; --user-text-color: #FFFFFF; --ai-text-color: #FFFFFF;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            background: #000; 
-            color: #fff; 
-            height: 100vh; height: 100dvh;
-            overflow: hidden; position: fixed; width: 100%;
-        }
-        .layout-container { 
-            display: grid; grid-template-columns: 1fr 2fr; 
-            width: 100vw; height: 100dvh; 
-        }
+        body { background: #000; color: #fff; height: 100vh; height: 100dvh; overflow: hidden; position: fixed; width: 100%; }
+        .layout-container { display: grid; grid-template-columns: 1fr 2fr; width: 100vw; height: 100dvh; }
         @media (max-width: 768px) {
             .layout-container { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
-            .left-set-panel {
-                position: fixed; bottom: 0; left: 0; width: 100%; height: 50vh;
-                z-index: 50; border-radius: 16px 16px 0 0;
-                transform: translateY(82%); transition: transform 0.3s ease;
-            }
+            .left-set-panel { position: fixed; bottom: 0; left: 0; width: 100%; height: 50vh; z-index: 50; border-radius: 16px 16px 0 0; transform: translateY(82%); transition: transform 0.3s ease; }
             .left-set-panel.expand { transform: translateY(0); }
             .chat-main-panel { height: 100dvh !important; }
         }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .avatar-img, .avatar-placeholder { 
-            object-fit: cover; width: 100%; height: 100%; border-radius: 4px;
-        }
-        .chat-bubble-content {
-            word-wrap: break-word; white-space: pre-wrap;
-            max-width: 100%; overflow-wrap: break-word; overflow: hidden;
-            font-size: var(--font-size); line-height: var(--line-height);
-        }
+        .avatar-img, .avatar-placeholder { object-fit: cover; width: 100%; height: 100%; border-radius: 4px; }
+        .chat-bubble-content { word-wrap: break-word; white-space: pre-wrap; max-width: 100%; overflow-wrap: break-word; overflow: hidden; font-size: var(--font-size); line-height: var(--line-height); }
         .user-bubble { background-color: var(--user-bubble-color); color: var(--user-text-color); }
         .ai-bubble { background-color: var(--ai-bubble-color); color: var(--ai-text-color); }
-        .katex { font-size: var(--font-size); line-height: var(--line-height); max-width: 100%; }
         .collapsible-settings { display: none; }
         .phone-drag-bar { display: none; }
-        @media (max-width: 768px) {
-            .phone-drag-bar { display: block; width: 40px; height: 4px; background: #666; border-radius: 2px; margin: 8px auto; }
-        }
-        /* 名称编辑相关 */
-        .name-tag { cursor: pointer; transition: all 0.2s; border-bottom: 1px dashed transparent; }
-        .name-tag:hover { border-bottom-color: #888; color: #ccc; }
-        .name-tag .fa-pencil { opacity: 0; transition: opacity 0.2s; font-size: 0.7em; margin-left: 4px; }
-        .name-tag:hover .fa-pencil { opacity: 0.7; }
-        .msg-name-label { font-size: 0.7em; opacity: 0.7; letter-spacing: 0.5px; margin-bottom: 3px; display: block; cursor: pointer; }
-        .name-edit-modal {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 100; background: rgba(0,0,0,0.75);
-            display: flex; align-items: center; justify-content: center; display: none;
-        }
-        .name-edit-dialog {
-            background: #1a1a1a; border: 1px solid #333; border-radius: 12px;
-            padding: 24px; width: 90%; max-width: 380px;
-        }
+        @media (max-width: 768px) { .phone-drag-bar { display: block; width: 40px; height: 4px; background: #666; border-radius: 2px; margin: 8px auto; } }
+        .name-tag { cursor: pointer; border-bottom: 1px dashed transparent; }
+        .name-tag:hover { border-bottom-color: #888; }
+        .name-edit-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; background: rgba(0,0,0,0.75); display: none; align-items: center; justify-content: center; }
+        .name-edit-dialog { background: #1a1a1a; border: 1px solid #333; border-radius: 12px; padding: 24px; width: 90%; max-width: 380px; }
     </style>
 </head>
 <body>
 <div class="layout-container">
-    <!-- 左侧设置面板（保持不变） -->
+    <!-- 左侧设置面板 -->
     <div class="left-set-panel bg-darker border-r border-gray-800 flex flex-col h-full p-4 overflow-y-auto scrollbar-hide">
         <div class="phone-drag-bar"></div>
         <h1 class="text-xl font-bold mb-4">剧本/人设设置</h1>
         <textarea class="flex-1 bg-dark border border-gray-800 rounded p-3 text-white outline-none resize-none mb-4" placeholder="输入剧本..." id="agent-prompt"></textarea>
-        <button class="w-full bg-gray-800 rounded p-2 mb-3 text-sm" id="toggle-settings">
-            <i class="fa fa-cog mr-1"></i> 展开头像/样式设置
-        </button>
+        <button class="w-full bg-gray-800 rounded p-2 mb-3 text-sm" id="toggle-settings"><i class="fa fa-cog mr-1"></i> 展开头像/样式设置</button>
         <div class="collapsible-settings bg-dark border border-gray-800 rounded p-3 mb-3 space-y-3">
             <div><h3 class="text-sm text-gray-400 mb-1">智能体名称</h3><input class="w-full bg-darker rounded p-2 text-white outline-none" id="agent-name-set"></div>
             <div><h3 class="text-sm text-gray-400 mb-1">智能体头像</h3><button class="w-full bg-accent/20 rounded p-2 text-sm mb-2" id="agent-avatar-upload">上传头像</button><input type="file" id="agent-avatar-file" class="hidden" accept="image/*"><div id="agent-avatar-preview" class="w-14 h-14 bg-accent/20 flex items-center justify-center overflow-hidden rounded-lg mx-auto"><span>预览</span></div></div>
@@ -107,6 +67,7 @@
         </div>
         <button class="w-full bg-accent rounded p-3" id="save-set">保存所有设置</button>
     </div>
+
     <!-- 右侧聊天面板 -->
     <div class="chat-main-panel flex flex-col h-full bg-dark">
         <div class="p-3 border-b border-gray-800 flex items-center justify-between">
@@ -129,6 +90,7 @@
         </div>
     </div>
 </div>
+
 <!-- 名称编辑弹窗 -->
 <div id="name-edit-modal" class="name-edit-modal">
     <div class="name-edit-dialog">
@@ -141,27 +103,270 @@
         </div>
     </div>
 </div>
+
 <script>
-    // 原有JS逻辑（已包含修正的SW更新监听）
-    // 为节省篇幅，此处简写核心增加部分，完整JS与之前相同，但末尾新增以下内容：
+    // 完整聊天逻辑（已补全）
+    if (typeof renderMathInElement !== 'function') window.renderMathInElement = () => {};
+
+    const SUPABASE_URL = "https://vkeaimeytsymepgkizqk.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_R66fP0xmbxUZTeu7kjQYjQ_FHdXlRvm";
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let currentAgent = { name: 'AI助手', avatar: 'AI', prompt: '', avatarImg: null };
+    let user = { name: '我', avatar: '我', avatarImg: null };
+    let styleSettings = { fontSize: 16, lineHeight: 1.6, userBubbleColor: '#165DFF', aiBubbleColor: '#2D3748', userTextColor: '#FFFFFF', aiTextColor: '#FFFFFF' };
+    let messages = [];
+    let editingTarget = null;
+
+    // DOM 元素
+    const chatBox = document.getElementById('chat-box');
+    const msgInput = document.getElementById('msg-input');
+    const sendBtn = document.getElementById('send-btn');
+    const clearChatBtn = document.getElementById('clear-chat');
+    const saveSetBtn = document.getElementById('save-set');
+    const toggleSettingsBtn = document.getElementById('toggle-settings');
+    const collapsibleSettings = document.querySelector('.collapsible-settings');
+    const leftSetPanel = document.querySelector('.left-set-panel');
+    const phoneOpenSetBtn = document.getElementById('phone-open-set');
+    const nameEditModal = document.getElementById('name-edit-modal');
+    const nameEditTitle = document.getElementById('name-edit-title');
+    const nameEditSubtitle = document.getElementById('name-edit-subtitle');
+    const nameEditInput = document.getElementById('name-edit-input');
+    const nameEditCancel = document.getElementById('name-edit-cancel');
+    const nameEditConfirm = document.getElementById('name-edit-confirm');
+    const agentNameDisplay = document.getElementById('agent-name-display');
+    const userNameDisplay = document.getElementById('user-name-display');
+
+    // 手机面板
+    if (phoneOpenSetBtn) {
+        phoneOpenSetBtn.onclick = () => leftSetPanel.classList.toggle('expand');
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth <= 768 && !leftSetPanel.contains(e.target) && !phoneOpenSetBtn.contains(e.target) && leftSetPanel.classList.contains('expand')) {
+                leftSetPanel.classList.remove('expand');
+            }
+        });
+    }
+
+    // 设置折叠
+    toggleSettingsBtn.onclick = () => {
+        const isHidden = collapsibleSettings.style.display === 'none' || collapsibleSettings.style.display === '';
+        collapsibleSettings.style.display = isHidden ? 'block' : 'none';
+        toggleSettingsBtn.innerHTML = isHidden ? '<i class="fa fa-cog mr-1"></i> 收起头像/样式设置' : '<i class="fa fa-cog mr-1"></i> 展开头像/样式设置';
+    };
+
+    // 名称编辑
+    function openNameEditModal(target) {
+        editingTarget = target;
+        if (target === 'agent') {
+            nameEditTitle.textContent = '编辑 AI 智能体名称';
+            nameEditInput.value = currentAgent.name;
+        } else {
+            nameEditTitle.textContent = '编辑你的名称';
+            nameEditInput.value = user.name;
+        }
+        nameEditModal.style.display = 'flex';
+        nameEditInput.focus();
+    }
+    function closeNameEditModal() { nameEditModal.style.display = 'none'; }
+    function confirmNameEdit() {
+        const newName = nameEditInput.value.trim();
+        if (!newName) return;
+        if (editingTarget === 'agent') currentAgent.name = newName;
+        else user.name = newName;
+        updateNameDisplays();
+        renderChat();
+        syncSettingsToCloud();
+        closeNameEditModal();
+    }
+    nameEditCancel.onclick = closeNameEditModal;
+    nameEditConfirm.onclick = confirmNameEdit;
+    nameEditInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') confirmNameEdit(); });
+    nameEditModal.addEventListener('click', (e) => { if (e.target === nameEditModal) closeNameEditModal(); });
+    agentNameDisplay.onclick = () => openNameEditModal('agent');
+    userNameDisplay.onclick = () => openNameEditModal('user');
+
+    function updateNameDisplays() {
+        agentNameDisplay.innerHTML = `${escapeHTML(currentAgent.name)} <i class="fa fa-pencil"></i>`;
+        userNameDisplay.innerHTML = `${escapeHTML(user.name)} <i class="fa fa-pencil"></i>`;
+        document.getElementById('agent-name-set').value = currentAgent.name;
+        document.getElementById('user-name').value = user.name;
+    }
+    function escapeHTML(str) { const div = document.createElement('div'); div.textContent = str; return div.innerHTML; }
+
+    // 打字机
+    async function typeWriterEffect(elem, fullText, speed = 50) {
+        elem.innerHTML = '';
+        for (let i = 0; i < fullText.length; i++) {
+            elem.innerHTML += fullText[i];
+            if (typeof renderMathInElement === 'function') renderMathInElement(elem, { delimiters: [{ left: "$", right: "$", display: false }] });
+            chatBox.scrollTop = chatBox.scrollHeight;
+            await new Promise(r => setTimeout(r, speed));
+        }
+    }
+
+    function renderContent(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function renderChat() {
+        chatBox.innerHTML = '';
+        messages.forEach((msg) => {
+            const div = document.createElement('div');
+            div.className = `mb-4 ${msg.is_user ? 'text-right' : 'text-left'}`;
+            if (msg.is_user) {
+                div.innerHTML = `
+                    <div class="flex flex-row-reverse items-start gap-2">
+                        <div class="w-9 h-9 bg-accent/20 flex items-center justify-center overflow-hidden rounded-lg"><span>${escapeHTML(user.avatar)}</span></div>
+                        <div class="max-w-[70%]"><span class="msg-name-label">${escapeHTML(user.name)}</span><div class="user-bubble p-3 rounded-lg chat-bubble-content">${renderContent(msg.text)}</div></div>
+                    </div>`;
+            } else {
+                div.innerHTML = `
+                    <div class="flex items-start gap-2">
+                        <div class="w-9 h-9 bg-accent/20 flex items-center justify-center overflow-hidden rounded-lg"><span>${escapeHTML(currentAgent.avatar)}</span></div>
+                        <div class="max-w-[70%]"><span class="msg-name-label">${escapeHTML(currentAgent.name)}</span><div class="ai-bubble p-3 rounded-lg chat-bubble-content type-write-box"></div></div>
+                    </div>`;
+            }
+            chatBox.appendChild(div);
+        });
+        const typeBoxes = document.querySelectorAll('.type-write-box');
+        if (typeBoxes.length > 0) {
+            const last = typeBoxes[typeBoxes.length-1];
+            const lastMsg = messages[messages.length-1];
+            if (!lastMsg.is_user) typeWriterEffect(last, lastMsg.text, 50);
+        }
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    async function addMsg(text, isUser) {
+        messages.push({ text, is_user: isUser, created_at: new Date().toISOString() });
+        renderChat();
+        await sb.from('chat_messages').insert([{ text, is_user: isUser }]);
+    }
+
+    function generateAIReply() {
+        const prompt = currentAgent.prompt || '';
+        const aiMatch = prompt.match(/你:\s*([\s\S]*?)(?=\n我:|$)/);
+        let reply = aiMatch ? aiMatch[1].trim() : (prompt.trim() || "请先设置剧本~");
+        addMsg(reply, false);
+    }
+
+    function applyStyleSettings() {
+        document.documentElement.style.setProperty('--font-size', styleSettings.fontSize+'px');
+        document.documentElement.style.setProperty('--line-height', styleSettings.lineHeight);
+        document.documentElement.style.setProperty('--user-bubble-color', styleSettings.userBubbleColor);
+        document.documentElement.style.setProperty('--ai-bubble-color', styleSettings.aiBubbleColor);
+        document.documentElement.style.setProperty('--user-text-color', styleSettings.userTextColor);
+        document.documentElement.style.setProperty('--ai-text-color', styleSettings.aiTextColor);
+    }
+
+    async function syncSettingsToCloud() {
+        const settings = { agent_name: currentAgent.name, agent_avatar: currentAgent.avatarImg, agent_prompt: currentAgent.prompt, user_name: user.name, user_avatar: user.avatarImg, style_settings: styleSettings };
+        const { data } = await sb.from('user_settings').select('*');
+        if (data && data.length) await sb.from('user_settings').update(settings).eq('id', data[0].id);
+        else await sb.from('user_settings').insert([settings]);
+    }
+
+    async function loadSettingsFromCloud() {
+        const { data } = await sb.from('user_settings').select('*');
+        if (data && data.length) {
+            const c = data[0];
+            currentAgent.name = c.agent_name || 'AI助手';
+            currentAgent.avatarImg = c.agent_avatar;
+            currentAgent.prompt = c.agent_prompt || '';
+            user.name = c.user_name || '我';
+            user.avatarImg = c.user_avatar;
+            styleSettings = c.style_settings || styleSettings;
+            document.getElementById('agent-name-set').value = currentAgent.name;
+            document.getElementById('agent-prompt').value = currentAgent.prompt;
+            document.getElementById('user-name').value = user.name;
+            document.getElementById('font-size').value = styleSettings.fontSize;
+            document.getElementById('line-height').value = styleSettings.lineHeight;
+            document.getElementById('user-bubble-color').value = styleSettings.userBubbleColor;
+            document.getElementById('ai-bubble-color').value = styleSettings.aiBubbleColor;
+            document.getElementById('user-text-color').value = styleSettings.userTextColor;
+            document.getElementById('ai-text-color').value = styleSettings.aiTextColor;
+        }
+        applyStyleSettings();
+        updateNameDisplays();
+    }
+
+    // 按钮事件
+    sendBtn.onclick = () => {
+        const text = msgInput.value.trim();
+        if (!text) return;
+        addMsg(text, true);
+        msgInput.value = '';
+        setTimeout(generateAIReply, 400);
+    };
+    msgInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendBtn.click(); } });
+
+    clearChatBtn.onclick = async () => {
+        if (!confirm('清空所有对话？')) return;
+        messages = [];
+        renderChat();
+        await sb.from('chat_messages').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    };
+
+    saveSetBtn.onclick = async () => {
+        user.name = document.getElementById('user-name').value.trim() || '我';
+        currentAgent.name = document.getElementById('agent-name-set').value.trim() || 'AI助手';
+        currentAgent.prompt = document.getElementById('agent-prompt').value;
+        styleSettings.fontSize = parseInt(document.getElementById('font-size').value) || 16;
+        styleSettings.lineHeight = parseFloat(document.getElementById('line-height').value) || 1.6;
+        styleSettings.userBubbleColor = document.getElementById('user-bubble-color').value;
+        styleSettings.aiBubbleColor = document.getElementById('ai-bubble-color').value;
+        styleSettings.userTextColor = document.getElementById('user-text-color').value;
+        styleSettings.aiTextColor = document.getElementById('ai-text-color').value;
+        applyStyleSettings();
+        updateNameDisplays();
+        await syncSettingsToCloud();
+        renderChat();
+        alert('✅ 保存成功');
+    };
+
+    // 头像上传
+    document.getElementById('user-avatar-upload').onclick = () => document.getElementById('user-avatar-file').click();
+    document.getElementById('user-avatar-file').onchange = function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = ev => { user.avatarImg = ev.target.result; syncSettingsToCloud(); renderChat(); };
+            reader.readAsDataURL(file);
+        }
+    };
+    document.getElementById('agent-avatar-upload').onclick = () => document.getElementById('agent-avatar-file').click();
+    document.getElementById('agent-avatar-file').onchange = function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = ev => { currentAgent.avatarImg = ev.target.result; syncSettingsToCloud(); renderChat(); };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    // 初始化
+    (async () => {
+        await loadSettingsFromCloud();
+        const { data } = await sb.from('chat_messages').select('*').order('created_at', { ascending: true });
+        messages = data || [];
+        renderChat();
+    })();
+
+    // SW 注册与更新
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('./sw-chat.js').then(reg => {
-                console.log('SW registered');
-                // 监听更新
                 reg.addEventListener('updatefound', () => {
                     const newWorker = reg.installing;
                     newWorker.addEventListener('statechange', () => {
                         if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                            if (confirm('有新版本可用，立即刷新？')) window.location.reload();
+                            if (confirm('有新版本，立即刷新？')) window.location.reload();
                         }
                     });
                 });
             });
-        });
-        // 自动更新：如果SW控制器变化则刷新
-        navigator.serviceWorker.addEventListener('controllerchange', () => {
-            window.location.reload();
         });
     }
 </script>
