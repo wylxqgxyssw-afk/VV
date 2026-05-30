@@ -130,7 +130,7 @@
             <div><h3 class="text-sm text-gray-400 mb-1">智能体头像</h3><button class="w-full bg-accent/20 rounded p-2 text-sm mb-2" id="agent-avatar-upload">上传头像</button><input type="file" id="agent-avatar-file" class="hidden" accept="image/*"><div id="agent-avatar-preview" class="w-14 h-14 bg-accent/20 flex items-center justify-center overflow-hidden rounded-lg mx-auto"><span>预览</span></div></div>
             <div class="border-t border-gray-700 pt-3"><h3 class="text-sm text-gray-400 mb-1">你的名称</h3><input class="w-full bg-darker rounded p-2 text-white outline-none" id="user-name"></div>
             <div><h3 class="text-sm text-gray-400 mb-1">你的头像</h3><button class="w-full bg-accent/20 rounded p-2 text-sm mb-2" id="user-avatar-upload">上传头像</button><input type="file" id="user-avatar-file" class="hidden" accept="image/*"><div id="user-avatar-preview" class="w-14 h-14 bg-accent/20 flex items-center justify-center overflow-hidden rounded-lg mx-auto"><span>预览</span></div></div>
-            <!-- OpenAI API Key 配置区域 -->
+            <!-- API Key 配置区域 -->
             <div class="border-t border-gray-700 pt-3"><h3 class="text-sm text-gray-400 mb-1">OpenAI API Key</h3><input type="password" class="w-full bg-darker rounded p-2 text-white outline-none" id="api-key" placeholder="sk-..."><p class="text-xs text-gray-500 mt-1">用于智能对话 (可留空则随机从剧本抽取)</p></div>
             <div class="border-t border-gray-700 pt-3"><h3 class="text-sm text-gray-400 mb-2">样式</h3>
                 <div class="grid grid-cols-2 gap-2 mb-2"><div><label class="text-xs text-gray-400">字体大小</label><input type="number" id="font-size" value="16" class="w-full bg-darker rounded p-2 text-white"></div><div><label class="text-xs text-gray-400">行间距</label><input type="number" id="line-height" value="1.6" step="0.1" class="w-full bg-darker rounded p-2 text-white"></div></div>
@@ -236,7 +236,7 @@
         let userAvatarUrl = '';
         let currentEditTarget = null;
         let messages = [];
-        let isSettingsLoaded = false; // 标记是否已从云端加载过设置
+        let isSettingsLoaded = false;
 
         // ---------- 工具函数 ----------
         function syncInputs(source) {
@@ -363,7 +363,6 @@
             const apiKey = apiKeyInput.value.trim();
             const script = agentPrompt.value.trim();
 
-            // 如果没有API Key，回退到剧本随机抽取
             if (!apiKey) {
                 if (!script) return "（请先在左侧输入剧本，我会按照剧本和你对话）";
                 const sentences = script.split(/[。！？\n]/).map(s => s.trim()).filter(s => s.length > 0);
@@ -374,7 +373,6 @@
                 return sentences[Math.floor(Math.random() * sentences.length)];
             }
 
-            // 有API Key则调用OpenAI
             const systemPrompt = script || "你是一个有帮助的助手。";
             try {
                 const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -418,9 +416,9 @@
             chatBox.innerHTML = '';
         }
 
-        // ========== Supabase 设置同步 ==========
-        const SETTINGS_TABLE = 'user_settings'; // Supabase表名
-        const SETTINGS_ID = 'default'; // 固定单用户ID
+        // ========== Supabase 设置同步 (修正版) ==========
+        const SETTINGS_TABLE = 'user_settings';
+        const SETTINGS_ID = 'default';
 
         // 从云端加载设置
         async function loadSettingsFromCloud() {
@@ -429,11 +427,11 @@
                     .from(SETTINGS_TABLE)
                     .select('*')
                     .eq('id', SETTINGS_ID)
-                    .maybeSingle();
+                    .limit(1)
+                    .single();
 
                 if (error) throw error;
                 if (data) {
-                    // 应用云端设置到界面和变量
                     if (data.agent_prompt) agentPrompt.value = data.agent_prompt;
                     if (data.agent_name) { currentAgentName = data.agent_name; agentNameSet.value = data.agent_name; }
                     if (data.user_name) { currentUserName = data.user_name; userNameInput.value = data.user_name; }
@@ -456,13 +454,12 @@
                 isSettingsLoaded = true;
             } catch (err) {
                 console.warn('❌ 云端加载失败，回退本地缓存', err);
-                // 回退到本地localStorage
                 loadSettingsFromLocal();
                 isSettingsLoaded = true;
             }
         }
 
-        // 从本地localStorage加载（作为备份）
+        // 从本地localStorage加载（备份）
         function loadSettingsFromLocal() {
             const saved = JSON.parse(localStorage.getItem('chat-settings') || '{}');
             if (saved.agentPrompt) agentPrompt.value = saved.agentPrompt;
@@ -500,7 +497,6 @@
                 updated_at: new Date().toISOString()
             };
 
-            // 同时存到localStorage作为离线缓存
             localStorage.setItem('chat-settings', JSON.stringify(settings));
 
             try {
@@ -517,7 +513,7 @@
             }
         }
 
-        // 保存按钮事件
+        // 保存按钮
         saveSetBtn.addEventListener('click', async () => {
             currentAgentName = agentNameSet.value || currentAgentName;
             currentUserName = userNameInput.value || currentUserName;
@@ -527,7 +523,7 @@
             alert(success ? '设置已保存并同步至云端' : '设置已保存到本地（云端暂不可用）');
         });
 
-        // 头像上传处理
+        // 头像上传
         agentAvatarUpload.addEventListener('click', () => agentAvatarFile.click());
         agentAvatarFile.addEventListener('change', e => {
             const file = e.target.files[0];
@@ -571,7 +567,6 @@
             }
             updateNameDisplays();
             closeNameEditor();
-            // 立即保存
             saveSettingsToCloud();
         });
 
@@ -593,11 +588,10 @@
             collapsibleSettings.style.display = collapsibleSettings.style.display === 'block' ? 'none' : 'block';
         });
 
-        // ========== 初始化流程 ==========
+        // ========== 初始化 ==========
         async function init() {
-            updateCSSVariables(); // 先应用默认样式
-            await loadSettingsFromCloud(); // 从云端拉取设置
-            // 如果云端加载失败，已经在函数内回退到本地
+            updateCSSVariables();
+            await loadSettingsFromCloud();
             console.log('🚀 初始化完成');
         }
 
