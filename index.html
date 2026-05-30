@@ -50,7 +50,7 @@
             .left-set-panel {
                 position: fixed; bottom: 0; left: 0; width: 100%; height: 50vh;
                 z-index: 50; border-radius: 16px 16px 0 0;
-                transform: translateY(100%); /* 完全隐藏，仅露出拖拽条时调整 */
+                transform: translateY(100%);
                 transition: transform 0.3s ease;
                 background: #121212;
                 border-top: 1px solid #333;
@@ -58,25 +58,22 @@
             .left-set-panel.expand {
                 transform: translateY(0);
             }
-            /* 桌面端输入框隐藏 */
             #desktop-input-area {
                 display: none !important;
             }
-            /* 移动端固定输入框 */
             .mobile-input-bar {
                 display: flex !important;
                 position: fixed;
                 bottom: 0;
                 left: 0;
                 width: 100%;
-                z-index: 200; /* 高于面板 */
+                z-index: 200;
                 background: #000;
                 border-top: 1px solid #333;
                 padding: 12px;
                 padding-bottom: calc(12px + var(--safe-bottom));
                 gap: 8px;
             }
-            /* 聊天区域留出底部空间 */
             #chat-box {
                 padding-bottom: 80px !important;
             }
@@ -85,10 +82,7 @@
             }
         }
 
-        /* 桌面端隐藏移动输入栏 */
-        .mobile-input-bar {
-            display: none;
-        }
+        .mobile-input-bar { display: none; }
 
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .avatar-img, .avatar-placeholder { 
@@ -105,7 +99,6 @@
         .collapsible-settings { display: none; }
         .phone-drag-bar { display: none; }
 
-        /* 名称编辑相关 */
         .name-tag { cursor: pointer; transition: all 0.2s; border-bottom: 1px dashed transparent; }
         .name-tag:hover { border-bottom-color: #888; color: #ccc; }
         .name-tag .fa-pencil { opacity: 0; transition: opacity 0.2s; font-size: 0.7em; margin-left: 4px; }
@@ -124,7 +117,6 @@
 </head>
 <body>
 <div class="layout-container">
-    <!-- 左侧设置面板 -->
     <div class="left-set-panel bg-darker border-r border-gray-800 flex flex-col h-full p-4 overflow-y-auto scrollbar-hide" id="left-panel">
         <div class="phone-drag-bar"></div>
         <h1 class="text-xl font-bold mb-4">剧本/人设设置</h1>
@@ -146,7 +138,6 @@
         <button class="w-full bg-accent rounded p-3" id="save-set">保存所有设置</button>
     </div>
 
-    <!-- 右侧聊天面板 -->
     <div class="chat-main-panel flex flex-col h-full bg-dark">
         <div class="p-3 border-b border-gray-800 flex items-center justify-between">
             <div class="flex items-center gap-3">
@@ -160,7 +151,6 @@
             </div>
         </div>
         <div class="flex-1 overflow-y-auto scrollbar-hide p-4" id="chat-box"></div>
-        <!-- 桌面端输入框 -->
         <div class="p-3 border-t border-gray-800" id="desktop-input-area">
             <div class="flex gap-2">
                 <input type="text" placeholder="输入消息..." class="flex-1 bg-darker border border-gray-800 rounded-lg p-3 text-white outline-none" id="msg-input">
@@ -170,13 +160,11 @@
     </div>
 </div>
 
-<!-- 移动端固定输入栏（仅移动端可见，与桌面端输入框同步） -->
 <div class="mobile-input-bar" id="mobile-input-area">
     <input type="text" placeholder="输入消息..." class="flex-1 bg-darker border border-gray-800 rounded-lg p-3 text-white outline-none" id="msg-input-mobile">
     <button class="bg-accent px-5 rounded-lg" id="send-btn-mobile"><i class="fa fa-paper-plane"></i></button>
 </div>
 
-<!-- 名称编辑弹窗 -->
 <div id="name-edit-modal" class="name-edit-modal">
     <div class="name-edit-dialog">
         <h3 class="text-lg font-bold mb-1" id="name-edit-title"></h3>
@@ -190,14 +178,12 @@
 </div>
 
 <script>
-    // ============= 原有核心逻辑（保留并适配双输入框） =============
     (function() {
-        // Supabase 初始化（请替换为您的实际项目URL和Key）
+        // Supabase（可留空，不影响本地剧本功能）
         const SUPABASE_URL = 'https://your-project.supabase.co';
         const SUPABASE_ANON_KEY = 'your-anon-key';
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // DOM 元素
         const chatBox = document.getElementById('chat-box');
         const desktopInput = document.getElementById('msg-input');
         const mobileInput = document.getElementById('msg-input-mobile');
@@ -234,7 +220,6 @@
         const nameEditCancel = document.getElementById('name-edit-cancel');
         const nameEditConfirm = document.getElementById('name-edit-confirm');
 
-        // 状态变量
         let currentAgentName = 'AI助手';
         let currentUserName = '我';
         let agentAvatarUrl = '';
@@ -242,30 +227,18 @@
         let currentEditTarget = null;
         let messages = [];
 
-        // ---------- 双输入框同步 ----------
         function syncInputs(source) {
-            if (source === 'desktop') {
-                mobileInput.value = desktopInput.value;
-            } else {
-                desktopInput.value = mobileInput.value;
-            }
+            if (source === 'desktop') mobileInput.value = desktopInput.value;
+            else desktopInput.value = mobileInput.value;
         }
-
         function getActiveInputValue() {
-            // 移动端优先使用mobileInput的值，桌面端使用desktopInput
-            if (window.innerWidth <= 768) {
-                return mobileInput.value.trim();
-            } else {
-                return desktopInput.value.trim();
-            }
+            return window.innerWidth <= 768 ? mobileInput.value.trim() : desktopInput.value.trim();
         }
-
         function clearAllInputs() {
             desktopInput.value = '';
             mobileInput.value = '';
         }
 
-        // ---------- 样式与设置 ----------
         function updateCSSVariables() {
             document.documentElement.style.setProperty('--font-size', fontSizeInput.value + 'px');
             document.documentElement.style.setProperty('--line-height', lineHeightInput.value);
@@ -286,7 +259,7 @@
                     ],
                     throwOnError: false
                 });
-            } catch (e) {}
+            } catch(e) {}
         }
 
         function loadSettings() {
@@ -295,7 +268,7 @@
             if (saved.agentName) { currentAgentName = saved.agentName; agentNameSet.value = saved.agentName; }
             if (saved.userName) { currentUserName = saved.userName; userNameInput.value = saved.userName; }
             if (saved.agentAvatarUrl) { agentAvatarUrl = saved.agentAvatarUrl; updateAgentAvatarDisplay(); }
-            if (saved.userAvatarUrl) { userAvatarUrl = saved.userAvatarUrl; }
+            if (saved.userAvatarUrl) userAvatarUrl = saved.userAvatarUrl;
             if (saved.fontSize) fontSizeInput.value = saved.fontSize;
             if (saved.lineHeight) lineHeightInput.value = saved.lineHeight;
             if (saved.userBubbleColor) userBubbleColor.value = saved.userBubbleColor;
@@ -329,14 +302,11 @@
         }
 
         function updateAgentAvatarDisplay() {
-            if (agentAvatarUrl) {
-                agentAvatarDiv.innerHTML = `<img src="${agentAvatarUrl}" class="avatar-img" alt="agent avatar">`;
-            } else {
-                agentAvatarDiv.innerHTML = '<span class="avatar-placeholder">AI</span>';
-            }
+            agentAvatarDiv.innerHTML = agentAvatarUrl 
+                ? `<img src="${agentAvatarUrl}" class="avatar-img" alt="agent avatar">` 
+                : '<span class="avatar-placeholder">AI</span>';
         }
 
-        // ---------- 名称编辑弹窗 ----------
         function openNameEditor(target) {
             currentEditTarget = target;
             if (target === 'agent') {
@@ -355,13 +325,6 @@
         function closeNameEditor() {
             nameEditModal.style.display = 'none';
             currentEditTarget = null;
-        }
-
-        // ---------- 消息渲染与打字机 ----------
-        function renderMessages() {
-            chatBox.innerHTML = '';
-            messages.forEach(msg => appendMessageToDOM(msg));
-            chatBox.scrollTop = chatBox.scrollHeight;
         }
 
         function appendMessageToDOM(msg) {
@@ -390,9 +353,7 @@
                 } else {
                     clearInterval(interval);
                     const lastMsg = messages[messages.length-1];
-                    if (lastMsg && lastMsg.role === 'assistant') {
-                        lastMsg.content = fullText;
-                    }
+                    if (lastMsg && lastMsg.role === 'assistant') lastMsg.content = fullText;
                 }
             }, 30);
         }
@@ -417,28 +378,38 @@
             chatBox.scrollTop = chatBox.scrollHeight;
         }
 
-        // ---------- AI回复逻辑（请在此接入您的真实API） ----------
-        async function getAIResponse(userMessage) {
-            // 示例：结合剧本生成回复（实际应调用API）
-            const prompt = agentPrompt.value.trim();
-            let reply = `这是基于剧本“${prompt.substring(0, 20)}…”的回复。`;
-            // 此处可替换为真实的API调用，例如：
-            // const { data, error } = await supabase.functions.invoke('chat', { body: { message: userMessage, system: prompt } });
-            return reply;
+        // ---------- 真正的剧本回复引擎 ----------
+        function getResponseFromScript(userMessage) {
+            const script = agentPrompt.value.trim();
+            if (!script) return "（请先在左侧输入剧本，我会按照剧本和你对话）";
+            
+            // 将剧本按行或标点拆分成句子
+            const sentences = script
+                .split(/[。！？\n]/)
+                .map(s => s.trim())
+                .filter(s => s.length > 0);
+            
+            if (sentences.length === 0) return "（剧本内容无法识别，请写完整句子）";
+            
+            // 简单关键词匹配：如果用户消息包含某个句子的一部分，则返回该句子
+            for (let sentence of sentences) {
+                if (sentence.includes(userMessage) || userMessage.includes(sentence)) {
+                    return sentence;
+                }
+            }
+            // 随机返回剧本中的一句话
+            return sentences[Math.floor(Math.random() * sentences.length)];
         }
 
-        // ---------- 发送消息 ----------
         async function sendMessage() {
             const value = getActiveInputValue();
             if (!value) return;
             addMessage('user', value);
             clearAllInputs();
-
-            const aiReply = await getAIResponse(value);
-            addMessage('assistant', aiReply, true);
-
-            // 可选：存储到Supabase
-            // await supabase.from('messages').insert([...]);
+            
+            // 生成回复（本地剧本引擎）
+            const reply = getResponseFromScript(value);
+            addMessage('assistant', reply, true);
         }
 
         function clearChat() {
@@ -446,26 +417,15 @@
             chatBox.innerHTML = '';
         }
 
-        // ---------- 事件绑定 ----------
         desktopInput.addEventListener('input', () => syncInputs('desktop'));
         mobileInput.addEventListener('input', () => syncInputs('mobile'));
-
         sendBtnDesktop.addEventListener('click', sendMessage);
         sendBtnMobile.addEventListener('click', sendMessage);
-
-        desktopInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') sendMessage();
-        });
-        mobileInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') sendMessage();
-        });
+        desktopInput.addEventListener('keypress', e => { if (e.key === 'Enter') sendMessage(); });
+        mobileInput.addEventListener('keypress', e => { if (e.key === 'Enter') sendMessage(); });
 
         clearBtn.addEventListener('click', clearChat);
-
-        phoneOpenSet.addEventListener('click', () => {
-            leftPanel.classList.toggle('expand');
-        });
-
+        phoneOpenSet.addEventListener('click', () => leftPanel.classList.toggle('expand'));
         toggleSettingsBtn.addEventListener('click', () => {
             collapsibleSettings.style.display = collapsibleSettings.style.display === 'block' ? 'none' : 'block';
         });
@@ -480,11 +440,11 @@
         });
 
         agentAvatarUpload.addEventListener('click', () => agentAvatarFile.click());
-        agentAvatarFile.addEventListener('change', (e) => {
+        agentAvatarFile.addEventListener('change', e => {
             const file = e.target.files[0];
             if (file) {
                 const reader = new FileReader();
-                reader.onload = (ev) => {
+                reader.onload = ev => {
                     agentAvatarUrl = ev.target.result;
                     agentAvatarPreview.innerHTML = `<img src="${agentAvatarUrl}" class="avatar-img">`;
                     updateAgentAvatarDisplay();
@@ -494,11 +454,11 @@
         });
 
         userAvatarUpload.addEventListener('click', () => userAvatarFile.click());
-        userAvatarFile.addEventListener('change', (e) => {
+        userAvatarFile.addEventListener('change', e => {
             const file = e.target.files[0];
             if (file) {
                 const reader = new FileReader();
-                reader.onload = (ev) => {
+                reader.onload = ev => {
                     userAvatarUrl = ev.target.result;
                     userAvatarPreview.innerHTML = `<img src="${userAvatarUrl}" class="avatar-img">`;
                 };
@@ -516,7 +476,7 @@
             if (currentEditTarget === 'agent') {
                 currentAgentName = newName;
                 agentNameSet.value = newName;
-            } else if (currentEditTarget === 'user') {
+            } else {
                 currentUserName = newName;
                 userNameInput.value = newName;
             }
@@ -529,15 +489,12 @@
             el.addEventListener('input', updateCSSVariables);
         });
 
-        // 初始化
         loadSettings();
         updateCSSVariables();
 
-        // Service Worker（如果存在）
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw-chat.js').then(reg => {
-                    console.log('SW registered');
                     reg.addEventListener('updatefound', () => {
                         const newWorker = reg.installing;
                         newWorker.addEventListener('statechange', () => {
@@ -548,9 +505,7 @@
                     });
                 });
             });
-            navigator.serviceWorker.addEventListener('controllerchange', () => {
-                window.location.reload();
-            });
+            navigator.serviceWorker.addEventListener('controllerchange', () => window.location.reload());
         }
     })();
 </script>
