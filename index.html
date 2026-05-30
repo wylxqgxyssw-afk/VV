@@ -130,8 +130,8 @@
             <div><h3 class="text-sm text-gray-400 mb-1">智能体头像</h3><button class="w-full bg-accent/20 rounded p-2 text-sm mb-2" id="agent-avatar-upload">上传头像</button><input type="file" id="agent-avatar-file" class="hidden" accept="image/*"><div id="agent-avatar-preview" class="w-14 h-14 bg-accent/20 flex items-center justify-center overflow-hidden rounded-lg mx-auto"><span>预览</span></div></div>
             <div class="border-t border-gray-700 pt-3"><h3 class="text-sm text-gray-400 mb-1">你的名称</h3><input class="w-full bg-darker rounded p-2 text-white outline-none" id="user-name"></div>
             <div><h3 class="text-sm text-gray-400 mb-1">你的头像</h3><button class="w-full bg-accent/20 rounded p-2 text-sm mb-2" id="user-avatar-upload">上传头像</button><input type="file" id="user-avatar-file" class="hidden" accept="image/*"><div id="user-avatar-preview" class="w-14 h-14 bg-accent/20 flex items-center justify-center overflow-hidden rounded-lg mx-auto"><span>预览</span></div></div>
-            <!-- API Key 配置区域 -->
-            <div class="border-t border-gray-700 pt-3"><h3 class="text-sm text-gray-400 mb-1">OpenAI API Key</h3><input type="password" class="w-full bg-darker rounded p-2 text-white outline-none" id="api-key" placeholder="sk-..."><p class="text-xs text-gray-500 mt-1">需要填入有效的API Key才能使用智能回复</p></div>
+            <!-- OpenAI API Key 配置区域 -->
+            <div class="border-t border-gray-700 pt-3"><h3 class="text-sm text-gray-400 mb-1">OpenAI API Key</h3><input type="password" class="w-full bg-darker rounded p-2 text-white outline-none" id="api-key" placeholder="sk-..."><p class="text-xs text-gray-500 mt-1">用于智能对话 (可留空则随机从剧本抽取)</p></div>
             <div class="border-t border-gray-700 pt-3"><h3 class="text-sm text-gray-400 mb-2">样式</h3>
                 <div class="grid grid-cols-2 gap-2 mb-2"><div><label class="text-xs text-gray-400">字体大小</label><input type="number" id="font-size" value="16" class="w-full bg-darker rounded p-2 text-white"></div><div><label class="text-xs text-gray-400">行间距</label><input type="number" id="line-height" value="1.6" step="0.1" class="w-full bg-darker rounded p-2 text-white"></div></div>
                 <div class="grid grid-cols-2 gap-2 mb-2"><div><label class="text-xs text-gray-400">我的气泡</label><input type="color" id="user-bubble-color" value="#165DFF" class="w-full h-8"></div><div><label class="text-xs text-gray-400">AI气泡</label><input type="color" id="ai-bubble-color" value="#2D3748" class="w-full h-8"></div></div>
@@ -139,6 +139,7 @@
             </div>
         </div>
         <button class="w-full bg-accent rounded p-3" id="save-set">保存所有设置</button>
+        <p class="text-xs text-gray-500 mt-2 text-center">数据自动云端同步，多端一致</p>
     </div>
 
     <!-- 右侧聊天面板 -->
@@ -164,11 +165,13 @@
     </div>
 </div>
 
+<!-- 移动端固定输入栏 -->
 <div class="mobile-input-bar" id="mobile-input-area">
     <input type="text" placeholder="输入消息..." class="flex-1 bg-darker border border-gray-800 rounded-lg p-3 text-white outline-none" id="msg-input-mobile">
     <button class="bg-accent px-5 rounded-lg" id="send-btn-mobile"><i class="fa fa-paper-plane"></i></button>
 </div>
 
+<!-- 名称编辑弹窗 -->
 <div id="name-edit-modal" class="name-edit-modal">
     <div class="name-edit-dialog">
         <h3 class="text-lg font-bold mb-1" id="name-edit-title"></h3>
@@ -183,11 +186,12 @@
 
 <script>
     (function() {
-        // Supabase（可选）
-        const SUPABASE_URL = 'https://your-project.supabase.co';
-        const SUPABASE_ANON_KEY = 'your-anon-key';
+        // ========== Supabase 真实配置 ==========
+        const SUPABASE_URL = 'https://vkeaimeytsymepgkizqk.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_R66fP0xmbxUZTeu7kjQYjQ_FHdXlRvm';
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+        // ========== DOM 元素 ==========
         const chatBox = document.getElementById('chat-box');
         const desktopInput = document.getElementById('msg-input');
         const mobileInput = document.getElementById('msg-input-mobile');
@@ -225,13 +229,16 @@
         const nameEditCancel = document.getElementById('name-edit-cancel');
         const nameEditConfirm = document.getElementById('name-edit-confirm');
 
+        // 状态变量
         let currentAgentName = 'AI助手';
         let currentUserName = '我';
         let agentAvatarUrl = '';
         let userAvatarUrl = '';
         let currentEditTarget = null;
         let messages = [];
+        let isSettingsLoaded = false; // 标记是否已从云端加载过设置
 
+        // ---------- 工具函数 ----------
         function syncInputs(source) {
             if (source === 'desktop') mobileInput.value = desktopInput.value;
             else desktopInput.value = mobileInput.value;
@@ -267,42 +274,6 @@
             } catch(e) {}
         }
 
-        function loadSettings() {
-            const saved = JSON.parse(localStorage.getItem('chat-settings') || '{}');
-            if (saved.agentPrompt) agentPrompt.value = saved.agentPrompt;
-            if (saved.agentName) { currentAgentName = saved.agentName; agentNameSet.value = saved.agentName; }
-            if (saved.userName) { currentUserName = saved.userName; userNameInput.value = saved.userName; }
-            if (saved.agentAvatarUrl) { agentAvatarUrl = saved.agentAvatarUrl; updateAgentAvatarDisplay(); }
-            if (saved.userAvatarUrl) userAvatarUrl = saved.userAvatarUrl;
-            if (saved.apiKey) apiKeyInput.value = saved.apiKey;
-            if (saved.fontSize) fontSizeInput.value = saved.fontSize;
-            if (saved.lineHeight) lineHeightInput.value = saved.lineHeight;
-            if (saved.userBubbleColor) userBubbleColor.value = saved.userBubbleColor;
-            if (saved.aiBubbleColor) aiBubbleColor.value = saved.aiBubbleColor;
-            if (saved.userTextColor) userTextColor.value = saved.userTextColor;
-            if (saved.aiTextColor) aiTextColor.value = saved.aiTextColor;
-            updateCSSVariables();
-            updateNameDisplays();
-        }
-
-        function saveSettings() {
-            const settings = {
-                agentPrompt: agentPrompt.value,
-                agentName: currentAgentName,
-                userName: currentUserName,
-                agentAvatarUrl,
-                userAvatarUrl,
-                apiKey: apiKeyInput.value,
-                fontSize: fontSizeInput.value,
-                lineHeight: lineHeightInput.value,
-                userBubbleColor: userBubbleColor.value,
-                aiBubbleColor: aiBubbleColor.value,
-                userTextColor: userTextColor.value,
-                aiTextColor: aiTextColor.value
-            };
-            localStorage.setItem('chat-settings', JSON.stringify(settings));
-        }
-
         function updateNameDisplays() {
             agentNameDisplay.innerHTML = `${currentAgentName} <i class="fa fa-pencil"></i>`;
             userNameDisplay.innerHTML = `${currentUserName} <i class="fa fa-pencil"></i>`;
@@ -314,6 +285,7 @@
                 : '<span class="avatar-placeholder">AI</span>';
         }
 
+        // ---------- 名称编辑弹窗 ----------
         function openNameEditor(target) {
             currentEditTarget = target;
             if (target === 'agent') {
@@ -334,6 +306,7 @@
             currentEditTarget = null;
         }
 
+        // ---------- 消息渲染 ----------
         function appendMessageToDOM(msg) {
             const div = document.createElement('div');
             div.className = `flex mb-4 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`;
@@ -385,13 +358,24 @@
             chatBox.scrollTop = chatBox.scrollHeight;
         }
 
-        // ---------- OpenAI API 调用 ----------
+        // ---------- 智能回复 (OpenAI + 剧本) ----------
         async function getAIResponse(userMessage) {
             const apiKey = apiKeyInput.value.trim();
-            if (!apiKey) return "❌ 请先在设置中填入有效的 OpenAI API Key。";
+            const script = agentPrompt.value.trim();
 
-            const systemPrompt = agentPrompt.value.trim() || "你是一个有帮助的助手。";
+            // 如果没有API Key，回退到剧本随机抽取
+            if (!apiKey) {
+                if (!script) return "（请先在左侧输入剧本，我会按照剧本和你对话）";
+                const sentences = script.split(/[。！？\n]/).map(s => s.trim()).filter(s => s.length > 0);
+                if (sentences.length === 0) return "（剧本内容无法识别，请写完整句子）";
+                for (let sentence of sentences) {
+                    if (sentence.includes(userMessage) || userMessage.includes(sentence)) return sentence;
+                }
+                return sentences[Math.floor(Math.random() * sentences.length)];
+            }
 
+            // 有API Key则调用OpenAI
+            const systemPrompt = script || "你是一个有帮助的助手。";
             try {
                 const response = await fetch('https://api.openai.com/v1/chat/completions', {
                     method: 'POST',
@@ -409,16 +393,14 @@
                         max_tokens: 500
                     })
                 });
-
                 if (!response.ok) {
                     const errorData = await response.json();
                     throw new Error(errorData.error?.message || '请求失败');
                 }
-
                 const data = await response.json();
                 return data.choices[0].message.content.trim();
             } catch (error) {
-                return `⚠️ 调用API出错：${error.message}`;
+                return `⚠️ API错误：${error.message}`;
             }
         }
 
@@ -427,7 +409,6 @@
             if (!value) return;
             addMessage('user', value);
             clearAllInputs();
-            
             const reply = await getAIResponse(value);
             addMessage('assistant', reply, true);
         }
@@ -437,28 +418,116 @@
             chatBox.innerHTML = '';
         }
 
-        desktopInput.addEventListener('input', () => syncInputs('desktop'));
-        mobileInput.addEventListener('input', () => syncInputs('mobile'));
-        sendBtnDesktop.addEventListener('click', sendMessage);
-        sendBtnMobile.addEventListener('click', sendMessage);
-        desktopInput.addEventListener('keypress', e => { if (e.key === 'Enter') sendMessage(); });
-        mobileInput.addEventListener('keypress', e => { if (e.key === 'Enter') sendMessage(); });
+        // ========== Supabase 设置同步 ==========
+        const SETTINGS_TABLE = 'user_settings'; // Supabase表名
+        const SETTINGS_ID = 'default'; // 固定单用户ID
 
-        clearBtn.addEventListener('click', clearChat);
-        phoneOpenSet.addEventListener('click', () => leftPanel.classList.toggle('expand'));
-        toggleSettingsBtn.addEventListener('click', () => {
-            collapsibleSettings.style.display = collapsibleSettings.style.display === 'block' ? 'none' : 'block';
-        });
+        // 从云端加载设置
+        async function loadSettingsFromCloud() {
+            try {
+                const { data, error } = await supabase
+                    .from(SETTINGS_TABLE)
+                    .select('*')
+                    .eq('id', SETTINGS_ID)
+                    .maybeSingle();
 
-        saveSetBtn.addEventListener('click', () => {
+                if (error) throw error;
+                if (data) {
+                    // 应用云端设置到界面和变量
+                    if (data.agent_prompt) agentPrompt.value = data.agent_prompt;
+                    if (data.agent_name) { currentAgentName = data.agent_name; agentNameSet.value = data.agent_name; }
+                    if (data.user_name) { currentUserName = data.user_name; userNameInput.value = data.user_name; }
+                    if (data.agent_avatar_url) { agentAvatarUrl = data.agent_avatar_url; updateAgentAvatarDisplay(); }
+                    if (data.user_avatar_url) userAvatarUrl = data.user_avatar_url;
+                    if (data.api_key) apiKeyInput.value = data.api_key;
+                    if (data.font_size) fontSizeInput.value = data.font_size;
+                    if (data.line_height) lineHeightInput.value = data.line_height;
+                    if (data.user_bubble_color) userBubbleColor.value = data.user_bubble_color;
+                    if (data.ai_bubble_color) aiBubbleColor.value = data.ai_bubble_color;
+                    if (data.user_text_color) userTextColor.value = data.user_text_color;
+                    if (data.ai_text_color) aiTextColor.value = data.ai_text_color;
+
+                    updateNameDisplays();
+                    updateCSSVariables();
+                    console.log('✅ 已从云端加载设置');
+                } else {
+                    console.log('ℹ️ 云端无设置，使用默认值');
+                }
+                isSettingsLoaded = true;
+            } catch (err) {
+                console.warn('❌ 云端加载失败，回退本地缓存', err);
+                // 回退到本地localStorage
+                loadSettingsFromLocal();
+                isSettingsLoaded = true;
+            }
+        }
+
+        // 从本地localStorage加载（作为备份）
+        function loadSettingsFromLocal() {
+            const saved = JSON.parse(localStorage.getItem('chat-settings') || '{}');
+            if (saved.agentPrompt) agentPrompt.value = saved.agentPrompt;
+            if (saved.agentName) { currentAgentName = saved.agentName; agentNameSet.value = saved.agentName; }
+            if (saved.userName) { currentUserName = saved.userName; userNameInput.value = saved.userName; }
+            if (saved.agentAvatarUrl) { agentAvatarUrl = saved.agentAvatarUrl; updateAgentAvatarDisplay(); }
+            if (saved.userAvatarUrl) userAvatarUrl = saved.userAvatarUrl;
+            if (saved.apiKey) apiKeyInput.value = saved.apiKey;
+            if (saved.fontSize) fontSizeInput.value = saved.fontSize;
+            if (saved.lineHeight) lineHeightInput.value = saved.lineHeight;
+            if (saved.userBubbleColor) userBubbleColor.value = saved.userBubbleColor;
+            if (saved.aiBubbleColor) aiBubbleColor.value = saved.aiBubbleColor;
+            if (saved.userTextColor) userTextColor.value = saved.userTextColor;
+            if (saved.aiTextColor) aiTextColor.value = saved.aiTextColor;
+            updateNameDisplays();
+            updateCSSVariables();
+        }
+
+        // 保存设置到云端 + 本地
+        async function saveSettingsToCloud() {
+            const settings = {
+                id: SETTINGS_ID,
+                agent_prompt: agentPrompt.value,
+                agent_name: currentAgentName,
+                user_name: currentUserName,
+                agent_avatar_url: agentAvatarUrl,
+                user_avatar_url: userAvatarUrl,
+                api_key: apiKeyInput.value,
+                font_size: parseInt(fontSizeInput.value) || 16,
+                line_height: parseFloat(lineHeightInput.value) || 1.6,
+                user_bubble_color: userBubbleColor.value,
+                ai_bubble_color: aiBubbleColor.value,
+                user_text_color: userTextColor.value,
+                ai_text_color: aiTextColor.value,
+                updated_at: new Date().toISOString()
+            };
+
+            // 同时存到localStorage作为离线缓存
+            localStorage.setItem('chat-settings', JSON.stringify(settings));
+
+            try {
+                const { error } = await supabase
+                    .from(SETTINGS_TABLE)
+                    .upsert(settings, { onConflict: 'id' });
+
+                if (error) throw error;
+                console.log('✅ 设置已同步到云端');
+                return true;
+            } catch (err) {
+                console.warn('❌ 云端保存失败，已保存到本地', err);
+                return false;
+            }
+        }
+
+        // 保存按钮事件
+        saveSetBtn.addEventListener('click', async () => {
             currentAgentName = agentNameSet.value || currentAgentName;
             currentUserName = userNameInput.value || currentUserName;
             updateNameDisplays();
-            saveSettings();
             updateCSSVariables();
-            alert('设置已保存');
+            const success = await saveSettingsToCloud();
+            alert(success ? '设置已保存并同步至云端' : '设置已保存到本地（云端暂不可用）');
         });
 
+        // 头像上传处理
         agentAvatarUpload.addEventListener('click', () => agentAvatarFile.click());
         agentAvatarFile.addEventListener('change', e => {
             const file = e.target.files[0];
@@ -486,9 +555,9 @@
             }
         });
 
+        // 名称编辑
         agentNameDisplay.addEventListener('click', () => openNameEditor('agent'));
         userNameDisplay.addEventListener('click', () => openNameEditor('user'));
-
         nameEditCancel.addEventListener('click', closeNameEditor);
         nameEditConfirm.addEventListener('click', () => {
             const newName = nameEditInput.value.trim();
@@ -502,16 +571,39 @@
             }
             updateNameDisplays();
             closeNameEditor();
-            saveSettings();
+            // 立即保存
+            saveSettingsToCloud();
         });
 
+        // 样式实时预览
         [fontSizeInput, lineHeightInput, userBubbleColor, aiBubbleColor, userTextColor, aiTextColor].forEach(el => {
             el.addEventListener('input', updateCSSVariables);
         });
 
-        loadSettings();
-        updateCSSVariables();
+        // ---------- 事件绑定 ----------
+        desktopInput.addEventListener('input', () => syncInputs('desktop'));
+        mobileInput.addEventListener('input', () => syncInputs('mobile'));
+        sendBtnDesktop.addEventListener('click', sendMessage);
+        sendBtnMobile.addEventListener('click', sendMessage);
+        desktopInput.addEventListener('keypress', e => { if (e.key === 'Enter') sendMessage(); });
+        mobileInput.addEventListener('keypress', e => { if (e.key === 'Enter') sendMessage(); });
+        clearBtn.addEventListener('click', clearChat);
+        phoneOpenSet.addEventListener('click', () => leftPanel.classList.toggle('expand'));
+        toggleSettingsBtn.addEventListener('click', () => {
+            collapsibleSettings.style.display = collapsibleSettings.style.display === 'block' ? 'none' : 'block';
+        });
 
+        // ========== 初始化流程 ==========
+        async function init() {
+            updateCSSVariables(); // 先应用默认样式
+            await loadSettingsFromCloud(); // 从云端拉取设置
+            // 如果云端加载失败，已经在函数内回退到本地
+            console.log('🚀 初始化完成');
+        }
+
+        init();
+
+        // Service Worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw-chat.js').then(reg => {
