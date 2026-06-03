@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>黑色极简 · 云端逐字打字版</title>
+    <title>黑色极简 · 剧本逐字播放版</title>
     <link rel="manifest" href="manifest-chat.json">
     <link rel="apple-touch-icon" href="icon-192.png">
     <meta name="theme-color" content="#000000">
@@ -121,7 +121,7 @@
     <div class="left-set-panel bg-darker border-r border-gray-800 flex flex-col h-full p-4 overflow-y-auto scrollbar-hide" id="left-panel">
         <div class="phone-drag-bar"></div>
         <h1 class="text-xl font-bold mb-4">剧本/人设设置</h1>
-        <textarea class="flex-1 bg-dark border border-gray-800 rounded p-3 text-white outline-none resize-none mb-4" placeholder="输入剧本..." id="agent-prompt"></textarea>
+        <textarea class="flex-1 bg-dark border border-gray-800 rounded p-3 text-white outline-none resize-none mb-4" placeholder="输入剧本（一行一句，自动按顺序播放）&#10;支持格式：&#10;[red:文字] 红色&#10;[b:文字] 加粗&#10;[br] 换行" id="agent-prompt"></textarea>
         <button class="w-full bg-gray-800 rounded p-2 mb-3 text-sm" id="toggle-settings">
             <i class="fa fa-cog mr-1"></i> 展开头像/样式设置
         </button>
@@ -130,8 +130,8 @@
             <div><h3 class="text-sm text-gray-400 mb-1">智能体头像</h3><button class="w-full bg-accent/20 rounded p-2 text-sm mb-2" id="agent-avatar-upload">上传头像</button><input type="file" id="agent-avatar-file" class="hidden" accept="image/*"><div id="agent-avatar-preview" class="w-14 h-14 bg-accent/20 flex items-center justify-center overflow-hidden rounded-lg mx-auto"><span>预览</span></div></div>
             <div class="border-t border-gray-700 pt-3"><h3 class="text-sm text-gray-400 mb-1">你的名称</h3><input class="w-full bg-darker rounded p-2 text-white outline-none" id="user-name"></div>
             <div><h3 class="text-sm text-gray-400 mb-1">你的头像</h3><button class="w-full bg-accent/20 rounded p-2 text-sm mb-2" id="user-avatar-upload">上传头像</button><input type="file" id="user-avatar-file" class="hidden" accept="image/*"><div id="user-avatar-preview" class="w-14 h-14 bg-accent/20 flex items-center justify-center overflow-hidden rounded-lg mx-auto"><span>预览</span></div></div>
-            <!-- API Key 配置区域 -->
-            <div class="border-t border-gray-700 pt-3"><h3 class="text-sm text-gray-400 mb-1">OpenAI API Key</h3><input type="password" class="w-full bg-darker rounded p-2 text-white outline-none" id="api-key" placeholder="sk-..."><p class="text-xs text-gray-500 mt-1">用于智能对话 (可留空则随机从剧本抽取)</p></div>
+            <!-- API Key 区域（保留但提示无需使用） -->
+            <div class="border-t border-gray-700 pt-3"><h3 class="text-sm text-gray-400 mb-1">API Key（当前无需填写）</h3><input type="password" class="w-full bg-darker rounded p-2 text-white outline-none" id="api-key" placeholder="本地剧本模式无需API"><p class="text-xs text-gray-500 mt-1">当前使用纯本地剧本模式，无需联网</p></div>
             <div class="border-t border-gray-700 pt-3"><h3 class="text-sm text-gray-400 mb-2">样式</h3>
                 <div class="grid grid-cols-2 gap-2 mb-2"><div><label class="text-xs text-gray-400">字体大小</label><input type="number" id="font-size" value="16" class="w-full bg-darker rounded p-2 text-white"></div><div><label class="text-xs text-gray-400">行间距</label><input type="number" id="line-height" value="1.6" step="0.1" class="w-full bg-darker rounded p-2 text-white"></div></div>
                 <div class="grid grid-cols-2 gap-2 mb-2"><div><label class="text-xs text-gray-400">我的气泡</label><input type="color" id="user-bubble-color" value="#165DFF" class="w-full h-8"></div><div><label class="text-xs text-gray-400">AI气泡</label><input type="color" id="ai-bubble-color" value="#2D3748" class="w-full h-8"></div></div>
@@ -147,18 +147,19 @@
         <div class="p-3 border-b border-gray-800 flex items-center justify-between">
             <div class="flex items-center gap-3">
                 <div id="agent-avatar" class="w-10 h-10 bg-accent/20 flex items-center justify-center overflow-hidden rounded-lg"><span class="avatar-placeholder">AI</span></div>
-                <div><span class="text-xs text-gray-500">AI</span><span id="agent-name-display" class="font-medium name-tag text-white">AI助手 <i class="fa fa-pencil"></i></span></div>
+                <div><span class="text-xs text-gray-500">AI</span><span id="agent-name-display" class="font-medium name-tag text-white">剧本助手 <i class="fa fa-pencil"></i></span></div>
             </div>
             <div class="flex items-center gap-2">
                 <span id="user-name-display" class="hidden sm:flex font-medium name-tag text-gray-300 text-sm">我 <i class="fa fa-pencil"></i></span>
                 <button class="text-gray-400 hover:text-white md:hidden" id="phone-open-set"><i class="fa fa-bars"></i></button>
+                <button class="text-gray-400 hover:text-white" id="reset-script">重置剧本</button>
                 <button class="text-gray-400 hover:text-white" id="clear-chat">清空</button>
             </div>
         </div>
         <div class="flex-1 overflow-y-auto scrollbar-hide p-4" id="chat-box"></div>
         <div class="p-3 border-t border-gray-800" id="desktop-input-area">
             <div class="flex gap-2">
-                <input type="text" placeholder="输入消息..." class="flex-1 bg-darker border border-gray-800 rounded-lg p-3 text-white outline-none" id="msg-input">
+                <input type="text" placeholder="输入任意内容继续剧本..." class="flex-1 bg-darker border border-gray-800 rounded-lg p-3 text-white outline-none" id="msg-input">
                 <button class="bg-accent px-5 rounded-lg" id="send-btn"><i class="fa fa-paper-plane"></i></button>
             </div>
         </div>
@@ -167,7 +168,7 @@
 
 <!-- 移动端固定输入栏 -->
 <div class="mobile-input-bar" id="mobile-input-area">
-    <input type="text" placeholder="输入消息..." class="flex-1 bg-darker border border-gray-800 rounded-lg p-3 text-white outline-none" id="msg-input-mobile">
+    <input type="text" placeholder="输入任意内容继续剧本..." class="flex-1 bg-darker border border-gray-800 rounded-lg p-3 text-white outline-none" id="msg-input-mobile">
     <button class="bg-accent px-5 rounded-lg" id="send-btn-mobile"><i class="fa fa-paper-plane"></i></button>
 </div>
 
@@ -198,6 +199,7 @@
         const sendBtnDesktop = document.getElementById('send-btn');
         const sendBtnMobile = document.getElementById('send-btn-mobile');
         const clearBtn = document.getElementById('clear-chat');
+        const resetScriptBtn = document.getElementById('reset-script');
         const leftPanel = document.getElementById('left-panel');
         const phoneOpenSet = document.getElementById('phone-open-set');
         const toggleSettingsBtn = document.getElementById('toggle-settings');
@@ -230,13 +232,15 @@
         const nameEditConfirm = document.getElementById('name-edit-confirm');
 
         // 状态变量
-        let currentAgentName = 'AI助手';
+        let currentAgentName = '剧本助手';
         let currentUserName = '我';
         let agentAvatarUrl = '';
         let userAvatarUrl = '';
         let currentEditTarget = null;
         let messages = [];
         let isSettingsLoaded = false;
+        // 剧本进度指针（核心：记录当前播放到第几句）
+        let scriptIndex = 0;
 
         // ---------- 工具函数 ----------
         function syncInputs(source) {
@@ -306,7 +310,7 @@
             currentEditTarget = null;
         }
 
-        // ---------- 消息渲染 ----------
+        // ---------- 消息渲染（支持HTML格式的逐字效果） ----------
         function appendMessageToDOM(msg) {
             const div = document.createElement('div');
             div.className = `flex mb-4 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`;
@@ -320,14 +324,27 @@
             renderLatex(div);
         }
 
+        // ✅ 改进版逐字效果：支持HTML标签，不会破坏格式
         function typewriterEffect(fullText, msgElement) {
             const bubble = msgElement.querySelector('.chat-bubble-content');
             let index = 0;
-            bubble.textContent = '';
+            bubble.innerHTML = '';
             const interval = setInterval(() => {
                 if (index < fullText.length) {
-                    bubble.textContent += fullText.charAt(index);
-                    index++;
+                    // 遇到HTML标签时一次性读取整个标签，不拆分
+                    if (fullText.charAt(index) === '<') {
+                        const endIndex = fullText.indexOf('>', index);
+                        if (endIndex !== -1) {
+                            bubble.innerHTML += fullText.substring(index, endIndex + 1);
+                            index = endIndex + 1;
+                        } else {
+                            bubble.innerHTML += fullText.charAt(index);
+                            index++;
+                        }
+                    } else {
+                        bubble.innerHTML += fullText.charAt(index);
+                        index++;
+                    }
                     chatBox.scrollTop = chatBox.scrollHeight;
                     renderLatex(msgElement);
                 } else {
@@ -358,48 +375,52 @@
             chatBox.scrollTop = chatBox.scrollHeight;
         }
 
-        // ---------- 智能回复 (OpenAI + 剧本) ----------
+        // ========== ✅ 核心：纯本地剧本顺序回复逻辑 ==========
+        // 解析剧本：从左侧输入框读取，按换行分割成句子
+        function loadScript() {
+            return agentPrompt.value
+                .split('\n') // 一行一句，按顺序播放
+                .map(line => line.trim())
+                .filter(line => line.length > 0); // 过滤空行
+        }
+
+        // 解析剧本格式标记（后期加新格式只要在这里加一行）
+        function parseScriptFormat(text) {
+            let result = text;
+            // 红色文字
+            result = result.replace(/\[red:(.*?)\]/g, '<span style="color: #ff4444">$1</span>');
+            // 加粗文字
+            result = result.replace(/\[b:(.*?)\]/g, '<strong>$1</strong>');
+            // 手动换行
+            result = result.replace(/\[br\]/g, '<br>');
+            
+            // 👉 后期加新格式直接复制下面的模板改就行：
+            // 蓝色文字：result = result.replace(/\[blue:(.*?)\]/g, '<span style="color: #4488ff">$1</span>');
+            // 绿色文字：result = result.replace(/\[green:(.*?)\]/g, '<span style="color: #44ff44">$1</span>');
+            // 斜体文字：result = result.replace(/\[i:(.*?)\]/g, '<em>$1</em>');
+            // 删除线：result = result.replace(/\[del:(.*?)\]/g, '<del>$1</del>');
+            // 下划线：result = result.replace(/\[u:(.*?)\]/g, '<u>$1</u>');
+
+            return result;
+        }
+
         async function getAIResponse(userMessage) {
-            const apiKey = apiKeyInput.value.trim();
-            const script = agentPrompt.value.trim();
-
-            if (!apiKey) {
-                if (!script) return "（请先在左侧输入剧本，我会按照剧本和你对话）";
-                const sentences = script.split(/[。！？\n]/).map(s => s.trim()).filter(s => s.length > 0);
-                if (sentences.length === 0) return "（剧本内容无法识别，请写完整句子）";
-                for (let sentence of sentences) {
-                    if (sentence.includes(userMessage) || userMessage.includes(sentence)) return sentence;
-                }
-                return sentences[Math.floor(Math.random() * sentences.length)];
+            const script = loadScript();
+            
+            // 如果没有写剧本
+            if (script.length === 0) {
+                return "请先在左侧设置框里输入你的剧本，一行一句，保存后即可开始播放。";
             }
 
-            const systemPrompt = script || "你是一个有帮助的助手。";
-            try {
-                const response = await fetch('https://api.openai.com/v1/chat/completions', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${apiKey}`
-                    },
-                    body: JSON.stringify({
-                        model: 'gpt-3.5-turbo',
-                        messages: [
-                            { role: 'system', content: systemPrompt },
-                            { role: 'user', content: userMessage }
-                        ],
-                        temperature: 0.7,
-                        max_tokens: 500
-                    })
-                });
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error?.message || '请求失败');
-                }
-                const data = await response.json();
-                return data.choices[0].message.content.trim();
-            } catch (error) {
-                return `⚠️ API错误：${error.message}`;
+            // 如果剧本已经全部播放完
+            if (scriptIndex >= script.length) {
+                return "✅ 剧本已全部播放完毕，点击右上角「重置剧本」可以重新开始。";
             }
+
+            // 取出下一句剧本，自动解析格式，指针后移
+            const nextLine = script[scriptIndex];
+            scriptIndex++;
+            return parseScriptFormat(nextLine);
         }
 
         async function sendMessage() {
@@ -416,7 +437,14 @@
             chatBox.innerHTML = '';
         }
 
-        // ========== Supabase 设置同步 (修正版) ==========
+        // 重置剧本进度
+        function resetScript() {
+            scriptIndex = 0;
+            clearChat();
+            addMessage('assistant', '✅ 剧本已重置，现在可以重新开始播放了。');
+        }
+
+        // ========== Supabase 设置同步 ==========
         const SETTINGS_TABLE = 'user_settings';
         const SETTINGS_ID = 'default';
 
@@ -519,8 +547,10 @@
             currentUserName = userNameInput.value || currentUserName;
             updateNameDisplays();
             updateCSSVariables();
+            // 保存后自动重置剧本进度，使用新剧本
+            scriptIndex = 0;
             const success = await saveSettingsToCloud();
-            alert(success ? '设置已保存并同步至云端' : '设置已保存到本地（云端暂不可用）');
+            alert(success ? '设置已保存并同步至云端，剧本已重置' : '设置已保存到本地（云端暂不可用），剧本已重置');
         });
 
         // 头像上传
@@ -583,6 +613,7 @@
         desktopInput.addEventListener('keypress', e => { if (e.key === 'Enter') sendMessage(); });
         mobileInput.addEventListener('keypress', e => { if (e.key === 'Enter') sendMessage(); });
         clearBtn.addEventListener('click', clearChat);
+        resetScriptBtn.addEventListener('click', resetScript);
         phoneOpenSet.addEventListener('click', () => leftPanel.classList.toggle('expand'));
         toggleSettingsBtn.addEventListener('click', () => {
             collapsibleSettings.style.display = collapsibleSettings.style.display === 'block' ? 'none' : 'block';
@@ -592,6 +623,7 @@
         async function init() {
             updateCSSVariables();
             await loadSettingsFromCloud();
+            addMessage('assistant', '欢迎使用剧本播放助手！请在左侧输入你的剧本，一行一句，保存后输入任意内容即可开始逐句播放。');
             console.log('🚀 初始化完成');
         }
 
