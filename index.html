@@ -64,45 +64,67 @@
             display: flex;
             flex-direction: column;
             height: 100%;
-            min-height: 0; /* 重要：允许flex子元素缩小 */
+            min-height: 0;
         }
 
         #chat-box {
             flex: 1 1 auto;
             overflow-y: auto;
             min-height: 0;
-            padding-bottom: 16px; /* 桌面端底部留一点空间 */
+            padding-bottom: 16px;
         }
 
-        /* 移动端布局 */
+        /* ---------- 移动端：侧边抽屉式设置面板 ---------- */
         @media (max-width: 768px) {
             .layout-container {
-                grid-template-columns: 1fr;
+                grid-template-columns: 1fr;  /* 只显示聊天区域 */
                 grid-template-rows: 1fr;
             }
 
-            .left-set-panel {
-                position: fixed;
-                bottom: 0;
-                left: 0;
-                width: 100%;
-                height: 50vh;
-                z-index: 50;
-                border-radius: 16px 16px 0 0;
-                transform: translateY(100%);
-                transition: transform 0.3s ease;
-                background: #121212;
-                border-top: 1px solid #333;
-            }
-
-            .left-set-panel.expand {
-                transform: translateY(0);
-            }
-
+            /* 隐藏原来的桌面输入区域 */
             #desktop-input-area {
                 display: none !important;
             }
 
+            /* 左侧面板变为侧边抽屉 */
+            .left-set-panel {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 85%;
+                height: 100%;
+                height: 100dvh;
+                z-index: 100;
+                background: #121212;
+                border-right: 1px solid #333;
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+                overflow-y: auto;
+                padding: 24px 16px;
+                box-shadow: 2px 0 10px rgba(0,0,0,0.5);
+            }
+
+            .left-set-panel.expand {
+                transform: translateX(0);
+            }
+
+            /* 遮罩层 */
+            .drawer-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.6);
+                z-index: 99;
+                display: none;
+            }
+
+            .drawer-overlay.show {
+                display: block;
+            }
+
+            /* 移动端输入栏（固定在底部） */
             .mobile-input-bar {
                 display: flex !important;
                 position: fixed;
@@ -117,29 +139,27 @@
                 gap: 8px;
             }
 
-            /* 为固定输入栏腾出空间 */
+            /* 为固定输入栏腾出底部空间 */
             #chat-box {
                 padding-bottom: calc(72px + var(--safe-bottom)) !important;
             }
 
-            .phone-drag-bar {
-                display: block;
-                width: 40px;
-                height: 4px;
-                background: #666;
-                border-radius: 2px;
-                margin: 8px auto;
+            /* 隐藏手机端的拖拽条（不再需要） */
+            .phone-drag-bar { display: none; }
+        }
+
+        /* ---------- 桌面端恢复原样 ---------- */
+        @media (min-width: 769px) {
+            .mobile-input-bar {
+                display: none;
+            }
+            .drawer-overlay {
+                display: none;
             }
         }
 
-        .mobile-input-bar {
-            display: none;
-        }
-
-        .scrollbar-hide::-webkit-scrollbar {
-            display: none;
-        }
-
+        /* 通用样式 */
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide {
             -ms-overflow-style: none;
             scrollbar-width: none;
@@ -173,7 +193,6 @@
         }
 
         .collapsible-settings { display: none; }
-        .phone-drag-bar { display: none; }
 
         .name-tag {
             cursor: pointer;
@@ -232,7 +251,7 @@
             color: white;
         }
 
-        /* 修正顶部标题栏的缩小 */
+        /* 固定顶栏和底栏 */
         .chat-header, .chat-footer {
             flex-shrink: 0;
         }
@@ -240,9 +259,12 @@
 </head>
 <body>
 <div class="layout-container">
-    <!-- 左侧设置面板 -->
+    <!-- 左侧设置面板（手机端变抽屉） -->
     <div class="left-set-panel bg-darker border-r border-gray-800 flex flex-col h-full p-4 overflow-y-auto scrollbar-hide" id="left-panel">
-        <div class="phone-drag-bar"></div>
+        <!-- 关闭按钮（仅手机端显示） -->
+        <button class="self-end text-gray-400 hover:text-white mb-4 md:hidden" id="close-drawer-btn">
+            <i class="fa fa-times fa-lg"></i>
+        </button>
         <h1 class="text-xl font-bold mb-4">剧本/人设设置</h1>
         <textarea class="flex-1 bg-dark border border-gray-800 rounded p-3 text-white outline-none resize-none mb-4" placeholder="输入剧本内容，AI会根据剧本回答问题&#10;支持格式：&#10;[red:文字] 红色&#10;[b:文字] 加粗&#10;[br] 换行" id="agent-prompt"></textarea>
 
@@ -277,6 +299,9 @@
         <p class="text-xs text-gray-500 mt-2 text-center">数据自动云端同步，多端一致</p>
     </div>
 
+    <!-- 遮罩层（手机端） -->
+    <div class="drawer-overlay" id="drawer-overlay"></div>
+
     <!-- 右侧聊天面板 -->
     <div class="chat-main-panel bg-dark">
         <!-- 头部区域 -->
@@ -287,6 +312,7 @@
             </div>
             <div class="flex items-center gap-2">
                 <span id="user-name-display" class="hidden sm:flex font-medium name-tag text-gray-300 text-sm">我 <i class="fa fa-pencil"></i></span>
+                <!-- 手机端打开设置按钮 -->
                 <button class="text-gray-400 hover:text-white md:hidden" id="phone-open-set"><i class="fa fa-bars"></i></button>
                 <button class="text-gray-400 hover:text-white" id="reset-script">重置剧本</button>
                 <button class="text-gray-400 hover:text-white" id="clear-chat">清空</button>
@@ -345,6 +371,8 @@
         const resetScriptBtn = document.getElementById('reset-script');
         const leftPanel = document.getElementById('left-panel');
         const phoneOpenSet = document.getElementById('phone-open-set');
+        const closeDrawerBtn = document.getElementById('close-drawer-btn');
+        const drawerOverlay = document.getElementById('drawer-overlay');
         const toggleSettingsBtn = document.getElementById('toggle-settings');
         const collapsibleSettings = document.getElementById('collapsible-settings');
         const agentPrompt = document.getElementById('agent-prompt');
@@ -381,7 +409,22 @@
         let currentEditTarget = null;
         let messages = [];
         let isSettingsLoaded = false;
-        let scriptIndex = 0;  // 纯本地模式进度指针
+        let scriptIndex = 0;
+
+        // ---------- 抽屉控制 ----------
+        function openDrawer() {
+            leftPanel.classList.add('expand');
+            drawerOverlay.classList.add('show');
+        }
+
+        function closeDrawer() {
+            leftPanel.classList.remove('expand');
+            drawerOverlay.classList.remove('show');
+        }
+
+        phoneOpenSet.addEventListener('click', openDrawer);
+        closeDrawerBtn.addEventListener('click', closeDrawer);
+        drawerOverlay.addEventListener('click', closeDrawer);
 
         // ---------- 工具函数 ----------
         function syncInputs(source) {
@@ -430,7 +473,6 @@
                 : '<span class="avatar-placeholder">AI</span>';
         }
 
-        // 名称编辑弹窗
         function openNameEditor(target) {
             currentEditTarget = target;
             if (target === 'agent') {
@@ -450,12 +492,10 @@
             currentEditTarget = null;
         }
 
-        // 消息渲染（支持HTML格式的逐字效果）
         function typewriterEffect(fullText, msgElement) {
             const bubble = msgElement.querySelector('.chat-bubble-content');
             let index = 0;
             bubble.innerHTML = '';
-
             const interval = setInterval(() => {
                 if (index < fullText.length) {
                     if (fullText.charAt(index) === '<') {
@@ -471,14 +511,12 @@
                         bubble.innerHTML += fullText.charAt(index);
                         index++;
                     }
-                    // 每次更新内容后滚动到底部
                     chatBox.scrollTop = chatBox.scrollHeight;
                     renderLatex(msgElement);
                 } else {
                     clearInterval(interval);
                     const lastMsg = messages[messages.length-1];
                     if (lastMsg && lastMsg.role === 'assistant') lastMsg.content = fullText;
-                    // 最终确保滚动到底部
                     chatBox.scrollTop = chatBox.scrollHeight;
                 }
             }, 30);
@@ -500,31 +538,24 @@
                 typewriterEffect(content, div);
             } else {
                 renderLatex(div);
-                // 非动画消息也滚动到底部
                 chatBox.scrollTop = chatBox.scrollHeight;
             }
         }
 
-        // 格式解析器（支持红色、加粗、换行，可扩展）
         function parseScriptFormat(text) {
             let result = text;
             result = result.replace(/\[red:(.*?)\]/g, '<span style="color: #ff4444">$1</span>');
             result = result.replace(/\[b:(.*?)\]/g, '<strong>$1</strong>');
             result = result.replace(/\[br\]/g, '<br>');
-            // 可在此添加更多格式
             return result;
         }
 
-        // 纯本地模式：按顺序念稿
         function loadScript() {
             return agentPrompt.value.split('\n').map(l => l.trim()).filter(l => l.length > 0);
         }
 
-        // 核心：双模式回复
         async function getAIResponse(userMessage) {
             const mode = document.querySelector('input[name="mode"]:checked').value;
-
-            // 纯本地顺序念稿
             if (mode === 'local') {
                 const script = loadScript();
                 if (script.length === 0) return "请在左侧输入剧本（一行一句）。";
@@ -534,7 +565,6 @@
                 return parseScriptFormat(nextLine);
             }
 
-            // AI 智能理解剧本模式
             const script = agentPrompt.value.trim();
             if (!script) return "请先在左侧输入剧本内容。";
 
@@ -581,7 +611,6 @@ ${script}
             addMessage('user', value);
             clearAllInputs();
 
-            // 显示加载提示
             const loadingDiv = document.createElement('div');
             loadingDiv.className = 'flex mb-4 justify-start';
             loadingDiv.innerHTML = `
@@ -594,12 +623,9 @@ ${script}
             chatBox.scrollTop = chatBox.scrollHeight;
 
             const reply = await getAIResponse(value);
-
-            // 移除加载提示
             if (chatBox.contains(loadingDiv)) {
                 chatBox.removeChild(loadingDiv);
             }
-
             addMessage('assistant', reply, true);
         }
 
@@ -614,7 +640,7 @@ ${script}
             addMessage('assistant', '✅ 剧本已重置，可以重新开始。');
         }
 
-        // ========== Supabase 设置同步（完全保留） ==========
+        // ========== Supabase 设置同步 ==========
         const SETTINGS_TABLE = 'user_settings';
         const SETTINGS_ID = 'default';
 
@@ -756,12 +782,11 @@ ${script}
         mobileInput.addEventListener('keypress', e => { if (e.key === 'Enter') sendMessage(); });
         clearBtn.addEventListener('click', clearChat);
         resetScriptBtn.addEventListener('click', resetScript);
-        phoneOpenSet.addEventListener('click', () => leftPanel.classList.toggle('expand'));
+
         toggleSettingsBtn.addEventListener('click', () => {
             collapsibleSettings.style.display = collapsibleSettings.style.display === 'block' ? 'none' : 'block';
         });
 
-        // 窗口大小变化时确保滚动位置正确（例如横竖屏切换）
         window.addEventListener('resize', () => {
             chatBox.scrollTop = chatBox.scrollHeight;
         });
