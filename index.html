@@ -30,37 +30,79 @@
             --ai-text-color: #FFFFFF;
             --safe-bottom: env(safe-area-inset-bottom, 0px);
         }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            background: #000; 
-            color: #fff; 
-            height: 100vh; height: 100dvh;
-            overflow: hidden; position: fixed; width: 100%;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        .layout-container { 
-            display: grid; grid-template-columns: 1fr 2fr; 
-            width: 100vw; height: 100dvh; 
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #000;
+            color: #fff;
+        }
+
+        body {
+            height: 100vh;
+            height: 100dvh;
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+
+        .layout-container {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            width: 100%;
+            height: 100%;
             position: relative;
         }
+
+        .chat-main-panel {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            min-height: 0; /* 重要：允许flex子元素缩小 */
+        }
+
+        #chat-box {
+            flex: 1 1 auto;
+            overflow-y: auto;
+            min-height: 0;
+            padding-bottom: 16px; /* 桌面端底部留一点空间 */
+        }
+
+        /* 移动端布局 */
         @media (max-width: 768px) {
-            .layout-container { 
-                grid-template-columns: 1fr; 
+            .layout-container {
+                grid-template-columns: 1fr;
                 grid-template-rows: 1fr;
             }
+
             .left-set-panel {
-                position: fixed; bottom: 0; left: 0; width: 100%; height: 50vh;
-                z-index: 50; border-radius: 16px 16px 0 0;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                height: 50vh;
+                z-index: 50;
+                border-radius: 16px 16px 0 0;
                 transform: translateY(100%);
                 transition: transform 0.3s ease;
                 background: #121212;
                 border-top: 1px solid #333;
             }
+
             .left-set-panel.expand {
                 transform: translateY(0);
             }
+
             #desktop-input-area {
                 display: none !important;
             }
+
             .mobile-input-bar {
                 display: flex !important;
                 position: fixed;
@@ -74,48 +116,125 @@
                 padding-bottom: calc(12px + var(--safe-bottom));
                 gap: 8px;
             }
+
+            /* 为固定输入栏腾出空间 */
             #chat-box {
-                padding-bottom: 80px !important;
+                padding-bottom: calc(72px + var(--safe-bottom)) !important;
             }
+
             .phone-drag-bar {
-                display: block; width: 40px; height: 4px; background: #666; border-radius: 2px; margin: 8px auto;
+                display: block;
+                width: 40px;
+                height: 4px;
+                background: #666;
+                border-radius: 2px;
+                margin: 8px auto;
             }
         }
 
-        .mobile-input-bar { display: none; }
+        .mobile-input-bar {
+            display: none;
+        }
 
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .avatar-img, .avatar-placeholder { 
-            object-fit: cover; width: 100%; height: 100%; border-radius: 4px;
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
         }
+
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .avatar-img, .avatar-placeholder {
+            object-fit: cover;
+            width: 100%;
+            height: 100%;
+            border-radius: 4px;
+        }
+
         .chat-bubble-content {
-            word-wrap: break-word; white-space: pre-wrap;
-            max-width: 100%; overflow-wrap: break-word; overflow: hidden;
-            font-size: var(--font-size); line-height: var(--line-height);
+            word-wrap: break-word;
+            word-break: break-word;
+            white-space: pre-wrap;
+            max-width: 100%;
+            overflow-wrap: break-word;
+            overflow: hidden;
+            font-size: var(--font-size);
+            line-height: var(--line-height);
         }
+
         .user-bubble { background-color: var(--user-bubble-color); color: var(--user-text-color); }
         .ai-bubble { background-color: var(--ai-bubble-color); color: var(--ai-text-color); }
-        .katex { font-size: var(--font-size); line-height: var(--line-height); max-width: 100%; }
+
+        .katex {
+            font-size: var(--font-size);
+            line-height: var(--line-height);
+            max-width: 100%;
+        }
+
         .collapsible-settings { display: none; }
         .phone-drag-bar { display: none; }
 
-        .name-tag { cursor: pointer; transition: all 0.2s; border-bottom: 1px dashed transparent; }
-        .name-tag:hover { border-bottom-color: #888; color: #ccc; }
-        .name-tag .fa-pencil { opacity: 0; transition: opacity 0.2s; font-size: 0.7em; margin-left: 4px; }
+        .name-tag {
+            cursor: pointer;
+            transition: all 0.2s;
+            border-bottom: 1px dashed transparent;
+        }
+
+        .name-tag:hover {
+            border-bottom-color: #888;
+            color: #ccc;
+        }
+
+        .name-tag .fa-pencil {
+            opacity: 0;
+            transition: opacity 0.2s;
+            font-size: 0.7em;
+            margin-left: 4px;
+        }
+
         .name-tag:hover .fa-pencil { opacity: 0.7; }
-        .msg-name-label { font-size: 0.7em; opacity: 0.7; letter-spacing: 0.5px; margin-bottom: 3px; display: block; cursor: pointer; }
+
+        .msg-name-label {
+            font-size: 0.7em;
+            opacity: 0.7;
+            letter-spacing: 0.5px;
+            margin-bottom: 3px;
+            display: block;
+            cursor: pointer;
+        }
+
         .name-edit-modal {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 300; background: rgba(0,0,0,0.75);
-            display: flex; align-items: center; justify-content: center; display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 300;
+            background: rgba(0,0,0,0.75);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            display: none;
         }
+
         .name-edit-dialog {
-            background: #1a1a1a; border: 1px solid #333; border-radius: 12px;
-            padding: 24px; width: 90%; max-width: 380px;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 24px;
+            width: 90%;
+            max-width: 380px;
         }
+
         .mode-radio:checked + label {
             background-color: #165DFF;
             color: white;
+        }
+
+        /* 修正顶部标题栏的缩小 */
+        .chat-header, .chat-footer {
+            flex-shrink: 0;
         }
     </style>
 </head>
@@ -126,14 +245,14 @@
         <div class="phone-drag-bar"></div>
         <h1 class="text-xl font-bold mb-4">剧本/人设设置</h1>
         <textarea class="flex-1 bg-dark border border-gray-800 rounded p-3 text-white outline-none resize-none mb-4" placeholder="输入剧本内容，AI会根据剧本回答问题&#10;支持格式：&#10;[red:文字] 红色&#10;[b:文字] 加粗&#10;[br] 换行" id="agent-prompt"></textarea>
-        
+
         <!-- 双模式切换 -->
         <div class="border-t border-gray-700 pt-3 mb-3">
             <h3 class="text-sm text-gray-400 mb-2">回复模式</h3>
             <div class="grid grid-cols-2 gap-2">
                 <input type="radio" name="mode" id="mode-local" value="local" checked class="hidden mode-radio">
                 <label for="mode-local" class="text-center py-2 rounded bg-gray-800 cursor-pointer transition">纯本地顺序念稿</label>
-                
+
                 <input type="radio" name="mode" id="mode-ai" value="ai" class="hidden mode-radio">
                 <label for="mode-ai" class="text-center py-2 rounded bg-gray-800 cursor-pointer transition">AI智能理解剧本</label>
             </div>
@@ -159,8 +278,9 @@
     </div>
 
     <!-- 右侧聊天面板 -->
-    <div class="chat-main-panel flex flex-col h-full bg-dark">
-        <div class="p-3 border-b border-gray-800 flex items-center justify-between">
+    <div class="chat-main-panel bg-dark">
+        <!-- 头部区域 -->
+        <div class="chat-header p-3 border-b border-gray-800 flex items-center justify-between">
             <div class="flex items-center gap-3">
                 <div id="agent-avatar" class="w-10 h-10 bg-accent/20 flex items-center justify-center overflow-hidden rounded-lg"><span class="avatar-placeholder">AI</span></div>
                 <div><span class="text-xs text-gray-500">AI</span><span id="agent-name-display" class="font-medium name-tag text-white">剧本助手 <i class="fa fa-pencil"></i></span></div>
@@ -172,8 +292,12 @@
                 <button class="text-gray-400 hover:text-white" id="clear-chat">清空</button>
             </div>
         </div>
+
+        <!-- 消息滚动区 -->
         <div class="flex-1 overflow-y-auto scrollbar-hide p-4" id="chat-box"></div>
-        <div class="p-3 border-t border-gray-800" id="desktop-input-area">
+
+        <!-- 桌面端输入区域 -->
+        <div class="chat-footer p-3 border-t border-gray-800" id="desktop-input-area">
             <div class="flex gap-2">
                 <input type="text" placeholder="输入消息..." class="flex-1 bg-darker border border-gray-800 rounded-lg p-3 text-white outline-none" id="msg-input">
                 <button class="bg-accent px-5 rounded-lg" id="send-btn"><i class="fa fa-paper-plane"></i></button>
@@ -301,8 +425,8 @@
         }
 
         function updateAgentAvatarDisplay() {
-            agentAvatarDiv.innerHTML = agentAvatarUrl 
-                ? `<img src="${agentAvatarUrl}" class="avatar-img" alt="agent avatar">` 
+            agentAvatarDiv.innerHTML = agentAvatarUrl
+                ? `<img src="${agentAvatarUrl}" class="avatar-img" alt="agent avatar">`
                 : '<span class="avatar-placeholder">AI</span>';
         }
 
@@ -331,6 +455,7 @@
             const bubble = msgElement.querySelector('.chat-bubble-content');
             let index = 0;
             bubble.innerHTML = '';
+
             const interval = setInterval(() => {
                 if (index < fullText.length) {
                     if (fullText.charAt(index) === '<') {
@@ -346,12 +471,15 @@
                         bubble.innerHTML += fullText.charAt(index);
                         index++;
                     }
+                    // 每次更新内容后滚动到底部
                     chatBox.scrollTop = chatBox.scrollHeight;
                     renderLatex(msgElement);
                 } else {
                     clearInterval(interval);
                     const lastMsg = messages[messages.length-1];
                     if (lastMsg && lastMsg.role === 'assistant') lastMsg.content = fullText;
+                    // 最终确保滚动到底部
+                    chatBox.scrollTop = chatBox.scrollHeight;
                 }
             }, 30);
         }
@@ -372,8 +500,9 @@
                 typewriterEffect(content, div);
             } else {
                 renderLatex(div);
+                // 非动画消息也滚动到底部
+                chatBox.scrollTop = chatBox.scrollHeight;
             }
-            chatBox.scrollTop = chatBox.scrollHeight;
         }
 
         // 格式解析器（支持红色、加粗、换行，可扩展）
@@ -394,7 +523,7 @@
         // 核心：双模式回复
         async function getAIResponse(userMessage) {
             const mode = document.querySelector('input[name="mode"]:checked').value;
-            
+
             // 纯本地顺序念稿
             if (mode === 'local') {
                 const script = loadScript();
@@ -451,7 +580,26 @@ ${script}
             if (!value) return;
             addMessage('user', value);
             clearAllInputs();
+
+            // 显示加载提示
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'flex mb-4 justify-start';
+            loadingDiv.innerHTML = `
+                <div class="max-w-[85%]">
+                    <span class="msg-name-label">${currentAgentName}</span>
+                    <div class="inline-block px-4 py-2 rounded-lg ai-bubble chat-bubble-content">思考中...</div>
+                </div>
+            `;
+            chatBox.appendChild(loadingDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+
             const reply = await getAIResponse(value);
+
+            // 移除加载提示
+            if (chatBox.contains(loadingDiv)) {
+                chatBox.removeChild(loadingDiv);
+            }
+
             addMessage('assistant', reply, true);
         }
 
@@ -611,6 +759,11 @@ ${script}
         phoneOpenSet.addEventListener('click', () => leftPanel.classList.toggle('expand'));
         toggleSettingsBtn.addEventListener('click', () => {
             collapsibleSettings.style.display = collapsibleSettings.style.display === 'block' ? 'none' : 'block';
+        });
+
+        // 窗口大小变化时确保滚动位置正确（例如横竖屏切换）
+        window.addEventListener('resize', () => {
+            chatBox.scrollTop = chatBox.scrollHeight;
         });
 
         async function init() {
