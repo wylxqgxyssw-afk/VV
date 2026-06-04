@@ -51,11 +51,12 @@
         }
 
         .layout-container {
-            display: grid;
-            grid-template-columns: 1fr 2fr;
             width: 100%;
             height: 100%;
             position: relative;
+            display: grid;
+            grid-template-columns: 1fr;
+            grid-template-rows: 1fr;
         }
 
         .chat-main-panel {
@@ -72,79 +73,71 @@
             padding-bottom: 16px;
         }
 
-        /* 移动端：侧边抽屉式设置面板 */
-        @media (max-width: 768px) {
-            .layout-container {
-                grid-template-columns: 1fr;
-                grid-template-rows: 1fr;
-            }
-
-            #desktop-input-area {
-                display: none !important;
-            }
-
-            .left-set-panel {
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 85%;
-                height: 100%;
-                height: 100dvh;
-                z-index: 100;
-                background: #121212;
-                border-right: 1px solid #333;
-                transform: translateX(-100%);
-                transition: transform 0.3s ease;
-                overflow-y: auto;
-                padding: 24px 16px;
-                box-shadow: 2px 0 10px rgba(0,0,0,0.5);
-            }
-
-            .left-set-panel.expand {
-                transform: translateX(0);
-            }
-
-            .drawer-overlay {
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0,0,0,0.6);
-                z-index: 99;
-                display: none;
-            }
-
-            .drawer-overlay.show {
-                display: block;
-            }
-
-            .mobile-input-bar {
-                display: flex !important;
-                position: fixed;
-                bottom: 0;
-                left: 0;
-                width: 100%;
-                z-index: 200;
-                background: #000;
-                border-top: 1px solid #333;
-                padding: 12px;
-                padding-bottom: calc(12px + var(--safe-bottom));
-                gap: 8px;
-            }
-
-            #chat-box {
-                padding-bottom: calc(72px + var(--safe-bottom)) !important;
-            }
-
-            .phone-drag-bar { display: none; }
+        /* 设置面板：全局抽屉式（所有屏幕） */
+        .left-set-panel {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 85%;
+            max-width: 400px;
+            height: 100%;
+            height: 100dvh;
+            z-index: 100;
+            background: #121212;
+            border-right: 1px solid #333;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+            overflow-y: auto;
+            padding: 24px 16px;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.5);
         }
 
-        @media (min-width: 769px) {
-            .mobile-input-bar { display: none; }
-            .drawer-overlay { display: none; }
+        .left-set-panel.expand {
+            transform: translateX(0);
         }
 
+        /* 遮罩层（全屏使用） */
+        .drawer-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 99;
+            display: none;
+        }
+
+        .drawer-overlay.show {
+            display: block;
+        }
+
+        /* 移动端输入栏：始终固定在底部 */
+        .mobile-input-bar {
+            display: flex;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            z-index: 200;
+            background: #000;
+            border-top: 1px solid #333;
+            padding: 12px;
+            padding-bottom: calc(12px + var(--safe-bottom));
+            gap: 8px;
+        }
+
+        /* 桌面端输入区域默认隐藏，用移动端统一输入栏 */
+        #desktop-input-area {
+            display: none;
+        }
+
+        /* 聊天区域为固定输入栏留出底部空间 */
+        #chat-box {
+            padding-bottom: calc(72px + var(--safe-bottom)) !important;
+        }
+
+        /* 通用滚动条隐藏 */
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide {
             -ms-overflow-style: none;
@@ -184,7 +177,7 @@
             line-height: var(--line-height);
         }
 
-        /* 气泡背景统一黑色，保持文字颜色可调 */
+        /* 气泡背景统一黑色，带细边框 */
         .user-bubble {
             background-color: #000 !important;
             color: var(--user-text-color);
@@ -263,13 +256,13 @@
 </head>
 <body>
 <div class="layout-container">
-    <!-- 左侧设置面板（手机端变抽屉） -->
-    <div class="left-set-panel bg-darker border-r border-gray-800 flex flex-col h-full p-4 overflow-y-auto scrollbar-hide" id="left-panel">
-        <button class="self-end text-gray-400 hover:text-white mb-4 md:hidden" id="close-drawer-btn">
+    <!-- 左侧抽屉设置面板 -->
+    <div class="left-set-panel" id="left-panel">
+        <button class="self-end text-gray-400 hover:text-white mb-4" id="close-drawer-btn">
             <i class="fa fa-times fa-lg"></i>
         </button>
         <h1 class="text-xl font-bold mb-4">剧本/人设设置</h1>
-        <textarea class="flex-1 bg-dark border border-gray-800 rounded p-3 text-white outline-none resize-none mb-4" placeholder="输入剧本内容，AI会根据剧本回答问题&#10;支持格式：&#10;[red:文字] 红色&#10;[b:文字] 加粗&#10;[br] 换行" id="agent-prompt"></textarea>
+        <textarea class="w-full h-40 bg-dark border border-gray-800 rounded p-3 text-white outline-none resize-none mb-4" placeholder="输入剧本内容，AI会根据剧本回答问题&#10;支持格式：&#10;[red:文字] 红色&#10;[b:文字] 加粗&#10;[br] 换行" id="agent-prompt"></textarea>
 
         <button class="w-full bg-gray-800 rounded p-2 mb-3 text-sm" id="toggle-settings">
             <i class="fa fa-cog mr-1"></i> 展开头像/样式设置
@@ -289,10 +282,10 @@
         <p class="text-xs text-gray-500 mt-2 text-center">数据自动云端同步，多端一致</p>
     </div>
 
-    <!-- 遮罩层（手机端） -->
+    <!-- 遮罩层 -->
     <div class="drawer-overlay" id="drawer-overlay"></div>
 
-    <!-- 右侧聊天面板 -->
+    <!-- 聊天全屏面板 -->
     <div class="chat-main-panel bg-dark">
         <!-- 头部区域 -->
         <div class="chat-header p-3 border-b border-gray-800 flex items-center justify-between">
@@ -302,7 +295,7 @@
             </div>
             <div class="flex items-center gap-2">
                 <span id="user-name-display" class="hidden sm:flex font-medium name-tag text-gray-300 text-sm">我 <i class="fa fa-pencil"></i></span>
-                <button class="text-gray-400 hover:text-white md:hidden" id="phone-open-set"><i class="fa fa-bars"></i></button>
+                <button class="text-gray-400 hover:text-white" id="phone-open-set"><i class="fa fa-bars"></i></button>
                 <button class="text-gray-400 hover:text-white" id="reset-script">重置剧本</button>
                 <button class="text-gray-400 hover:text-white" id="clear-chat">清空</button>
             </div>
@@ -310,21 +303,13 @@
 
         <!-- 消息滚动区 -->
         <div class="flex-1 overflow-y-auto scrollbar-hide p-4" id="chat-box"></div>
-
-        <!-- 桌面端输入区域 -->
-        <div class="chat-footer p-3 border-t border-gray-800" id="desktop-input-area">
-            <div class="flex gap-2">
-                <input type="text" placeholder="输入消息..." class="flex-1 bg-darker border border-gray-800 rounded-lg p-3 text-white outline-none" id="msg-input">
-                <button class="bg-accent px-5 rounded-lg" id="send-btn"><i class="fa fa-paper-plane"></i></button>
-            </div>
-        </div>
     </div>
 </div>
 
-<!-- 移动端固定输入栏 -->
+<!-- 统一输入栏（固定在底部） -->
 <div class="mobile-input-bar" id="mobile-input-area">
-    <input type="text" placeholder="输入消息..." class="flex-1 bg-darker border border-gray-800 rounded-lg p-3 text-white outline-none" id="msg-input-mobile">
-    <button class="bg-accent px-5 rounded-lg" id="send-btn-mobile"><i class="fa fa-paper-plane"></i></button>
+    <input type="text" placeholder="输入消息..." class="flex-1 bg-darker border border-gray-800 rounded-lg p-3 text-white outline-none" id="msg-input">
+    <button class="bg-accent px-5 rounded-lg" id="send-btn"><i class="fa fa-paper-plane"></i></button>
 </div>
 
 <!-- 名称编辑弹窗 -->
@@ -348,10 +333,8 @@
         const AI_PROXY_URL = 'https://vkeaimeytsymepgkizqk.supabase.co/functions/v1/swift-api';
 
         const chatBox = document.getElementById('chat-box');
-        const desktopInput = document.getElementById('msg-input');
-        const mobileInput = document.getElementById('msg-input-mobile');
-        const sendBtnDesktop = document.getElementById('send-btn');
-        const sendBtnMobile = document.getElementById('send-btn-mobile');
+        const msgInput = document.getElementById('msg-input');
+        const sendBtn = document.getElementById('send-btn');
         const clearBtn = document.getElementById('clear-chat');
         const resetScriptBtn = document.getElementById('reset-script');
         const leftPanel = document.getElementById('left-panel');
@@ -391,7 +374,6 @@
         let currentEditTarget = null;
         let messages = [];
 
-        // 抽屉控制
         function openDrawer() {
             leftPanel.classList.add('expand');
             drawerOverlay.classList.add('show');
@@ -403,18 +385,6 @@
         phoneOpenSet.addEventListener('click', openDrawer);
         closeDrawerBtn.addEventListener('click', closeDrawer);
         drawerOverlay.addEventListener('click', closeDrawer);
-
-        function syncInputs(source) {
-            if (source === 'desktop') mobileInput.value = desktopInput.value;
-            else desktopInput.value = mobileInput.value;
-        }
-        function getActiveInputValue() {
-            return window.innerWidth <= 768 ? mobileInput.value.trim() : desktopInput.value.trim();
-        }
-        function clearAllInputs() {
-            desktopInput.value = '';
-            mobileInput.value = '';
-        }
 
         function updateCSSVariables() {
             document.documentElement.style.setProperty('--font-size', fontSizeInput.value + 'px');
@@ -509,12 +479,10 @@
             const div = document.createElement('div');
             div.className = `flex mb-4 ${isUser ? 'justify-end' : 'justify-start'} items-end gap-2`;
 
-            // 头像
             const avatarHTML = avatarSrc
                 ? `<img src="${avatarSrc}" class="avatar-img" alt="avatar">`
                 : `<span>${avatarInitial}</span>`;
 
-            // AI消息头像在左，用户消息头像在右
             if (isUser) {
                 div.innerHTML = `
                     <div class="max-w-[80%]">
@@ -553,7 +521,7 @@
 
         async function getAIResponse(userMessage) {
             const script = agentPrompt.value.trim();
-            if (!script) return "请先在左侧输入剧本内容。";
+            if (!script) return "请先在左侧设置中填写剧本内容。";
 
             const systemPrompt = `
 你是一个严格按照剧本回答问题的助手。
@@ -593,11 +561,12 @@ ${script}
         }
 
         async function sendMessage() {
-            const value = getActiveInputValue();
+            const value = msgInput.value.trim();
             if (!value) return;
             addMessage('user', value);
-            clearAllInputs();
+            msgInput.value = '';
 
+            // 加载提示
             const loadingDiv = document.createElement('div');
             loadingDiv.className = 'flex mb-4 justify-start items-end gap-2';
             loadingDiv.innerHTML = `
@@ -627,7 +596,7 @@ ${script}
             addMessage('assistant', '✅ 剧本已重置，可以重新开始。');
         }
 
-        // Supabase 设置同步
+        // Supabase 同步
         const SETTINGS_TABLE = 'user_settings';
         const SETTINGS_ID = 'default';
 
@@ -702,7 +671,7 @@ ${script}
 
         saveSetBtn.addEventListener('click', async () => {
             const ok = await saveSettingsToCloud();
-            alert(ok ? '已保存并同步云端，剧本已重置' : '已保存到本地（云端同步失败）');
+            alert(ok ? '已保存并同步云端' : '已保存到本地（云端同步失败）');
         });
 
         agentAvatarUpload.addEventListener('click', () => agentAvatarFile.click());
@@ -753,12 +722,8 @@ ${script}
             el.addEventListener('input', updateCSSVariables);
         });
 
-        desktopInput.addEventListener('input', () => syncInputs('desktop'));
-        mobileInput.addEventListener('input', () => syncInputs('mobile'));
-        sendBtnDesktop.addEventListener('click', sendMessage);
-        sendBtnMobile.addEventListener('click', sendMessage);
-        desktopInput.addEventListener('keypress', e => { if (e.key === 'Enter') sendMessage(); });
-        mobileInput.addEventListener('keypress', e => { if (e.key === 'Enter') sendMessage(); });
+        sendBtn.addEventListener('click', sendMessage);
+        msgInput.addEventListener('keypress', e => { if (e.key === 'Enter') sendMessage(); });
         clearBtn.addEventListener('click', clearChat);
         resetScriptBtn.addEventListener('click', resetScript);
 
@@ -773,7 +738,7 @@ ${script}
         async function init() {
             updateCSSVariables();
             await loadSettingsFromCloud();
-            addMessage('assistant', '欢迎使用剧本智能助手！输入剧本后即可开始对话。');
+            addMessage('assistant', '欢迎使用剧本智能助手！点击左上角按钮设置剧本。');
         }
         init();
 
