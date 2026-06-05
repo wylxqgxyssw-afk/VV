@@ -64,17 +64,16 @@
             flex-direction: column;
             height: 100%;
             min-height: 0;
-            /* 保障整个面板不溢出 */
             width: 100%;
         }
 
+        /* 聊天区：强制固定宽度，横向溢出隐藏 */
         #chat-box {
             flex: 1 1 auto;
             overflow-y: auto;
-            overflow-x: hidden;   /* 关键：强制裁剪水平溢出 */
+            overflow-x: hidden;
             min-height: 0;
-            padding-bottom: 16px;
-            width: 100%;          /* 确保宽度不会被子元素撑开 */
+            width: 100%;
         }
 
         /* 设置面板：全局抽屉式 */
@@ -160,7 +159,7 @@
             width: 32px;
             height: 32px;
             border-radius: 6px;
-            flex-shrink: 0;
+            flex: 0 0 32px;          /* 固定宽度，绝不缩放 */
             overflow: hidden;
             background: #1a1a1a;
             display: flex;
@@ -170,12 +169,11 @@
             color: #888;
         }
 
-        /* 气泡内容 - 强化换行 */
+        /* 气泡内容 - 强制换行 */
         .chat-bubble-content {
             word-wrap: break-word;
             word-break: break-word;
             white-space: pre-wrap;
-            max-width: 100%;
             overflow-wrap: anywhere;
             overflow: hidden;
             font-size: var(--font-size);
@@ -194,14 +192,14 @@
             border: 1px solid #333;
         }
 
-        /* KaTeX 公式防护 */
+        /* KaTeX 公式保护 */
         .katex {
             font-size: var(--font-size);
             line-height: var(--line-height);
             max-width: 100%;
             overflow-x: auto;
             overflow-y: hidden;
-            display: inline-block;  /* 避免作为块级元素撑宽 */
+            display: inline-block;
         }
 
         .collapsible-settings { display: none; }
@@ -262,10 +260,28 @@
             flex-shrink: 0;
         }
 
-        /* 消息行强制不超出屏幕 */
+        /* 消息行：flex 容器，强制不换行且不超出屏幕 */
         .message-row {
-            max-width: 100% !important;
+            display: flex;
+            flex-wrap: nowrap;
+            max-width: 100%;
             overflow: hidden;
+            margin-bottom: 1rem;
+            gap: 0.5rem;
+        }
+
+        /* 气泡容器：占据剩余空间，允许收缩 */
+        .bubble-container {
+            flex: 1 1 0%;
+            min-width: 0;
+        }
+
+        .user-row {
+            justify-content: flex-end;
+        }
+
+        .ai-row {
+            justify-content: flex-start;
         }
     </style>
 </head>
@@ -511,51 +527,55 @@
             }, 30);
         }
 
-        // 核心：创建消息DOM（强化宽度限制）
+        // 核心：创建消息DOM（使用 flex 零空间争抢法）
         function addMessageToDOM(role, content, animate = false) {
             const isUser = role === 'user';
             const avatarSrc = isUser ? userAvatarUrl : agentAvatarUrl;
             const avatarInitial = isUser ? (currentUserName || '我').charAt(0) : (currentAgentName || 'AI').charAt(0);
             const senderName = isUser ? currentUserName : currentAgentName;
 
-            const div = document.createElement('div');
-            // 消息行：flex + 最大宽度限制 + 隐藏溢出
-            div.className = `flex mb-4 ${isUser ? 'justify-end' : 'justify-start'} items-start gap-2 message-row`;
+            const row = document.createElement('div');
+            row.className = `message-row ${isUser ? 'user-row' : 'ai-row'} items-start`;
 
             const avatarHTML = avatarSrc
                 ? `<img src="${avatarSrc}" class="avatar-img" alt="avatar">`
                 : `<span>${avatarInitial}</span>`;
 
-            // 气泡容器宽度使用 calc 减去头像和间距（48px），保证头像始终在屏幕内
-            const bubbleMaxWidthStyle = 'style="max-width: calc(100% - 48px); min-width: 0;"';
+            const avatarDiv = document.createElement('div');
+            avatarDiv.className = 'msg-avatar';
+            avatarDiv.innerHTML = avatarHTML;
+
+            const bubbleContainer = document.createElement('div');
+            bubbleContainer.className = 'bubble-container';
+
+            const nameLabel = document.createElement('span');
+            nameLabel.className = `msg-name-label ${isUser ? 'text-right' : ''}`;
+            nameLabel.textContent = senderName;
+
+            const bubble = document.createElement('div');
+            bubble.className = `inline-block px-4 py-2 rounded-lg chat-bubble-content ${isUser ? 'user-bubble' : 'ai-bubble'}`;
+            bubble.innerHTML = content;
+
+            bubbleContainer.appendChild(nameLabel);
+            bubbleContainer.appendChild(bubble);
 
             if (isUser) {
-                div.innerHTML = `
-                    <div ${bubbleMaxWidthStyle}>
-                        <span class="msg-name-label text-right">${senderName}</span>
-                        <div class="inline-block px-4 py-2 rounded-lg chat-bubble-content user-bubble">${content}</div>
-                    </div>
-                    <div class="msg-avatar">${avatarHTML}</div>
-                `;
+                row.appendChild(bubbleContainer);
+                row.appendChild(avatarDiv);
             } else {
-                div.innerHTML = `
-                    <div class="msg-avatar">${avatarHTML}</div>
-                    <div ${bubbleMaxWidthStyle}>
-                        <span class="msg-name-label">${senderName}</span>
-                        <div class="inline-block px-4 py-2 rounded-lg chat-bubble-content ai-bubble">${content}</div>
-                    </div>
-                `;
+                row.appendChild(avatarDiv);
+                row.appendChild(bubbleContainer);
             }
 
-            chatBox.appendChild(div);
+            chatBox.appendChild(row);
 
             if (role === 'assistant' && animate) {
-                typewriterEffect(content, div);
+                typewriterEffect(content, row);
             } else {
-                renderLatex(div);
+                renderLatex(row);
                 chatBox.scrollTop = chatBox.scrollHeight;
             }
-            return div;
+            return row;
         }
 
         function addMessage(role, content, animate = false) {
@@ -620,20 +640,21 @@ ${script}
             addMessage('user', value);
             msgInput.value = '';
 
-            const loadingDiv = document.createElement('div');
-            loadingDiv.className = 'flex mb-4 justify-start items-start gap-2 message-row';
-            loadingDiv.innerHTML = `
+            // 加载提示
+            const loadingRow = document.createElement('div');
+            loadingRow.className = 'message-row ai-row items-start';
+            loadingRow.innerHTML = `
                 <div class="msg-avatar">${agentAvatarUrl ? `<img src="${agentAvatarUrl}" class="avatar-img">` : (currentAgentName || 'AI').charAt(0)}</div>
-                <div style="max-width: calc(100% - 48px); min-width: 0;">
+                <div class="bubble-container">
                     <span class="msg-name-label">${currentAgentName}</span>
                     <div class="inline-block px-4 py-2 rounded-lg ai-bubble chat-bubble-content">思考中...</div>
                 </div>
             `;
-            chatBox.appendChild(loadingDiv);
+            chatBox.appendChild(loadingRow);
             chatBox.scrollTop = chatBox.scrollHeight;
 
             const reply = await getAIResponse(value);
-            if (chatBox.contains(loadingDiv)) chatBox.removeChild(loadingDiv);
+            if (chatBox.contains(loadingRow)) chatBox.removeChild(loadingRow);
             addMessage('assistant', reply, true);
         }
 
