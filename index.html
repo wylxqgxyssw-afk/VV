@@ -69,9 +69,9 @@
         #chat-box {
             flex: 1 1 auto;
             overflow-y: auto;
-            overflow-x: hidden; /* 防止整体横向溢出 */
             min-height: 0;
             padding-bottom: 16px;
+            /* 防止整个聊天区横向溢出 */;
         }
 
         /* 设置面板：全局抽屉式 */
@@ -113,7 +113,7 @@
             display: block;
         }
 
-        /* 移动端输入栏 */
+        /* 移动端输入栏：固定在底部 */
         .mobile-input-bar {
             display: flex;
             position: fixed;
@@ -128,14 +128,17 @@
             gap: 8px;
         }
 
+        /* 桌面端输入区域隐藏 */
         #desktop-input-area {
             display: none;
         }
 
+        /* 为固定输入栏留出底部空间 */
         #chat-box {
             padding-bottom: calc(72px + var(--safe-bottom)) !important;
         }
 
+        /* 通用滚动条隐藏 */
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide {
             -ms-overflow-style: none;
@@ -149,6 +152,7 @@
             border-radius: 4px;
         }
 
+        /* 消息头像 */
         .msg-avatar {
             width: 32px;
             height: 32px;
@@ -163,17 +167,19 @@
             color: #888;
         }
 
+        /* 气泡内容 - 关键修复 */
         .chat-bubble-content {
             word-wrap: break-word;
-            word-break: break-word;       /* 强制长单词/数字换行 */
-            overflow-wrap: anywhere;      /* 新标准，更强制 */
+            word-break: break-word;
             white-space: pre-wrap;
             max-width: 100%;
+            overflow-wrap: anywhere;   /* 新增：强制任意字符换行 */
             overflow: hidden;
             font-size: var(--font-size);
             line-height: var(--line-height);
         }
 
+        /* 气泡背景统一黑色，带细边框 */
         .user-bubble {
             background-color: #000 !important;
             color: var(--user-text-color);
@@ -185,10 +191,13 @@
             border: 1px solid #333;
         }
 
+        /* KaTeX 公式保护 */
         .katex {
             font-size: var(--font-size);
             line-height: var(--line-height);
             max-width: 100%;
+            overflow-x: auto;        /* 长公式内部滚动，不撑破气泡 */
+            overflow-y: hidden;
         }
 
         .collapsible-settings { display: none; }
@@ -198,16 +207,19 @@
             transition: all 0.2s;
             border-bottom: 1px dashed transparent;
         }
+
         .name-tag:hover {
             border-bottom-color: #888;
             color: #ccc;
         }
+
         .name-tag .fa-pencil {
             opacity: 0;
             transition: opacity 0.2s;
             font-size: 0.7em;
             margin-left: 4px;
         }
+
         .name-tag:hover .fa-pencil { opacity: 0.7; }
 
         .msg-name-label {
@@ -232,6 +244,7 @@
             justify-content: center;
             display: none;
         }
+
         .name-edit-dialog {
             background: #1a1a1a;
             border: 1px solid #333;
@@ -243,24 +256,6 @@
 
         .chat-header, .chat-footer {
             flex-shrink: 0;
-        }
-
-        /* 字体大小调节按钮样式 */
-        .font-size-btn {
-            background: #1a1a1a;
-            border: 1px solid #333;
-            color: #fff;
-            border-radius: 6px;
-            width: 28px;
-            height: 28px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-weight: bold;
-        }
-        .font-size-btn:active {
-            background: #333;
         }
     </style>
 </head>
@@ -297,22 +292,13 @@
 
     <!-- 聊天全屏面板 -->
     <div class="chat-main-panel bg-dark">
-        <!-- 头部区域，包含字体调节按钮 -->
+        <!-- 头部区域 -->
         <div class="chat-header p-3 border-b border-gray-800 flex items-center justify-between">
             <div class="flex items-center gap-3">
                 <div id="agent-avatar" class="w-10 h-10 bg-accent/20 flex items-center justify-center overflow-hidden rounded-lg"><span class="avatar-placeholder">AI</span></div>
-                <div>
-                    <span class="text-xs text-gray-500">AI</span>
-                    <span id="agent-name-display" class="font-medium name-tag text-white">剧本助手 <i class="fa fa-pencil"></i></span>
-                </div>
+                <div><span class="text-xs text-gray-500">AI</span><span id="agent-name-display" class="font-medium name-tag text-white">剧本助手 <i class="fa fa-pencil"></i></span></div>
             </div>
             <div class="flex items-center gap-2">
-                <!-- 字体调节按钮组 -->
-                <div class="flex items-center gap-1 mr-2">
-                    <button class="font-size-btn" id="font-size-down" title="缩小字体">A-</button>
-                    <span class="text-xs text-gray-400 w-8 text-center" id="font-size-display">16</span>
-                    <button class="font-size-btn" id="font-size-up" title="放大字体">A+</button>
-                </div>
                 <span id="user-name-display" class="hidden sm:flex font-medium name-tag text-gray-300 text-sm">我 <i class="fa fa-pencil"></i></span>
                 <button class="text-gray-400 hover:text-white" id="phone-open-set"><i class="fa fa-bars"></i></button>
                 <button class="text-gray-400 hover:text-white" id="reset-script">重置剧本</button>
@@ -325,7 +311,7 @@
     </div>
 </div>
 
-<!-- 统一输入栏 -->
+<!-- 统一输入栏（固定在底部） -->
 <div class="mobile-input-bar" id="mobile-input-area">
     <input type="text" placeholder="输入消息..." class="flex-1 bg-darker border border-gray-800 rounded-lg p-3 text-white outline-none" id="msg-input">
     <button class="bg-accent px-5 rounded-lg" id="send-btn"><i class="fa fa-paper-plane"></i></button>
@@ -385,9 +371,6 @@
         const nameEditInput = document.getElementById('name-edit-input');
         const nameEditCancel = document.getElementById('name-edit-cancel');
         const nameEditConfirm = document.getElementById('name-edit-confirm');
-        const fontSizeDownBtn = document.getElementById('font-size-down');
-        const fontSizeUpBtn = document.getElementById('font-size-up');
-        const fontSizeDisplay = document.getElementById('font-size-display');
 
         let currentAgentName = '剧本助手';
         let currentUserName = '我';
@@ -411,27 +394,11 @@
         drawerOverlay.addEventListener('click', closeDrawer);
 
         function updateCSSVariables() {
-            const fs = parseInt(fontSizeInput.value) || 16;
-            document.documentElement.style.setProperty('--font-size', fs + 'px');
+            document.documentElement.style.setProperty('--font-size', fontSizeInput.value + 'px');
             document.documentElement.style.setProperty('--line-height', lineHeightInput.value);
             document.documentElement.style.setProperty('--user-text-color', userTextColor.value);
             document.documentElement.style.setProperty('--ai-text-color', aiTextColor.value);
-            // 更新头部显示的字体大小
-            fontSizeDisplay.textContent = fs;
         }
-
-        // 调节字体大小的函数
-        function changeFontSize(delta) {
-            let currentSize = parseInt(fontSizeInput.value) || 16;
-            currentSize = Math.max(12, Math.min(24, currentSize + delta)); // 限制在12-24之间
-            fontSizeInput.value = currentSize;
-            updateCSSVariables();
-            // 自动保存设置（本地+云端）
-            saveSettingsToCloud();
-        }
-
-        fontSizeDownBtn.addEventListener('click', () => changeFontSize(-1));
-        fontSizeUpBtn.addEventListener('click', () => changeFontSize(1));
 
         function renderLatex(element) {
             try {
@@ -497,9 +464,7 @@
 
         function renderStoredMessages() {
             chatBox.innerHTML = '';
-            messages.forEach(msg => {
-                addMessageToDOM(msg.role, msg.content, false);
-            });
+            messages.forEach(msg => addMessageToDOM(msg.role, msg.content, false));
             if (messages.length === 0) {
                 addMessageToDOM('assistant', '欢迎使用剧本智能助手！点击左上角按钮设置剧本。', false);
             }
@@ -536,6 +501,7 @@
             }, 30);
         }
 
+        // 核心：添加消息到DOM（关键修复：容器限制宽度）
         function addMessageToDOM(role, content, animate = false) {
             const isUser = role === 'user';
             const avatarSrc = isUser ? userAvatarUrl : agentAvatarUrl;
@@ -543,7 +509,7 @@
             const senderName = isUser ? currentUserName : currentAgentName;
 
             const div = document.createElement('div');
-            // 消息行：顶部对齐 + 防止溢出
+            // 关键：max-w-full overflow-hidden 防止容器超出屏幕
             div.className = `flex mb-4 ${isUser ? 'justify-end' : 'justify-start'} items-start gap-2 max-w-full overflow-hidden`;
 
             const avatarHTML = avatarSrc
@@ -556,11 +522,11 @@
                         <span class="msg-name-label text-right">${senderName}</span>
                         <div class="inline-block px-4 py-2 rounded-lg chat-bubble-content user-bubble">${content}</div>
                     </div>
-                    <div class="msg-avatar flex-shrink-0">${avatarHTML}</div>
+                    <div class="msg-avatar">${avatarHTML}</div>
                 `;
             } else {
                 div.innerHTML = `
-                    <div class="msg-avatar flex-shrink-0">${avatarHTML}</div>
+                    <div class="msg-avatar">${avatarHTML}</div>
                     <div class="max-w-[80%] min-w-0">
                         <span class="msg-name-label">${senderName}</span>
                         <div class="inline-block px-4 py-2 rounded-lg chat-bubble-content ai-bubble">${content}</div>
@@ -644,7 +610,7 @@ ${script}
             const loadingDiv = document.createElement('div');
             loadingDiv.className = 'flex mb-4 justify-start items-start gap-2 max-w-full overflow-hidden';
             loadingDiv.innerHTML = `
-                <div class="msg-avatar flex-shrink-0">${agentAvatarUrl ? `<img src="${agentAvatarUrl}" class="avatar-img">` : (currentAgentName || 'AI').charAt(0)}</div>
+                <div class="msg-avatar">${agentAvatarUrl ? `<img src="${agentAvatarUrl}" class="avatar-img">` : (currentAgentName || 'AI').charAt(0)}</div>
                 <div class="max-w-[80%] min-w-0">
                     <span class="msg-name-label">${currentAgentName}</span>
                     <div class="inline-block px-4 py-2 rounded-lg ai-bubble chat-bubble-content">思考中...</div>
@@ -654,9 +620,7 @@ ${script}
             chatBox.scrollTop = chatBox.scrollHeight;
 
             const reply = await getAIResponse(value);
-            if (chatBox.contains(loadingDiv)) {
-                chatBox.removeChild(loadingDiv);
-            }
+            if (chatBox.contains(loadingDiv)) chatBox.removeChild(loadingDiv);
             addMessage('assistant', reply, true);
         }
 
@@ -794,7 +758,6 @@ ${script}
             saveSettingsToCloud();
         });
 
-        // 同步设置面板中的字体大小变化
         [fontSizeInput, lineHeightInput, userTextColor, aiTextColor].forEach(el => {
             el.addEventListener('input', updateCSSVariables);
         });
