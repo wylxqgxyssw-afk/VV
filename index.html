@@ -151,6 +151,56 @@
             border-radius: 4px;
         }
 
+        /* 消息头像 */
+        .msg-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            flex-shrink: 0;
+            overflow: hidden;
+            background: #1a1a1a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #888;
+        }
+
+        .chat-bubble-content {
+            word-wrap: break-word;
+            word-break: break-word;
+            white-space: pre-wrap;
+            max-width: 100%;
+            overflow-wrap: break-word;
+            overflow: hidden;
+            font-size: var(--font-size);
+            line-height: var(--line-height);
+        }
+
+        /* 气泡背景统一黑色，带细边框 */
+        .user-bubble {
+            background-color: #000 !important;
+            color: var(--user-text-color);
+            border: 1px solid #333;
+        }
+        .ai-bubble {
+            background-color: #000 !important;
+            color: var(--ai-text-color);
+            border: 1px solid #333;
+        }
+
+        /* ★ 修复公式撑破气泡的核心样式 ★ */
+        .katex {
+            font-size: var(--font-size);
+            line-height: var(--line-height);
+            max-width: 100% !important;
+            overflow-x: auto;
+            display: inline-block;
+            vertical-align: bottom;
+        }
+
+        .collapsible-settings { display: none; }
+
         .name-tag {
             cursor: pointer;
             transition: all 0.2s;
@@ -206,104 +256,6 @@
         .chat-header, .chat-footer {
             flex-shrink: 0;
         }
-
-        /* ===========================
-           聊天布局终极修复版（核心）
-           =========================== */
-        .message-row{
-            display:flex;
-            align-items:flex-start;
-            gap:8px;
-            width:100%;
-            margin-bottom:16px;
-        }
-
-        .user-row{
-            justify-content:flex-end;
-        }
-
-        .ai-row{
-            justify-content:flex-start;
-        }
-
-        .message-wrapper{
-            flex:1 1 auto;
-            min-width:0;
-            display:flex;
-            flex-direction:column;
-        }
-
-        .user-wrapper{
-            max-width:80%;
-            align-items:flex-end;
-        }
-
-        .ai-wrapper{
-            max-width:80%;
-            align-items:flex-start;
-        }
-
-        .msg-avatar{
-            width:32px;
-            height:32px;
-            min-width:32px;
-            min-height:32px;
-            max-width:32px;
-            max-height:32px;
-            flex:0 0 32px;
-            border-radius:6px;
-            overflow:hidden;
-            background:#1a1a1a;
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            font-size:12px;
-            color:#888;
-        }
-
-        .chat-bubble-content{
-            width:fit-content;
-            max-width:100%;
-            word-break:break-word;
-            overflow-wrap:anywhere;
-            white-space:pre-wrap;
-            overflow:hidden;
-            font-size:var(--font-size);
-            line-height:var(--line-height);
-        }
-
-        /* 气泡背景统一黑色，带细边框 */
-        .user-bubble {
-            background-color: #000 !important;
-            color: var(--user-text-color);
-            border: 1px solid #333;
-            padding: 8px 16px;
-            border-radius: 8px;
-        }
-        .ai-bubble {
-            background-color: #000 !important;
-            color: var(--ai-text-color);
-            border: 1px solid #333;
-            padding: 8px 16px;
-            border-radius: 8px;
-        }
-
-        .katex {
-            font-size: var(--font-size);
-            line-height: var(--line-height);
-            max-width:100%;
-            overflow-x:auto;
-            overflow-y:hidden;
-        }
-
-        .katex-display{
-            max-width:100%;
-            overflow-x:auto;
-            overflow-y:hidden;
-            margin:8px 0;
-        }
-
-        .collapsible-settings { display: none; }
     </style>
 </head>
 <body>
@@ -567,7 +519,8 @@
             const senderName = isUser ? currentUserName : currentAgentName;
 
             const div = document.createElement('div');
-            div.className = `message-row ${isUser ? 'user-row' : 'ai-row'}`;
+            // 关键修改：items-end -> items-start 保证头像始终在顶部
+            div.className = `flex mb-4 ${isUser ? 'justify-end' : 'justify-start'} items-start gap-2`;
 
             const avatarHTML = avatarSrc
                 ? `<img src="${avatarSrc}" class="avatar-img" alt="avatar">`
@@ -575,18 +528,18 @@
 
             if (isUser) {
                 div.innerHTML = `
-                    <div class="message-wrapper user-wrapper">
+                    <div class="max-w-[80%]">
                         <span class="msg-name-label text-right">${senderName}</span>
-                        <div class="chat-bubble-content user-bubble">${content}</div>
+                        <div class="inline-block px-4 py-2 rounded-lg chat-bubble-content user-bubble">${content}</div>
                     </div>
                     <div class="msg-avatar">${avatarHTML}</div>
                 `;
             } else {
                 div.innerHTML = `
                     <div class="msg-avatar">${avatarHTML}</div>
-                    <div class="message-wrapper ai-wrapper">
+                    <div class="max-w-[80%]">
                         <span class="msg-name-label">${senderName}</span>
-                        <div class="chat-bubble-content ai-bubble">${content}</div>
+                        <div class="inline-block px-4 py-2 rounded-lg chat-bubble-content ai-bubble">${content}</div>
                     </div>
                 `;
             }
@@ -667,18 +620,13 @@ ${script}
 
             // 加载提示
             const loadingDiv = document.createElement('div');
-            loadingDiv.className = 'message-row ai-row';
+            // 同样使用 items-start
+            loadingDiv.className = 'flex mb-4 justify-start items-start gap-2';
             loadingDiv.innerHTML = `
-                <div class="msg-avatar">
-                    ${
-                        agentAvatarUrl
-                            ? `<img src="${agentAvatarUrl}" class="avatar-img">`
-                            : (currentAgentName || 'AI').charAt(0)
-                    }
-                </div>
-                <div class="message-wrapper ai-wrapper">
+                <div class="msg-avatar">${agentAvatarUrl ? `<img src="${agentAvatarUrl}" class="avatar-img">` : (currentAgentName || 'AI').charAt(0)}</div>
+                <div class="max-w-[80%]">
                     <span class="msg-name-label">${currentAgentName}</span>
-                    <div class="chat-bubble-content ai-bubble">思考中...</div>
+                    <div class="inline-block px-4 py-2 rounded-lg ai-bubble chat-bubble-content">思考中...</div>
                 </div>
             `;
             chatBox.appendChild(loadingDiv);
