@@ -69,6 +69,7 @@
         #chat-box {
             flex: 1 1 auto;
             overflow-y: auto;
+            overflow-x: hidden; /* 防止整个聊天区域横向溢出 */
             min-height: 0;
             padding-bottom: 16px;
         }
@@ -96,7 +97,6 @@
             transform: translateX(0);
         }
 
-        /* 遮罩层 */
         .drawer-overlay {
             position: fixed;
             top: 0;
@@ -112,7 +112,6 @@
             display: block;
         }
 
-        /* 移动端输入栏：固定在底部 */
         .mobile-input-bar {
             display: flex;
             position: fixed;
@@ -127,17 +126,14 @@
             gap: 8px;
         }
 
-        /* 桌面端输入区域隐藏 */
         #desktop-input-area {
             display: none;
         }
 
-        /* 为固定输入栏留出底部空间 */
         #chat-box {
             padding-bottom: calc(72px + var(--safe-bottom)) !important;
         }
 
-        /* 通用滚动条隐藏 */
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide {
             -ms-overflow-style: none;
@@ -151,7 +147,6 @@
             border-radius: 4px;
         }
 
-        /* 消息头像 */
         .msg-avatar {
             width: 32px;
             height: 32px;
@@ -171,13 +166,12 @@
             word-break: break-word;
             white-space: pre-wrap;
             max-width: 100%;
-            overflow-wrap: break-word;
+            overflow-wrap: anywhere; /* 强制在任意位置换行 */
             overflow: hidden;
             font-size: var(--font-size);
             line-height: var(--line-height);
         }
 
-        /* 气泡背景统一黑色，带细边框 */
         .user-bubble {
             background-color: #000 !important;
             color: var(--user-text-color);
@@ -202,19 +196,16 @@
             transition: all 0.2s;
             border-bottom: 1px dashed transparent;
         }
-
         .name-tag:hover {
             border-bottom-color: #888;
             color: #ccc;
         }
-
         .name-tag .fa-pencil {
             opacity: 0;
             transition: opacity 0.2s;
             font-size: 0.7em;
             margin-left: 4px;
         }
-
         .name-tag:hover .fa-pencil { opacity: 0.7; }
 
         .msg-name-label {
@@ -239,7 +230,6 @@
             justify-content: center;
             display: none;
         }
-
         .name-edit-dialog {
             background: #1a1a1a;
             border: 1px solid #333;
@@ -251,6 +241,12 @@
 
         .chat-header, .chat-footer {
             flex-shrink: 0;
+        }
+
+        /* 确保消息行本身不超出屏幕 */
+        .message-row {
+            max-width: 100%;
+            overflow-x: hidden;
         }
     </style>
 </head>
@@ -272,22 +268,20 @@
             <div><h3 class="text-sm text-gray-400 mb-1">智能体头像</h3><button class="w-full bg-accent/20 rounded p-2 text-sm mb-2" id="agent-avatar-upload">上传头像</button><input type="file" id="agent-avatar-file" class="hidden" accept="image/*"><div id="agent-avatar-preview" class="w-14 h-14 bg-accent/20 flex items-center justify-center overflow-hidden rounded-lg mx-auto"><span>预览</span></div></div>
             <div class="border-t border-gray-700 pt-3"><h3 class="text-sm text-gray-400 mb-1">你的名称</h3><input class="w-full bg-darker rounded p-2 text-white outline-none" id="user-name"></div>
             <div><h3 class="text-sm text-gray-400 mb-1">你的头像</h3><button class="w-full bg-accent/20 rounded p-2 text-sm mb-2" id="user-avatar-upload">上传头像</button><input type="file" id="user-avatar-file" class="hidden" accept="image/*"><div id="user-avatar-preview" class="w-14 h-14 bg-accent/20 flex items-center justify-center overflow-hidden rounded-lg mx-auto"><span>预览</span></div></div>
-            <div class="border-t border-gray-700 pt-3"><h3 class="text-sm text-gray-400 mb-1">API Key（AI模式已通过代理调用）</h3><input type="password" class="w-full bg-darker rounded p-2 text-white outline-none" id="api-key" placeholder="无需填写" disabled><p class="text-xs text-gray-500 mt-1">已通过 Supabase Edge Function 安全调用 DeepSeek API</p></div>
+            <div class="border-t border-gray-700 pt-3"><h3 class="text-sm text-gray-400 mb-1">API Key（已代理）</h3><input type="password" class="w-full bg-darker rounded p-2 text-white outline-none" id="api-key" placeholder="无需填写" disabled><p class="text-xs text-gray-500 mt-1">已通过 Supabase Edge Function 安全调用</p></div>
             <div class="border-t border-gray-700 pt-3"><h3 class="text-sm text-gray-400 mb-2">样式</h3>
-                <div class="grid grid-cols-2 gap-2 mb-2"><div><label class="text-xs text-gray-400">字体大小</label><input type="number" id="font-size" value="16" class="w-full bg-darker rounded p-2 text-white"></div><div><label class="text-xs text-gray-400">行间距</label><input type="number" id="line-height" value="1.6" step="0.1" class="w-full bg-darker rounded p-2 text-white"></div></div>
-                <div class="grid grid-cols-2 gap-2"><div><label class="text-xs text-gray-400">我的文字</label><input type="color" id="user-text-color" value="#FFFFFF" class="w-full h-8"></div><div><label class="text-xs text-gray-400">AI文字</label><input type="color" id="ai-text-color" value="#FFFFFF" class="w-full h-8"></div></div>
+                <div class="grid grid-cols-2 gap-2 mb-2"><div><label class="text-xs text-gray-400">字体大小 (px)</label><input type="number" id="font-size" value="16" class="w-full bg-darker rounded p-2 text-white"></div><div><label class="text-xs text-gray-400">行间距</label><input type="number" id="line-height" value="1.6" step="0.1" class="w-full bg-darker rounded p-2 text-white"></div></div>
+                <div class="grid grid-cols-2 gap-2"><div><label class="text-xs text-gray-400">我的文字颜色</label><input type="color" id="user-text-color" value="#FFFFFF" class="w-full h-8"></div><div><label class="text-xs text-gray-400">AI文字颜色</label><input type="color" id="ai-text-color" value="#FFFFFF" class="w-full h-8"></div></div>
             </div>
         </div>
         <button class="w-full bg-accent rounded p-3" id="save-set">保存所有设置</button>
         <p class="text-xs text-gray-500 mt-2 text-center">数据自动云端同步，多端一致</p>
     </div>
 
-    <!-- 遮罩层 -->
     <div class="drawer-overlay" id="drawer-overlay"></div>
 
-    <!-- 聊天全屏面板 -->
+    <!-- 聊天面板 -->
     <div class="chat-main-panel bg-dark">
-        <!-- 头部区域 -->
         <div class="chat-header p-3 border-b border-gray-800 flex items-center justify-between">
             <div class="flex items-center gap-3">
                 <div id="agent-avatar" class="w-10 h-10 bg-accent/20 flex items-center justify-center overflow-hidden rounded-lg"><span class="avatar-placeholder">AI</span></div>
@@ -301,12 +295,11 @@
             </div>
         </div>
 
-        <!-- 消息滚动区 -->
         <div class="flex-1 overflow-y-auto scrollbar-hide p-4" id="chat-box"></div>
     </div>
 </div>
 
-<!-- 统一输入栏（固定在底部） -->
+<!-- 底部输入栏 -->
 <div class="mobile-input-bar" id="mobile-input-area">
     <input type="text" placeholder="输入消息..." class="flex-1 bg-darker border border-gray-800 rounded-lg p-3 text-white outline-none" id="msg-input">
     <button class="bg-accent px-5 rounded-lg" id="send-btn"><i class="fa fa-paper-plane"></i></button>
@@ -374,7 +367,6 @@
         let currentEditTarget = null;
         let messages = [];
 
-        // 本地存储键名
         const MESSAGES_STORAGE_KEY = 'chat-messages';
 
         function openDrawer() {
@@ -440,31 +432,24 @@
             currentEditTarget = null;
         }
 
-        // 保存消息到本地存储
         function saveMessagesToLocal() {
             try {
                 localStorage.setItem(MESSAGES_STORAGE_KEY, JSON.stringify(messages));
-            } catch (e) {
-                console.warn('无法保存聊天记录到本地', e);
-            }
+            } catch (e) {}
         }
 
-        // 从本地存储加载消息
         function loadMessagesFromLocal() {
             try {
                 const saved = localStorage.getItem(MESSAGES_STORAGE_KEY);
                 if (saved) {
                     const parsed = JSON.parse(saved);
-                    if (Array.isArray(parsed)) {
-                        messages = parsed;
-                    }
+                    if (Array.isArray(parsed)) messages = parsed;
                 }
             } catch (e) {
                 messages = [];
             }
         }
 
-        // 渲染历史消息（无动画）
         function renderStoredMessages() {
             chatBox.innerHTML = '';
             messages.forEach(msg => {
@@ -475,7 +460,6 @@
             }
         }
 
-        // 打字机效果（仅用于新AI回复）
         function typewriterEffect(fullText, msgElement) {
             const bubble = msgElement.querySelector('.chat-bubble-content');
             let index = 0;
@@ -507,7 +491,6 @@
             }, 30);
         }
 
-        // 核心：向DOM添加消息（不操作messages数组）
         function addMessageToDOM(role, content, animate = false) {
             const isUser = role === 'user';
             const avatarSrc = isUser ? userAvatarUrl : agentAvatarUrl;
@@ -515,8 +498,8 @@
             const senderName = isUser ? currentUserName : currentAgentName;
 
             const div = document.createElement('div');
-            // 关键修改：items-end -> items-start 保证头像始终在顶部
-            div.className = `flex mb-4 ${isUser ? 'justify-end' : 'justify-start'} items-start gap-2`;
+            // 关键修改：items-start 保证头像在顶部；加上 message-row 类限制溢出
+            div.className = `flex mb-4 ${isUser ? 'justify-end' : 'justify-start'} items-start gap-2 message-row`;
 
             const avatarHTML = avatarSrc
                 ? `<img src="${avatarSrc}" class="avatar-img" alt="avatar">`
@@ -551,7 +534,6 @@
             return div;
         }
 
-        // 添加新消息（同时更新messages数组并保存）
         function addMessage(role, content, animate = false) {
             const msg = { role, content };
             messages.push(msg);
@@ -614,10 +596,8 @@ ${script}
             addMessage('user', value);
             msgInput.value = '';
 
-            // 加载提示
             const loadingDiv = document.createElement('div');
-            // 同样使用 items-start
-            loadingDiv.className = 'flex mb-4 justify-start items-start gap-2';
+            loadingDiv.className = 'flex mb-4 justify-start items-start gap-2 message-row';
             loadingDiv.innerHTML = `
                 <div class="msg-avatar">${agentAvatarUrl ? `<img src="${agentAvatarUrl}" class="avatar-img">` : (currentAgentName || 'AI').charAt(0)}</div>
                 <div class="max-w-[80%]">
@@ -789,7 +769,6 @@ ${script}
         async function init() {
             updateCSSVariables();
             await loadSettingsFromCloud();
-            // 加载本地聊天记录
             loadMessagesFromLocal();
             renderStoredMessages();
         }
