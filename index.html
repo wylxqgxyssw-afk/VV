@@ -64,16 +64,13 @@
             flex-direction: column;
             height: 100%;
             min-height: 0;
-            width: 100%;
         }
 
-        /* 聊天区：强制固定宽度，横向溢出隐藏 */
         #chat-box {
             flex: 1 1 auto;
             overflow-y: auto;
-            overflow-x: hidden;
             min-height: 0;
-            width: 100%;
+            padding-bottom: 16px;
         }
 
         /* 设置面板：全局抽屉式 */
@@ -154,12 +151,13 @@
             border-radius: 4px;
         }
 
-        /* 消息头像 */
+        /* 消息头像 - 关键修复：添加最小宽度和不可收缩 */
         .msg-avatar {
             width: 32px;
             height: 32px;
+            min-width: 32px; /* 头像绝对不能小于32px */
+            flex-shrink: 0; /* 头像绝对不能被压缩 */
             border-radius: 6px;
-            flex: 0 0 32px;          /* 固定宽度，绝不缩放 */
             overflow: hidden;
             background: #1a1a1a;
             display: flex;
@@ -169,12 +167,14 @@
             color: #888;
         }
 
-        /* 气泡内容 - 强制换行 */
         .chat-bubble-content {
             word-wrap: break-word;
-            word-break: break-word;
+            word-break: break-all; /* 关键修复：强制在任意字符处换行 */
+            overflow-wrap: break-word; /* 双重保险 */
             white-space: pre-wrap;
-            overflow-wrap: anywhere;
+            max-width: 100%;
+            width: 100%; /* 关键修复：让气泡占据父容器全部宽度 */
+            overflow-wrap: break-word;
             overflow: hidden;
             font-size: var(--font-size);
             line-height: var(--line-height);
@@ -192,14 +192,12 @@
             border: 1px solid #333;
         }
 
-        /* KaTeX 公式保护 */
         .katex {
             font-size: var(--font-size);
             line-height: var(--line-height);
             max-width: 100%;
             overflow-x: auto;
             overflow-y: hidden;
-            display: inline-block;
         }
 
         .collapsible-settings { display: none; }
@@ -260,28 +258,10 @@
             flex-shrink: 0;
         }
 
-        /* 消息行：flex 容器，强制不换行且不超出屏幕 */
-        .message-row {
-            display: flex;
-            flex-wrap: nowrap;
-            max-width: 100%;
-            overflow: hidden;
-            margin-bottom: 1rem;
-            gap: 0.5rem;
-        }
-
-        /* 气泡容器：占据剩余空间，允许收缩 */
-        .bubble-container {
-            flex: 1 1 0%;
-            min-width: 0;
-        }
-
-        .user-row {
-            justify-content: flex-end;
-        }
-
-        .ai-row {
-            justify-content: flex-start;
+        /* 消息容器 - 关键修复：添加最大宽度限制 */
+        .message-container {
+            max-width: calc(100% - 40px); /* 给头像留出足够空间 */
+            flex-shrink: 1; /* 允许文字容器收缩 */
         }
     </style>
 </head>
@@ -405,6 +385,7 @@
         let currentEditTarget = null;
         let messages = [];
 
+        // 本地存储键名
         const MESSAGES_STORAGE_KEY = 'chat-messages';
 
         function openDrawer() {
@@ -470,32 +451,42 @@
             currentEditTarget = null;
         }
 
+        // 保存消息到本地存储
         function saveMessagesToLocal() {
             try {
                 localStorage.setItem(MESSAGES_STORAGE_KEY, JSON.stringify(messages));
-            } catch (e) {}
+            } catch (e) {
+                console.warn('无法保存聊天记录到本地', e);
+            }
         }
 
+        // 从本地存储加载消息
         function loadMessagesFromLocal() {
             try {
                 const saved = localStorage.getItem(MESSAGES_STORAGE_KEY);
                 if (saved) {
                     const parsed = JSON.parse(saved);
-                    if (Array.isArray(parsed)) messages = parsed;
+                    if (Array.isArray(parsed)) {
+                        messages = parsed;
+                    }
                 }
             } catch (e) {
                 messages = [];
             }
         }
 
+        // 渲染历史消息（无动画）
         function renderStoredMessages() {
             chatBox.innerHTML = '';
-            messages.forEach(msg => addMessageToDOM(msg.role, msg.content, false));
+            messages.forEach(msg => {
+                addMessageToDOM(msg.role, msg.content, false);
+            });
             if (messages.length === 0) {
                 addMessageToDOM('assistant', '欢迎使用剧本智能助手！点击左上角按钮设置剧本。', false);
             }
         }
 
+        // 打字机效果（仅用于新AI回复）
         function typewriterEffect(fullText, msgElement) {
             const bubble = msgElement.querySelector('.chat-bubble-content');
             let index = 0;
@@ -527,57 +518,51 @@
             }, 30);
         }
 
-        // 核心：创建消息DOM（使用 flex 零空间争抢法）
+        // 核心：向DOM添加消息（不操作messages数组）
         function addMessageToDOM(role, content, animate = false) {
             const isUser = role === 'user';
             const avatarSrc = isUser ? userAvatarUrl : agentAvatarUrl;
             const avatarInitial = isUser ? (currentUserName || '我').charAt(0) : (currentAgentName || 'AI').charAt(0);
             const senderName = isUser ? currentUserName : currentAgentName;
 
-            const row = document.createElement('div');
-            row.className = `message-row ${isUser ? 'user-row' : 'ai-row'} items-start`;
+            const div = document.createElement('div');
+            // 关键修复：保持items-start保证头像始终在顶部
+            div.className = `flex mb-4 ${isUser ? 'justify-end' : 'justify-start'} items-start gap-2`;
 
             const avatarHTML = avatarSrc
                 ? `<img src="${avatarSrc}" class="avatar-img" alt="avatar">`
                 : `<span>${avatarInitial}</span>`;
 
-            const avatarDiv = document.createElement('div');
-            avatarDiv.className = 'msg-avatar';
-            avatarDiv.innerHTML = avatarHTML;
-
-            const bubbleContainer = document.createElement('div');
-            bubbleContainer.className = 'bubble-container';
-
-            const nameLabel = document.createElement('span');
-            nameLabel.className = `msg-name-label ${isUser ? 'text-right' : ''}`;
-            nameLabel.textContent = senderName;
-
-            const bubble = document.createElement('div');
-            bubble.className = `inline-block px-4 py-2 rounded-lg chat-bubble-content ${isUser ? 'user-bubble' : 'ai-bubble'}`;
-            bubble.innerHTML = content;
-
-            bubbleContainer.appendChild(nameLabel);
-            bubbleContainer.appendChild(bubble);
-
             if (isUser) {
-                row.appendChild(bubbleContainer);
-                row.appendChild(avatarDiv);
+                div.innerHTML = `
+                    <div class="message-container">
+                        <span class="msg-name-label text-right">${senderName}</span>
+                        <div class="px-4 py-2 rounded-lg chat-bubble-content user-bubble">${content}</div>
+                    </div>
+                    <div class="msg-avatar">${avatarHTML}</div>
+                `;
             } else {
-                row.appendChild(avatarDiv);
-                row.appendChild(bubbleContainer);
+                div.innerHTML = `
+                    <div class="msg-avatar">${avatarHTML}</div>
+                    <div class="message-container">
+                        <span class="msg-name-label">${senderName}</span>
+                        <div class="px-4 py-2 rounded-lg chat-bubble-content ai-bubble">${content}</div>
+                    </div>
+                `;
             }
 
-            chatBox.appendChild(row);
+            chatBox.appendChild(div);
 
             if (role === 'assistant' && animate) {
-                typewriterEffect(content, row);
+                typewriterEffect(content, div);
             } else {
-                renderLatex(row);
+                renderLatex(div);
                 chatBox.scrollTop = chatBox.scrollHeight;
             }
-            return row;
+            return div;
         }
 
+        // 添加新消息（同时更新messages数组并保存）
         function addMessage(role, content, animate = false) {
             const msg = { role, content };
             messages.push(msg);
@@ -641,20 +626,23 @@ ${script}
             msgInput.value = '';
 
             // 加载提示
-            const loadingRow = document.createElement('div');
-            loadingRow.className = 'message-row ai-row items-start';
-            loadingRow.innerHTML = `
+            const loadingDiv = document.createElement('div');
+            // 同样使用 items-start
+            loadingDiv.className = 'flex mb-4 justify-start items-start gap-2';
+            loadingDiv.innerHTML = `
                 <div class="msg-avatar">${agentAvatarUrl ? `<img src="${agentAvatarUrl}" class="avatar-img">` : (currentAgentName || 'AI').charAt(0)}</div>
-                <div class="bubble-container">
+                <div class="message-container">
                     <span class="msg-name-label">${currentAgentName}</span>
-                    <div class="inline-block px-4 py-2 rounded-lg ai-bubble chat-bubble-content">思考中...</div>
+                    <div class="px-4 py-2 rounded-lg ai-bubble chat-bubble-content">思考中...</div>
                 </div>
             `;
-            chatBox.appendChild(loadingRow);
+            chatBox.appendChild(loadingDiv);
             chatBox.scrollTop = chatBox.scrollHeight;
 
             const reply = await getAIResponse(value);
-            if (chatBox.contains(loadingRow)) chatBox.removeChild(loadingRow);
+            if (chatBox.contains(loadingDiv)) {
+                chatBox.removeChild(loadingDiv);
+            }
             addMessage('assistant', reply, true);
         }
 
@@ -812,6 +800,7 @@ ${script}
         async function init() {
             updateCSSVariables();
             await loadSettingsFromCloud();
+            // 加载本地聊天记录
             loadMessagesFromLocal();
             renderStoredMessages();
         }
