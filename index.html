@@ -64,14 +64,17 @@
             flex-direction: column;
             height: 100%;
             min-height: 0;
+            /* 保障整个面板不溢出 */
+            width: 100%;
         }
 
         #chat-box {
             flex: 1 1 auto;
             overflow-y: auto;
+            overflow-x: hidden;   /* 关键：强制裁剪水平溢出 */
             min-height: 0;
             padding-bottom: 16px;
-            /* 防止整个聊天区横向溢出 */;
+            width: 100%;          /* 确保宽度不会被子元素撑开 */
         }
 
         /* 设置面板：全局抽屉式 */
@@ -167,13 +170,13 @@
             color: #888;
         }
 
-        /* 气泡内容 - 关键修复 */
+        /* 气泡内容 - 强化换行 */
         .chat-bubble-content {
             word-wrap: break-word;
             word-break: break-word;
             white-space: pre-wrap;
             max-width: 100%;
-            overflow-wrap: anywhere;   /* 新增：强制任意字符换行 */
+            overflow-wrap: anywhere;
             overflow: hidden;
             font-size: var(--font-size);
             line-height: var(--line-height);
@@ -191,13 +194,14 @@
             border: 1px solid #333;
         }
 
-        /* KaTeX 公式保护 */
+        /* KaTeX 公式防护 */
         .katex {
             font-size: var(--font-size);
             line-height: var(--line-height);
             max-width: 100%;
-            overflow-x: auto;        /* 长公式内部滚动，不撑破气泡 */
+            overflow-x: auto;
             overflow-y: hidden;
+            display: inline-block;  /* 避免作为块级元素撑宽 */
         }
 
         .collapsible-settings { display: none; }
@@ -256,6 +260,12 @@
 
         .chat-header, .chat-footer {
             flex-shrink: 0;
+        }
+
+        /* 消息行强制不超出屏幕 */
+        .message-row {
+            max-width: 100% !important;
+            overflow: hidden;
         }
     </style>
 </head>
@@ -501,7 +511,7 @@
             }, 30);
         }
 
-        // 核心：添加消息到DOM（关键修复：容器限制宽度）
+        // 核心：创建消息DOM（强化宽度限制）
         function addMessageToDOM(role, content, animate = false) {
             const isUser = role === 'user';
             const avatarSrc = isUser ? userAvatarUrl : agentAvatarUrl;
@@ -509,16 +519,19 @@
             const senderName = isUser ? currentUserName : currentAgentName;
 
             const div = document.createElement('div');
-            // 关键：max-w-full overflow-hidden 防止容器超出屏幕
-            div.className = `flex mb-4 ${isUser ? 'justify-end' : 'justify-start'} items-start gap-2 max-w-full overflow-hidden`;
+            // 消息行：flex + 最大宽度限制 + 隐藏溢出
+            div.className = `flex mb-4 ${isUser ? 'justify-end' : 'justify-start'} items-start gap-2 message-row`;
 
             const avatarHTML = avatarSrc
                 ? `<img src="${avatarSrc}" class="avatar-img" alt="avatar">`
                 : `<span>${avatarInitial}</span>`;
 
+            // 气泡容器宽度使用 calc 减去头像和间距（48px），保证头像始终在屏幕内
+            const bubbleMaxWidthStyle = 'style="max-width: calc(100% - 48px); min-width: 0;"';
+
             if (isUser) {
                 div.innerHTML = `
-                    <div class="max-w-[80%] min-w-0">
+                    <div ${bubbleMaxWidthStyle}>
                         <span class="msg-name-label text-right">${senderName}</span>
                         <div class="inline-block px-4 py-2 rounded-lg chat-bubble-content user-bubble">${content}</div>
                     </div>
@@ -527,7 +540,7 @@
             } else {
                 div.innerHTML = `
                     <div class="msg-avatar">${avatarHTML}</div>
-                    <div class="max-w-[80%] min-w-0">
+                    <div ${bubbleMaxWidthStyle}>
                         <span class="msg-name-label">${senderName}</span>
                         <div class="inline-block px-4 py-2 rounded-lg chat-bubble-content ai-bubble">${content}</div>
                     </div>
@@ -608,10 +621,10 @@ ${script}
             msgInput.value = '';
 
             const loadingDiv = document.createElement('div');
-            loadingDiv.className = 'flex mb-4 justify-start items-start gap-2 max-w-full overflow-hidden';
+            loadingDiv.className = 'flex mb-4 justify-start items-start gap-2 message-row';
             loadingDiv.innerHTML = `
                 <div class="msg-avatar">${agentAvatarUrl ? `<img src="${agentAvatarUrl}" class="avatar-img">` : (currentAgentName || 'AI').charAt(0)}</div>
-                <div class="max-w-[80%] min-w-0">
+                <div style="max-width: calc(100% - 48px); min-width: 0;">
                     <span class="msg-name-label">${currentAgentName}</span>
                     <div class="inline-block px-4 py-2 rounded-lg ai-bubble chat-bubble-content">思考中...</div>
                 </div>
