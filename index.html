@@ -7,17 +7,30 @@
     <link rel="manifest" href="manifest-chat.json">
     <link rel="apple-touch-icon" href="icon-192.png">
     <meta name="theme-color" content="#000000">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com">
+    </script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js">
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js">
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+    </script>
     <script>
         tailwind.config = {
-            theme: { extend: { colors: {
-                dark: '#000000', darker: '#121212', accent: '#165DFF',
-            }, fontFamily: { sans: ['Inter', 'sans-serif'] } } }
+            theme: {
+                extend: {
+                    colors: {
+                        dark: '#000000',
+                        darker: '#121212',
+                        accent: '#165DFF',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif']
+                    }
+                }
+            }
         }
     </script>
     <style>
@@ -28,13 +41,15 @@
             --ai-text-color: #FFFFFF;
             --safe-bottom: env(safe-area-inset-bottom, 0px);
         }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
-        html, body {
+        html,
+        body {
             width: 100%;
             height: 100%;
             overflow: hidden;
@@ -70,7 +85,7 @@
             flex: 1 1 auto;
             overflow-y: auto;
             min-height: 0;
-            padding-bottom: 16px;
+            padding-bottom: calc(72px + var(--safe-bottom)) !important;
         }
 
         /* 设置面板：全局抽屉式 */
@@ -89,7 +104,7 @@
             transition: transform 0.3s ease;
             overflow-y: auto;
             padding: 24px 16px;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.5);
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.5);
         }
 
         .left-set-panel.expand {
@@ -103,7 +118,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.6);
+            background: rgba(0, 0, 0, 0.6);
             z-index: 99;
             display: none;
         }
@@ -132,31 +147,68 @@
             display: none;
         }
 
-        /* 为固定输入栏留出底部空间 */
-        #chat-box {
-            padding-bottom: calc(72px + var(--safe-bottom)) !important;
+        /* 通用滚动条隐藏 */
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
         }
 
-        /* 通用滚动条隐藏 */
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide {
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
 
-        .avatar-img, .avatar-placeholder {
+        .avatar-img,
+        .avatar-placeholder {
             object-fit: cover;
             width: 100%;
             height: 100%;
             border-radius: 4px;
         }
 
-        /* 消息头像 - 关键修复：添加最小宽度和不可收缩 */
+        /* ===========================
+           聊天布局终极修复版
+           =========================== */
+        .message-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            width: 100%;
+            margin-bottom: 16px;
+        }
+
+        .user-row {
+            justify-content: flex-end;
+        }
+
+        .ai-row {
+            justify-content: flex-start;
+        }
+
+        .message-wrapper {
+            flex: 1 1 auto;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-wrapper {
+            max-width: 80%;
+            align-items: flex-end;
+        }
+
+        .ai-wrapper {
+            max-width: 80%;
+            align-items: flex-start;
+        }
+
         .msg-avatar {
             width: 32px;
             height: 32px;
-            min-width: 32px; /* 头像绝对不能小于32px */
-            flex-shrink: 0; /* 头像绝对不能被压缩 */
+            min-width: 32px;
+            min-height: 32px;
+            max-width: 32px;
+            max-height: 32px;
+            flex: 0 0 32px;
             border-radius: 6px;
             overflow: hidden;
             background: #1a1a1a;
@@ -168,16 +220,26 @@
         }
 
         .chat-bubble-content {
-            word-wrap: break-word;
-            word-break: break-all; /* 关键修复：强制在任意字符处换行 */
-            overflow-wrap: break-word; /* 双重保险 */
-            white-space: pre-wrap;
+            width: fit-content;
             max-width: 100%;
-            width: 100%; /* 关键修复：让气泡占据父容器全部宽度 */
-            overflow-wrap: break-word;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+            white-space: pre-wrap;
             overflow: hidden;
             font-size: var(--font-size);
             line-height: var(--line-height);
+        }
+
+        .katex {
+            max-width: 100%;
+            overflow-x: auto;
+            overflow-y: hidden;
+        }
+
+        .katex-display {
+            max-width: 100%;
+            overflow-x: auto;
+            overflow-y: hidden;
         }
 
         /* 气泡背景统一黑色，带细边框 */
@@ -186,21 +248,16 @@
             color: var(--user-text-color);
             border: 1px solid #333;
         }
+
         .ai-bubble {
             background-color: #000 !important;
             color: var(--ai-text-color);
             border: 1px solid #333;
         }
 
-        .katex {
-            font-size: var(--font-size);
-            line-height: var(--line-height);
-            max-width: 100%;
-            overflow-x: auto;
-            overflow-y: hidden;
+        .collapsible-settings {
+            display: none;
         }
-
-        .collapsible-settings { display: none; }
 
         .name-tag {
             cursor: pointer;
@@ -220,7 +277,9 @@
             margin-left: 4px;
         }
 
-        .name-tag:hover .fa-pencil { opacity: 0.7; }
+        .name-tag:hover .fa-pencil {
+            opacity: 0.7;
+        }
 
         .msg-name-label {
             font-size: 0.7em;
@@ -238,7 +297,7 @@
             width: 100%;
             height: 100%;
             z-index: 300;
-            background: rgba(0,0,0,0.75);
+            background: rgba(0, 0, 0, 0.75);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -254,564 +313,560 @@
             max-width: 380px;
         }
 
-        .chat-header, .chat-footer {
+        .chat-header,
+        .chat-footer {
             flex-shrink: 0;
-        }
-
-        /* 消息容器 - 关键修复：添加最大宽度限制 */
-        .message-container {
-            max-width: calc(100% - 40px); /* 给头像留出足够空间 */
-            flex-shrink: 1; /* 允许文字容器收缩 */
         }
     </style>
 </head>
 <body>
-<div class="layout-container">
-    <!-- 左侧抽屉设置面板 -->
-    <div class="left-set-panel" id="left-panel">
-        <button class="self-end text-gray-400 hover:text-white mb-4" id="close-drawer-btn">
-            <i class="fa fa-times fa-lg"></i>
-        </button>
-        <h1 class="text-xl font-bold mb-4">剧本/人设设置</h1>
-        <textarea class="w-full h-40 bg-dark border border-gray-800 rounded p-3 text-white outline-none resize-none mb-4" placeholder="输入剧本内容，AI会根据剧本回答问题&#10;支持格式：&#10;[red:文字] 红色&#10;[b:文字] 加粗&#10;[br] 换行" id="agent-prompt"></textarea>
+    <div class="layout-container">
+        <!-- 左侧抽屉设置面板 -->
+        <div class="left-set-panel" id="left-panel">
+            <button class="self-end text-gray-400 hover:text-white mb-4" id="close-drawer-btn">
+                <i class="fa fa-times fa-lg"></i>
+            </button>
+            <h1 class="text-xl font-bold mb-4">剧本/人设设置</h1>
+            <textarea class="w-full h-40 bg-dark border border-gray-800 rounded p-3 text-white outline-none resize-none mb-4" placeholder="输入剧本内容，AI会根据剧本回答问题&#10;支持格式：&#10;[red:文字] 红色&#10;[b:文字] 加粗&#10;[br] 换行" id="agent-prompt"></textarea>
 
-        <button class="w-full bg-gray-800 rounded p-2 mb-3 text-sm" id="toggle-settings">
-            <i class="fa fa-cog mr-1"></i> 展开头像/样式设置
-        </button>
-        <div class="collapsible-settings bg-dark border border-gray-800 rounded p-3 mb-3 space-y-3" id="collapsible-settings">
-            <div><h3 class="text-sm text-gray-400 mb-1">智能体名称</h3><input class="w-full bg-darker rounded p-2 text-white outline-none" id="agent-name-set"></div>
-            <div><h3 class="text-sm text-gray-400 mb-1">智能体头像</h3><button class="w-full bg-accent/20 rounded p-2 text-sm mb-2" id="agent-avatar-upload">上传头像</button><input type="file" id="agent-avatar-file" class="hidden" accept="image/*"><div id="agent-avatar-preview" class="w-14 h-14 bg-accent/20 flex items-center justify-center overflow-hidden rounded-lg mx-auto"><span>预览</span></div></div>
-            <div class="border-t border-gray-700 pt-3"><h3 class="text-sm text-gray-400 mb-1">你的名称</h3><input class="w-full bg-darker rounded p-2 text-white outline-none" id="user-name"></div>
-            <div><h3 class="text-sm text-gray-400 mb-1">你的头像</h3><button class="w-full bg-accent/20 rounded p-2 text-sm mb-2" id="user-avatar-upload">上传头像</button><input type="file" id="user-avatar-file" class="hidden" accept="image/*"><div id="user-avatar-preview" class="w-14 h-14 bg-accent/20 flex items-center justify-center overflow-hidden rounded-lg mx-auto"><span>预览</span></div></div>
-            <div class="border-t border-gray-700 pt-3"><h3 class="text-sm text-gray-400 mb-1">API Key（AI模式已通过代理调用）</h3><input type="password" class="w-full bg-darker rounded p-2 text-white outline-none" id="api-key" placeholder="无需填写" disabled><p class="text-xs text-gray-500 mt-1">已通过 Supabase Edge Function 安全调用 DeepSeek API</p></div>
-            <div class="border-t border-gray-700 pt-3"><h3 class="text-sm text-gray-400 mb-2">样式</h3>
-                <div class="grid grid-cols-2 gap-2 mb-2"><div><label class="text-xs text-gray-400">字体大小</label><input type="number" id="font-size" value="16" class="w-full bg-darker rounded p-2 text-white"></div><div><label class="text-xs text-gray-400">行间距</label><input type="number" id="line-height" value="1.6" step="0.1" class="w-full bg-darker rounded p-2 text-white"></div></div>
-                <div class="grid grid-cols-2 gap-2"><div><label class="text-xs text-gray-400">我的文字</label><input type="color" id="user-text-color" value="#FFFFFF" class="w-full h-8"></div><div><label class="text-xs text-gray-400">AI文字</label><input type="color" id="ai-text-color" value="#FFFFFF" class="w-full h-8"></div></div>
+            <button class="w-full bg-gray-800 rounded p-2 mb-3 text-sm" id="toggle-settings">
+                <i class="fa fa-cog mr-1"></i> 展开头像/样式设置
+            </button>
+            <div class="collapsible-settings bg-dark border border-gray-800 rounded p-3 mb-3 space-y-3" id="collapsible-settings">
+                <div><h3 class="text-sm text-gray-400 mb-1">智能体名称</h3><input class="w-full bg-darker rounded p-2 text-white outline-none" id="agent-name-set"></div>
+                <div><h3 class="text-sm text-gray-400 mb-1">智能体头像</h3><button class="w-full bg-accent/20 rounded p-2 text-sm mb-2" id="agent-avatar-upload">上传头像</button><input type="file" id="agent-avatar-file" class="hidden" accept="image/*"><div id="agent-avatar-preview" class="w-14 h-14 bg-accent/20 flex items-center justify-center overflow-hidden rounded-lg mx-auto"><span>预览</span></div></div>
+                <div class="border-t border-gray-700 pt-3"><h3 class="text-sm text-gray-400 mb-1">你的名称</h3><input class="w-full bg-darker rounded p-2 text-white outline-none" id="user-name"></div>
+                <div><h3 class="text-sm text-gray-400 mb-1">你的头像</h3><button class="w-full bg-accent/20 rounded p-2 text-sm mb-2" id="user-avatar-upload">上传头像</button><input type="file" id="user-avatar-file" class="hidden" accept="image/*"><div id="user-avatar-preview" class="w-14 h-14 bg-accent/20 flex items-center justify-center overflow-hidden rounded-lg mx-auto"><span>预览</span></div></div>
+                <div class="border-t border-gray-700 pt-3"><h3 class="text-sm text-gray-400 mb-1">API Key（AI模式已通过代理调用）</h3><input type="password" class="w-full bg-darker rounded p-2 text-white outline-none" id="api-key" placeholder="无需填写" disabled><p class="text-xs text-gray-500 mt-1">已通过 Supabase Edge Function 安全调用 DeepSeek API</p></div>
+                <div class="border-t border-gray-700 pt-3"><h3 class="text-sm text-gray-400 mb-2">样式</h3>
+                    <div class="grid grid-cols-2 gap-2 mb-2"><div><label class="text-xs text-gray-400">字体大小</label><input type="number" id="font-size" value="16" class="w-full bg-darker rounded p-2 text-white"></div><div><label class="text-xs text-gray-400">行间距</label><input type="number" id="line-height" value="1.6" step="0.1" class="w-full bg-darker rounded p-2 text-white"></div></div>
+                    <div class="grid grid-cols-2 gap-2"><div><label class="text-xs text-gray-400">我的文字</label><input type="color" id="user-text-color" value="#FFFFFF" class="w-full h-8"></div><div><label class="text-xs text-gray-400">AI文字</label><input type="color" id="ai-text-color" value="#FFFFFF" class="w-full h-8"></div></div>
+                </div>
             </div>
-        </div>
-        <button class="w-full bg-accent rounded p-3" id="save-set">保存所有设置</button>
-        <p class="text-xs text-gray-500 mt-2 text-center">数据自动云端同步，多端一致</p>
-    </div>
-
-    <!-- 遮罩层 -->
-    <div class="drawer-overlay" id="drawer-overlay"></div>
-
-    <!-- 聊天全屏面板 -->
-    <div class="chat-main-panel bg-dark">
-        <!-- 头部区域 -->
-        <div class="chat-header p-3 border-b border-gray-800 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <div id="agent-avatar" class="w-10 h-10 bg-accent/20 flex items-center justify-center overflow-hidden rounded-lg"><span class="avatar-placeholder">AI</span></div>
-                <div><span class="text-xs text-gray-500">AI</span><span id="agent-name-display" class="font-medium name-tag text-white">剧本助手 <i class="fa fa-pencil"></i></span></div>
-            </div>
-            <div class="flex items-center gap-2">
-                <span id="user-name-display" class="hidden sm:flex font-medium name-tag text-gray-300 text-sm">我 <i class="fa fa-pencil"></i></span>
-                <button class="text-gray-400 hover:text-white" id="phone-open-set"><i class="fa fa-bars"></i></button>
-                <button class="text-gray-400 hover:text-white" id="reset-script">重置剧本</button>
-                <button class="text-gray-400 hover:text-white" id="clear-chat">清空</button>
-            </div>
+            <button class="w-full bg-accent rounded p-3" id="save-set">保存所有设置</button>
+            <p class="text-xs text-gray-500 mt-2 text-center">数据自动云端同步，多端一致</p>
         </div>
 
-        <!-- 消息滚动区 -->
-        <div class="flex-1 overflow-y-auto scrollbar-hide p-4" id="chat-box"></div>
-    </div>
-</div>
+        <!-- 遮罩层 -->
+        <div class="drawer-overlay" id="drawer-overlay"></div>
 
-<!-- 统一输入栏（固定在底部） -->
-<div class="mobile-input-bar" id="mobile-input-area">
-    <input type="text" placeholder="输入消息..." class="flex-1 bg-darker border border-gray-800 rounded-lg p-3 text-white outline-none" id="msg-input">
-    <button class="bg-accent px-5 rounded-lg" id="send-btn"><i class="fa fa-paper-plane"></i></button>
-</div>
+        <!-- 聊天全屏面板 -->
+        <div class="chat-main-panel bg-dark">
+            <!-- 头部区域 -->
+            <div class="chat-header p-3 border-b border-gray-800 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div id="agent-avatar" class="w-10 h-10 bg-accent/20 flex items-center justify-center overflow-hidden rounded-lg"><span class="avatar-placeholder">AI</span></div>
+                    <div><span class="text-xs text-gray-500">AI</span><span id="agent-name-display" class="font-medium name-tag text-white">剧本助手 <i class="fa fa-pencil"></i></span></div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span id="user-name-display" class="hidden sm:flex font-medium name-tag text-gray-300 text-sm">我 <i class="fa fa-pencil"></i></span>
+                    <button class="text-gray-400 hover:text-white" id="phone-open-set"><i class="fa fa-bars"></i></button>
+                    <button class="text-gray-400 hover:text-white" id="reset-script">重置剧本</button>
+                    <button class="text-gray-400 hover:text-white" id="clear-chat">清空</button>
+                </div>
+            </div>
 
-<!-- 名称编辑弹窗 -->
-<div id="name-edit-modal" class="name-edit-modal">
-    <div class="name-edit-dialog">
-        <h3 class="text-lg font-bold mb-1" id="name-edit-title"></h3>
-        <p class="text-sm text-gray-400 mb-4" id="name-edit-subtitle"></p>
-        <input type="text" id="name-edit-input" class="w-full bg-dark border border-gray-700 rounded-lg p-3 text-white mb-4" placeholder="输入名称">
-        <div class="flex gap-2 justify-end">
-            <button class="px-4 py-2 bg-gray-700 rounded-lg" id="name-edit-cancel">取消</button>
-            <button class="px-4 py-2 bg-accent rounded-lg" id="name-edit-confirm">确认修改</button>
+            <!-- 消息滚动区 -->
+            <div class="flex-1 overflow-y-auto scrollbar-hide p-4" id="chat-box"></div>
         </div>
     </div>
-</div>
 
-<script>
-    (function() {
-        const SUPABASE_URL = 'https://vkeaimeytsymepgkizqk.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_R66fP0xmbxUZTeu7kjQYjQ_FHdXlRvm';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        const AI_PROXY_URL = 'https://vkeaimeytsymepgkizqk.supabase.co/functions/v1/swift-api';
+    <!-- 统一输入栏（固定在底部） -->
+    <div class="mobile-input-bar" id="mobile-input-area">
+        <input type="text" placeholder="输入消息..." class="flex-1 bg-darker border border-gray-800 rounded-lg p-3 text-white outline-none" id="msg-input">
+        <button class="bg-accent px-5 rounded-lg" id="send-btn"><i class="fa fa-paper-plane"></i></button>
+    </div>
 
-        const chatBox = document.getElementById('chat-box');
-        const msgInput = document.getElementById('msg-input');
-        const sendBtn = document.getElementById('send-btn');
-        const clearBtn = document.getElementById('clear-chat');
-        const resetScriptBtn = document.getElementById('reset-script');
-        const leftPanel = document.getElementById('left-panel');
-        const phoneOpenSet = document.getElementById('phone-open-set');
-        const closeDrawerBtn = document.getElementById('close-drawer-btn');
-        const drawerOverlay = document.getElementById('drawer-overlay');
-        const toggleSettingsBtn = document.getElementById('toggle-settings');
-        const collapsibleSettings = document.getElementById('collapsible-settings');
-        const agentPrompt = document.getElementById('agent-prompt');
-        const agentNameSet = document.getElementById('agent-name-set');
-        const userNameInput = document.getElementById('user-name');
-        const saveSetBtn = document.getElementById('save-set');
-        const agentAvatarUpload = document.getElementById('agent-avatar-upload');
-        const agentAvatarFile = document.getElementById('agent-avatar-file');
-        const agentAvatarPreview = document.getElementById('agent-avatar-preview');
-        const userAvatarUpload = document.getElementById('user-avatar-upload');
-        const userAvatarFile = document.getElementById('user-avatar-file');
-        const userAvatarPreview = document.getElementById('user-avatar-preview');
-        const fontSizeInput = document.getElementById('font-size');
-        const lineHeightInput = document.getElementById('line-height');
-        const userTextColor = document.getElementById('user-text-color');
-        const aiTextColor = document.getElementById('ai-text-color');
-        const agentNameDisplay = document.getElementById('agent-name-display');
-        const userNameDisplay = document.getElementById('user-name-display');
-        const agentAvatarDiv = document.getElementById('agent-avatar');
-        const nameEditModal = document.getElementById('name-edit-modal');
-        const nameEditTitle = document.getElementById('name-edit-title');
-        const nameEditSubtitle = document.getElementById('name-edit-subtitle');
-        const nameEditInput = document.getElementById('name-edit-input');
-        const nameEditCancel = document.getElementById('name-edit-cancel');
-        const nameEditConfirm = document.getElementById('name-edit-confirm');
+    <!-- 名称编辑弹窗 -->
+    <div id="name-edit-modal" class="name-edit-modal">
+        <div class="name-edit-dialog">
+            <h3 class="text-lg font-bold mb-1" id="name-edit-title"></h3>
+            <p class="text-sm text-gray-400 mb-4" id="name-edit-subtitle"></p>
+            <input type="text" id="name-edit-input" class="w-full bg-dark border border-gray-700 rounded-lg p-3 text-white mb-4" placeholder="输入名称">
+            <div class="flex gap-2 justify-end">
+                <button class="px-4 py-2 bg-gray-700 rounded-lg" id="name-edit-cancel">取消</button>
+                <button class="px-4 py-2 bg-accent rounded-lg" id="name-edit-confirm">确认修改</button>
+            </div>
+        </div>
+    </div>
 
-        let currentAgentName = '剧本助手';
-        let currentUserName = '我';
-        let agentAvatarUrl = '';
-        let userAvatarUrl = '';
-        let currentEditTarget = null;
-        let messages = [];
+    <script>
+        (function() {
+            const SUPABASE_URL = 'https://vkeaimeytsymepgkizqk.supabase.co';
+            const SUPABASE_ANON_KEY = 'sb_publishable_R66fP0xmbxUZTeu7kjQYjQ_FHdXlRvm';
+            const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            const AI_PROXY_URL = 'https://vkeaimeytsymepgkizqk.supabase.co/functions/v1/swift-api';
 
-        // 本地存储键名
-        const MESSAGES_STORAGE_KEY = 'chat-messages';
+            const chatBox = document.getElementById('chat-box');
+            const msgInput = document.getElementById('msg-input');
+            const sendBtn = document.getElementById('send-btn');
+            const clearBtn = document.getElementById('clear-chat');
+            const resetScriptBtn = document.getElementById('reset-script');
+            const leftPanel = document.getElementById('left-panel');
+            const phoneOpenSet = document.getElementById('phone-open-set');
+            const closeDrawerBtn = document.getElementById('close-drawer-btn');
+            const drawerOverlay = document.getElementById('drawer-overlay');
+            const toggleSettingsBtn = document.getElementById('toggle-settings');
+            const collapsibleSettings = document.getElementById('collapsible-settings');
+            const agentPrompt = document.getElementById('agent-prompt');
+            const agentNameSet = document.getElementById('agent-name-set');
+            const userNameInput = document.getElementById('user-name');
+            const saveSetBtn = document.getElementById('save-set');
+            const agentAvatarUpload = document.getElementById('agent-avatar-upload');
+            const agentAvatarFile = document.getElementById('agent-avatar-file');
+            const agentAvatarPreview = document.getElementById('agent-avatar-preview');
+            const userAvatarUpload = document.getElementById('user-avatar-upload');
+            const userAvatarFile = document.getElementById('user-avatar-file');
+            const userAvatarPreview = document.getElementById('user-avatar-preview');
+            const fontSizeInput = document.getElementById('font-size');
+            const lineHeightInput = document.getElementById('line-height');
+            const userTextColor = document.getElementById('user-text-color');
+            const aiTextColor = document.getElementById('ai-text-color');
+            const agentNameDisplay = document.getElementById('agent-name-display');
+            const userNameDisplay = document.getElementById('user-name-display');
+            const agentAvatarDiv = document.getElementById('agent-avatar');
+            const nameEditModal = document.getElementById('name-edit-modal');
+            const nameEditTitle = document.getElementById('name-edit-title');
+            const nameEditSubtitle = document.getElementById('name-edit-subtitle');
+            const nameEditInput = document.getElementById('name-edit-input');
+            const nameEditCancel = document.getElementById('name-edit-cancel');
+            const nameEditConfirm = document.getElementById('name-edit-confirm');
 
-        function openDrawer() {
-            leftPanel.classList.add('expand');
-            drawerOverlay.classList.add('show');
-        }
-        function closeDrawer() {
-            leftPanel.classList.remove('expand');
-            drawerOverlay.classList.remove('show');
-        }
-        phoneOpenSet.addEventListener('click', openDrawer);
-        closeDrawerBtn.addEventListener('click', closeDrawer);
-        drawerOverlay.addEventListener('click', closeDrawer);
+            let currentAgentName = '剧本助手';
+            let currentUserName = '我';
+            let agentAvatarUrl = '';
+            let userAvatarUrl = '';
+            let currentEditTarget = null;
+            let messages = [];
 
-        function updateCSSVariables() {
-            document.documentElement.style.setProperty('--font-size', fontSizeInput.value + 'px');
-            document.documentElement.style.setProperty('--line-height', lineHeightInput.value);
-            document.documentElement.style.setProperty('--user-text-color', userTextColor.value);
-            document.documentElement.style.setProperty('--ai-text-color', aiTextColor.value);
-        }
+            const MESSAGES_STORAGE_KEY = 'chat-messages';
 
-        function renderLatex(element) {
-            try {
-                renderMathInElement(element, {
-                    delimiters: [
-                        {left: '$$', right: '$$', display: true},
-                        {left: '$', right: '$', display: false},
-                        {left: '\\(', right: '\\)', display: false},
-                        {left: '\\[', right: '\\]', display: true}
-                    ],
-                    throwOnError: false
-                });
-            } catch(e) {}
-        }
-
-        function updateNameDisplays() {
-            agentNameDisplay.innerHTML = `${currentAgentName} <i class="fa fa-pencil"></i>`;
-            userNameDisplay.innerHTML = `${currentUserName} <i class="fa fa-pencil"></i>`;
-        }
-
-        function updateAgentAvatarDisplay() {
-            agentAvatarDiv.innerHTML = agentAvatarUrl
-                ? `<img src="${agentAvatarUrl}" class="avatar-img" alt="agent avatar">`
-                : '<span class="avatar-placeholder">AI</span>';
-        }
-
-        function openNameEditor(target) {
-            currentEditTarget = target;
-            if (target === 'agent') {
-                nameEditTitle.textContent = '修改智能体名称';
-                nameEditSubtitle.textContent = '输入新的名称';
-                nameEditInput.value = currentAgentName;
-            } else {
-                nameEditTitle.textContent = '修改你的名称';
-                nameEditSubtitle.textContent = '输入你的称呼';
-                nameEditInput.value = currentUserName;
+            function openDrawer() {
+                leftPanel.classList.add('expand');
+                drawerOverlay.classList.add('show');
             }
-            nameEditModal.style.display = 'flex';
-            nameEditInput.focus();
-        }
-        function closeNameEditor() {
-            nameEditModal.style.display = 'none';
-            currentEditTarget = null;
-        }
 
-        // 保存消息到本地存储
-        function saveMessagesToLocal() {
-            try {
-                localStorage.setItem(MESSAGES_STORAGE_KEY, JSON.stringify(messages));
-            } catch (e) {
-                console.warn('无法保存聊天记录到本地', e);
+            function closeDrawer() {
+                leftPanel.classList.remove('expand');
+                drawerOverlay.classList.remove('show');
             }
-        }
+            phoneOpenSet.addEventListener('click', openDrawer);
+            closeDrawerBtn.addEventListener('click', closeDrawer);
+            drawerOverlay.addEventListener('click', closeDrawer);
 
-        // 从本地存储加载消息
-        function loadMessagesFromLocal() {
-            try {
-                const saved = localStorage.getItem(MESSAGES_STORAGE_KEY);
-                if (saved) {
-                    const parsed = JSON.parse(saved);
-                    if (Array.isArray(parsed)) {
-                        messages = parsed;
-                    }
+            function updateCSSVariables() {
+                document.documentElement.style.setProperty('--font-size', fontSizeInput.value + 'px');
+                document.documentElement.style.setProperty('--line-height', lineHeightInput.value);
+                document.documentElement.style.setProperty('--user-text-color', userTextColor.value);
+                document.documentElement.style.setProperty('--ai-text-color', aiTextColor.value);
+            }
+
+            function renderLatex(element) {
+                try {
+                    renderMathInElement(element, {
+                        delimiters: [
+                            { left: '$$', right: '$$', display: true },
+                            { left: '$', right: '$', display: false },
+                            { left: '\\(', right: '\\)', display: false },
+                            { left: '\\[', right: '\\]', display: true }
+                        ],
+                        throwOnError: false
+                    });
+                } catch (e) {}
+            }
+
+            function updateNameDisplays() {
+                agentNameDisplay.innerHTML = `${currentAgentName} <i class="fa fa-pencil"></i>`;
+                userNameDisplay.innerHTML = `${currentUserName} <i class="fa fa-pencil"></i>`;
+            }
+
+            function updateAgentAvatarDisplay() {
+                agentAvatarDiv.innerHTML = agentAvatarUrl ?
+                    `<img src="${agentAvatarUrl}" class="avatar-img" alt="agent avatar">` :
+                    '<span class="avatar-placeholder">AI</span>';
+            }
+
+            function openNameEditor(target) {
+                currentEditTarget = target;
+                if (target === 'agent') {
+                    nameEditTitle.textContent = '修改智能体名称';
+                    nameEditSubtitle.textContent = '输入新的名称';
+                    nameEditInput.value = currentAgentName;
+                } else {
+                    nameEditTitle.textContent = '修改你的名称';
+                    nameEditSubtitle.textContent = '输入你的称呼';
+                    nameEditInput.value = currentUserName;
                 }
-            } catch (e) {
-                messages = [];
+                nameEditModal.style.display = 'flex';
+                nameEditInput.focus();
             }
-        }
 
-        // 渲染历史消息（无动画）
-        function renderStoredMessages() {
-            chatBox.innerHTML = '';
-            messages.forEach(msg => {
-                addMessageToDOM(msg.role, msg.content, false);
-            });
-            if (messages.length === 0) {
-                addMessageToDOM('assistant', '欢迎使用剧本智能助手！点击左上角按钮设置剧本。', false);
+            function closeNameEditor() {
+                nameEditModal.style.display = 'none';
+                currentEditTarget = null;
             }
-        }
 
-        // 打字机效果（仅用于新AI回复）
-        function typewriterEffect(fullText, msgElement) {
-            const bubble = msgElement.querySelector('.chat-bubble-content');
-            let index = 0;
-            bubble.innerHTML = '';
-            const interval = setInterval(() => {
-                if (index < fullText.length) {
-                    if (fullText.charAt(index) === '<') {
-                        const endIndex = fullText.indexOf('>', index);
-                        if (endIndex !== -1) {
-                            bubble.innerHTML += fullText.substring(index, endIndex + 1);
-                            index = endIndex + 1;
+            function saveMessagesToLocal() {
+                try {
+                    localStorage.setItem(MESSAGES_STORAGE_KEY, JSON.stringify(messages));
+                } catch (e) {
+                    console.warn('无法保存聊天记录到本地', e);
+                }
+            }
+
+            function loadMessagesFromLocal() {
+                try {
+                    const saved = localStorage.getItem(MESSAGES_STORAGE_KEY);
+                    if (saved) {
+                        const parsed = JSON.parse(saved);
+                        if (Array.isArray(parsed)) {
+                            messages = parsed;
+                        }
+                    }
+                } catch (e) {
+                    messages = [];
+                }
+            }
+
+            function renderStoredMessages() {
+                chatBox.innerHTML = '';
+                messages.forEach(msg => {
+                    addMessageToDOM(msg.role, msg.content, false);
+                });
+                if (messages.length === 0) {
+                    addMessageToDOM('assistant', '欢迎使用剧本智能助手！点击左上角按钮设置剧本。', false);
+                }
+            }
+
+            function typewriterEffect(fullText, msgElement) {
+                const bubble = msgElement.querySelector('.chat-bubble-content');
+                if (!bubble) return;
+                let index = 0;
+                bubble.innerHTML = '';
+                const interval = setInterval(() => {
+                    if (index < fullText.length) {
+                        if (fullText.charAt(index) === '<') {
+                            const endIndex = fullText.indexOf('>', index);
+                            if (endIndex !== -1) {
+                                bubble.innerHTML += fullText.substring(index, endIndex + 1);
+                                index = endIndex + 1;
+                            } else {
+                                bubble.innerHTML += fullText.charAt(index);
+                                index++;
+                            }
                         } else {
                             bubble.innerHTML += fullText.charAt(index);
                             index++;
                         }
+                        chatBox.scrollTop = chatBox.scrollHeight;
+                        renderLatex(msgElement);
                     } else {
-                        bubble.innerHTML += fullText.charAt(index);
-                        index++;
+                        clearInterval(interval);
+                        const lastMsg = messages[messages.length - 1];
+                        if (lastMsg && lastMsg.role === 'assistant') lastMsg.content = fullText;
+                        saveMessagesToLocal();
+                        chatBox.scrollTop = chatBox.scrollHeight;
                     }
-                    chatBox.scrollTop = chatBox.scrollHeight;
-                    renderLatex(msgElement);
+                }, 30);
+            }
+
+            function addMessageToDOM(role, content, animate = false) {
+                const isUser = role === 'user';
+                const avatarSrc = isUser ? userAvatarUrl : agentAvatarUrl;
+                const avatarInitial = isUser ? (currentUserName || '我').charAt(0) : (currentAgentName || 'AI').charAt(
+                    0);
+                const senderName = isUser ? currentUserName : currentAgentName;
+
+                const div = document.createElement('div');
+                div.className = `message-row ${isUser ? 'user-row' : 'ai-row'}`;
+
+                const avatarHTML = avatarSrc ?
+                    `<img src="${avatarSrc}" class="avatar-img" alt="avatar">` :
+                    `<span>${avatarInitial}</span>`;
+
+                if (isUser) {
+                    div.innerHTML = `
+                        <div class="message-wrapper user-wrapper">
+                            <span class="msg-name-label text-right">${senderName}</span>
+                            <div class="chat-bubble-content user-bubble">${content}</div>
+                        </div>
+                        <div class="msg-avatar">${avatarHTML}</div>
+                    `;
                 } else {
-                    clearInterval(interval);
-                    const lastMsg = messages[messages.length-1];
-                    if (lastMsg && lastMsg.role === 'assistant') lastMsg.content = fullText;
-                    saveMessagesToLocal();
+                    div.innerHTML = `
+                        <div class="msg-avatar">${avatarHTML}</div>
+                        <div class="message-wrapper ai-wrapper">
+                            <span class="msg-name-label">${senderName}</span>
+                            <div class="chat-bubble-content ai-bubble">${content}</div>
+                        </div>
+                    `;
+                }
+
+                chatBox.appendChild(div);
+
+                if (role === 'assistant' && animate) {
+                    typewriterEffect(content, div);
+                } else {
+                    renderLatex(div);
                     chatBox.scrollTop = chatBox.scrollHeight;
                 }
-            }, 30);
-        }
-
-        // 核心：向DOM添加消息（不操作messages数组）
-        function addMessageToDOM(role, content, animate = false) {
-            const isUser = role === 'user';
-            const avatarSrc = isUser ? userAvatarUrl : agentAvatarUrl;
-            const avatarInitial = isUser ? (currentUserName || '我').charAt(0) : (currentAgentName || 'AI').charAt(0);
-            const senderName = isUser ? currentUserName : currentAgentName;
-
-            const div = document.createElement('div');
-            // 关键修复：保持items-start保证头像始终在顶部
-            div.className = `flex mb-4 ${isUser ? 'justify-end' : 'justify-start'} items-start gap-2`;
-
-            const avatarHTML = avatarSrc
-                ? `<img src="${avatarSrc}" class="avatar-img" alt="avatar">`
-                : `<span>${avatarInitial}</span>`;
-
-            if (isUser) {
-                div.innerHTML = `
-                    <div class="message-container">
-                        <span class="msg-name-label text-right">${senderName}</span>
-                        <div class="px-4 py-2 rounded-lg chat-bubble-content user-bubble">${content}</div>
-                    </div>
-                    <div class="msg-avatar">${avatarHTML}</div>
-                `;
-            } else {
-                div.innerHTML = `
-                    <div class="msg-avatar">${avatarHTML}</div>
-                    <div class="message-container">
-                        <span class="msg-name-label">${senderName}</span>
-                        <div class="px-4 py-2 rounded-lg chat-bubble-content ai-bubble">${content}</div>
-                    </div>
-                `;
+                return div;
             }
 
-            chatBox.appendChild(div);
+            function addMessage(role, content, animate = false) {
+                const msg = { role, content };
+                messages.push(msg);
+                saveMessagesToLocal();
+                addMessageToDOM(role, content, animate);
+            }
 
-            if (role === 'assistant' && animate) {
-                typewriterEffect(content, div);
-            } else {
-                renderLatex(div);
+            function parseScriptFormat(text) {
+                let result = text;
+                result = result.replace(/\[red:(.*?)\]/g, '<span style="color: #ff4444">$1</span>');
+                result = result.replace(/\[b:(.*?)\]/g, '<strong>$1</strong>');
+                result = result.replace(/\[br\]/g, '<br>');
+                return result;
+            }
+
+            async function getAIResponse(userMessage) {
+                const script = agentPrompt.value.trim();
+                if (!script) return "请先在左侧设置中填写剧本内容。";
+
+                const systemPrompt = `
+        你是一个严格按照剧本回答问题的助手。
+        ?? 绝对规则：
+        1. 所有回答只能来自下面的剧本内容，绝对不能编造任何剧本里没有的信息。
+        2. 如果用户的问题剧本里没有答案，只说"这个我暂时不知道哦"。
+        3. 剧本里的[red:文字]、[b:文字]、[br]这些格式标记必须原封不动保留。
+        4. 不要加任何剧本以外的解释或客套话。
+
+        --- 剧本开始 ---
+        ${script}
+        --- 剧本结束 ---
+        `;
+
+                try {
+                    const response = await fetch(AI_PROXY_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            messages: [
+                                { role: 'system', content: systemPrompt },
+                                { role: 'user', content: userMessage }
+                            ],
+                        }),
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error?.message || '请求失败');
+                    }
+
+                    const data = await response.json();
+                    return parseScriptFormat(data.choices[0].message.content.trim());
+                } catch (error) {
+                    return `?? AI 模式出错：${error.message}<br>请检查 Supabase Edge Function 是否部署正常。`;
+                }
+            }
+
+            async function sendMessage() {
+                const value = msgInput.value.trim();
+                if (!value) return;
+                addMessage('user', value);
+                msgInput.value = '';
+
+                const loadingDiv = document.createElement('div');
+                loadingDiv.className = 'message-row ai-row';
+                loadingDiv.innerHTML = `
+                    <div class="msg-avatar">
+                        ${agentAvatarUrl ? `<img src="${agentAvatarUrl}" class="avatar-img">` : (currentAgentName || 'AI').charAt(0)}
+                    </div>
+                    <div class="message-wrapper ai-wrapper">
+                        <span class="msg-name-label">${currentAgentName}</span>
+                        <div class="chat-bubble-content ai-bubble">思考中...</div>
+                    </div>
+                `;
+                chatBox.appendChild(loadingDiv);
                 chatBox.scrollTop = chatBox.scrollHeight;
-            }
-            return div;
-        }
 
-        // 添加新消息（同时更新messages数组并保存）
-        function addMessage(role, content, animate = false) {
-            const msg = { role, content };
-            messages.push(msg);
-            saveMessagesToLocal();
-            addMessageToDOM(role, content, animate);
-        }
-
-        function parseScriptFormat(text) {
-            let result = text;
-            result = result.replace(/\[red:(.*?)\]/g, '<span style="color: #ff4444">$1</span>');
-            result = result.replace(/\[b:(.*?)\]/g, '<strong>$1</strong>');
-            result = result.replace(/\[br\]/g, '<br>');
-            return result;
-        }
-
-        async function getAIResponse(userMessage) {
-            const script = agentPrompt.value.trim();
-            if (!script) return "请先在左侧设置中填写剧本内容。";
-
-            const systemPrompt = `
-你是一个严格按照剧本回答问题的助手。
-⚠️ 绝对规则：
-1. 所有回答只能来自下面的剧本内容，绝对不能编造任何剧本里没有的信息。
-2. 如果用户的问题剧本里没有答案，只说"这个我暂时不知道哦"。
-3. 剧本里的[red:文字]、[b:文字]、[br]这些格式标记必须原封不动保留。
-4. 不要加任何剧本以外的解释或客套话。
-
---- 剧本开始 ---
-${script}
---- 剧本结束 ---
-`;
-
-            try {
-                const response = await fetch(AI_PROXY_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        messages: [
-                            { role: 'system', content: systemPrompt },
-                            { role: 'user', content: userMessage }
-                        ],
-                    }),
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error?.message || '请求失败');
+                const reply = await getAIResponse(value);
+                if (chatBox.contains(loadingDiv)) {
+                    chatBox.removeChild(loadingDiv);
                 }
-
-                const data = await response.json();
-                return parseScriptFormat(data.choices[0].message.content.trim());
-            } catch (error) {
-                return `⚠️ AI 模式出错：${error.message}<br>请检查 Supabase Edge Function 是否部署正常。`;
+                addMessage('assistant', reply, true);
             }
-        }
 
-        async function sendMessage() {
-            const value = msgInput.value.trim();
-            if (!value) return;
-            addMessage('user', value);
-            msgInput.value = '';
-
-            // 加载提示
-            const loadingDiv = document.createElement('div');
-            // 同样使用 items-start
-            loadingDiv.className = 'flex mb-4 justify-start items-start gap-2';
-            loadingDiv.innerHTML = `
-                <div class="msg-avatar">${agentAvatarUrl ? `<img src="${agentAvatarUrl}" class="avatar-img">` : (currentAgentName || 'AI').charAt(0)}</div>
-                <div class="message-container">
-                    <span class="msg-name-label">${currentAgentName}</span>
-                    <div class="px-4 py-2 rounded-lg ai-bubble chat-bubble-content">思考中...</div>
-                </div>
-            `;
-            chatBox.appendChild(loadingDiv);
-            chatBox.scrollTop = chatBox.scrollHeight;
-
-            const reply = await getAIResponse(value);
-            if (chatBox.contains(loadingDiv)) {
-                chatBox.removeChild(loadingDiv);
+            function clearChat() {
+                messages = [];
+                saveMessagesToLocal();
+                chatBox.innerHTML = '';
+                addMessage('assistant', '聊天记录已清空。');
             }
-            addMessage('assistant', reply, true);
-        }
 
-        function clearChat() {
-            messages = [];
-            saveMessagesToLocal();
-            chatBox.innerHTML = '';
-            addMessage('assistant', '聊天记录已清空。');
-        }
+            function resetScript() {
+                clearChat();
+                addMessage('assistant', '? 剧本已重置，可以重新开始。');
+            }
 
-        function resetScript() {
-            clearChat();
-            addMessage('assistant', '✅ 剧本已重置，可以重新开始。');
-        }
+            const SETTINGS_TABLE = 'user_settings';
+            const SETTINGS_ID = 'default';
 
-        // Supabase 同步设置
-        const SETTINGS_TABLE = 'user_settings';
-        const SETTINGS_ID = 'default';
-
-        async function loadSettingsFromCloud() {
-            try {
-                const { data, error } = await supabase
-                    .from(SETTINGS_TABLE)
-                    .select('*')
-                    .eq('id', SETTINGS_ID)
-                    .single();
-                if (error) throw error;
-                if (data) {
-                    if (data.agent_prompt) agentPrompt.value = data.agent_prompt;
-                    if (data.agent_name) { currentAgentName = data.agent_name; agentNameSet.value = data.agent_name; }
-                    if (data.user_name) { currentUserName = data.user_name; userNameInput.value = data.user_name; }
-                    if (data.agent_avatar_url) { agentAvatarUrl = data.agent_avatar_url; updateAgentAvatarDisplay(); }
-                    if (data.user_avatar_url) userAvatarUrl = data.user_avatar_url;
-                    if (data.font_size) fontSizeInput.value = data.font_size;
-                    if (data.line_height) lineHeightInput.value = data.line_height;
-                    if (data.user_text_color) userTextColor.value = data.user_text_color;
-                    if (data.ai_text_color) aiTextColor.value = data.ai_text_color;
-                    updateNameDisplays();
-                    updateCSSVariables();
+            async function loadSettingsFromCloud() {
+                try {
+                    const { data, error } = await supabase
+                        .from(SETTINGS_TABLE)
+                        .select('*')
+                        .eq('id', SETTINGS_ID)
+                        .single();
+                    if (error) throw error;
+                    if (data) {
+                        if (data.agent_prompt) agentPrompt.value = data.agent_prompt;
+                        if (data.agent_name) { currentAgentName = data.agent_name;
+                            agentNameSet.value = data.agent_name; }
+                        if (data.user_name) { currentUserName = data.user_name;
+                            userNameInput.value = data.user_name; }
+                        if (data.agent_avatar_url) { agentAvatarUrl = data.agent_avatar_url;
+                            updateAgentAvatarDisplay(); }
+                        if (data.user_avatar_url) userAvatarUrl = data.user_avatar_url;
+                        if (data.font_size) fontSizeInput.value = data.font_size;
+                        if (data.line_height) lineHeightInput.value = data.line_height;
+                        if (data.user_text_color) userTextColor.value = data.user_text_color;
+                        if (data.ai_text_color) aiTextColor.value = data.ai_text_color;
+                        updateNameDisplays();
+                        updateCSSVariables();
+                    }
+                } catch (err) {
+                    loadSettingsFromLocal();
                 }
-            } catch (err) {
-                loadSettingsFromLocal();
             }
-        }
 
-        function loadSettingsFromLocal() {
-            const saved = JSON.parse(localStorage.getItem('chat-settings') || '{}');
-            if (saved.agentPrompt) agentPrompt.value = saved.agentPrompt;
-            if (saved.agentName) { currentAgentName = saved.agentName; agentNameSet.value = saved.agentName; }
-            if (saved.userName) { currentUserName = saved.userName; userNameInput.value = saved.userName; }
-            if (saved.agentAvatarUrl) { agentAvatarUrl = saved.agentAvatarUrl; updateAgentAvatarDisplay(); }
-            if (saved.userAvatarUrl) userAvatarUrl = saved.userAvatarUrl;
-            if (saved.fontSize) fontSizeInput.value = saved.fontSize;
-            if (saved.lineHeight) lineHeightInput.value = saved.lineHeight;
-            if (saved.userTextColor) userTextColor.value = saved.userTextColor;
-            if (saved.aiTextColor) aiTextColor.value = saved.aiTextColor;
-            updateNameDisplays();
-            updateCSSVariables();
-        }
-
-        async function saveSettingsToCloud() {
-            currentAgentName = agentNameSet.value || currentAgentName;
-            currentUserName = userNameInput.value || currentUserName;
-            updateNameDisplays();
-            updateCSSVariables();
-
-            const settings = {
-                id: SETTINGS_ID,
-                agent_prompt: agentPrompt.value,
-                agent_name: currentAgentName,
-                user_name: currentUserName,
-                agent_avatar_url: agentAvatarUrl,
-                user_avatar_url: userAvatarUrl,
-                font_size: parseInt(fontSizeInput.value) || 16,
-                line_height: parseFloat(lineHeightInput.value) || 1.6,
-                user_text_color: userTextColor.value,
-                ai_text_color: aiTextColor.value,
-                updated_at: new Date().toISOString()
-            };
-            localStorage.setItem('chat-settings', JSON.stringify(settings));
-            try {
-                await supabase.from(SETTINGS_TABLE).upsert(settings, { onConflict: 'id' });
-                return true;
-            } catch (err) {
-                return false;
+            function loadSettingsFromLocal() {
+                const saved = JSON.parse(localStorage.getItem('chat-settings') || '{}');
+                if (saved.agentPrompt) agentPrompt.value = saved.agentPrompt;
+                if (saved.agentName) { currentAgentName = saved.agentName;
+                    agentNameSet.value = saved.agentName; }
+                if (saved.userName) { currentUserName = saved.userName;
+                    userNameInput.value = saved.userName; }
+                if (saved.agentAvatarUrl) { agentAvatarUrl = saved.agentAvatarUrl;
+                    updateAgentAvatarDisplay(); }
+                if (saved.userAvatarUrl) userAvatarUrl = saved.userAvatarUrl;
+                if (saved.fontSize) fontSizeInput.value = saved.fontSize;
+                if (saved.lineHeight) lineHeightInput.value = saved.lineHeight;
+                if (saved.userTextColor) userTextColor.value = saved.userTextColor;
+                if (saved.aiTextColor) aiTextColor.value = saved.aiTextColor;
+                updateNameDisplays();
+                updateCSSVariables();
             }
-        }
 
-        saveSetBtn.addEventListener('click', async () => {
-            const ok = await saveSettingsToCloud();
-            alert(ok ? '已保存并同步云端' : '已保存到本地（云端同步失败）');
-        });
+            async function saveSettingsToCloud() {
+                currentAgentName = agentNameSet.value || currentAgentName;
+                currentUserName = userNameInput.value || currentUserName;
+                updateNameDisplays();
+                updateCSSVariables();
 
-        agentAvatarUpload.addEventListener('click', () => agentAvatarFile.click());
-        agentAvatarFile.addEventListener('change', e => {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = ev => {
-                    agentAvatarUrl = ev.target.result;
-                    agentAvatarPreview.innerHTML = `<img src="${agentAvatarUrl}" class="avatar-img">`;
-                    updateAgentAvatarDisplay();
+                const settings = {
+                    id: SETTINGS_ID,
+                    agent_prompt: agentPrompt.value,
+                    agent_name: currentAgentName,
+                    user_name: currentUserName,
+                    agent_avatar_url: agentAvatarUrl,
+                    user_avatar_url: userAvatarUrl,
+                    font_size: parseInt(fontSizeInput.value) || 16,
+                    line_height: parseFloat(lineHeightInput.value) || 1.6,
+                    user_text_color: userTextColor.value,
+                    ai_text_color: aiTextColor.value,
+                    updated_at: new Date().toISOString()
                 };
-                reader.readAsDataURL(file);
+                localStorage.setItem('chat-settings', JSON.stringify(settings));
+                try {
+                    await supabase.from(SETTINGS_TABLE).upsert(settings, { onConflict: 'id' });
+                    return true;
+                } catch (err) {
+                    return false;
+                }
             }
-        });
-        userAvatarUpload.addEventListener('click', () => userAvatarFile.click());
-        userAvatarFile.addEventListener('change', e => {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = ev => {
-                    userAvatarUrl = ev.target.result;
-                    userAvatarPreview.innerHTML = `<img src="${userAvatarUrl}" class="avatar-img">`;
-                };
-                reader.readAsDataURL(file);
-            }
-        });
 
-        agentNameDisplay.addEventListener('click', () => openNameEditor('agent'));
-        userNameDisplay.addEventListener('click', () => openNameEditor('user'));
-        nameEditCancel.addEventListener('click', closeNameEditor);
-        nameEditConfirm.addEventListener('click', () => {
-            const newName = nameEditInput.value.trim();
-            if (!newName) return;
-            if (currentEditTarget === 'agent') {
-                currentAgentName = newName;
-                agentNameSet.value = newName;
-            } else {
-                currentUserName = newName;
-                userNameInput.value = newName;
-            }
-            updateNameDisplays();
-            closeNameEditor();
-            saveSettingsToCloud();
-        });
-
-        [fontSizeInput, lineHeightInput, userTextColor, aiTextColor].forEach(el => {
-            el.addEventListener('input', updateCSSVariables);
-        });
-
-        sendBtn.addEventListener('click', sendMessage);
-        msgInput.addEventListener('keypress', e => { if (e.key === 'Enter') sendMessage(); });
-        clearBtn.addEventListener('click', clearChat);
-        resetScriptBtn.addEventListener('click', resetScript);
-
-        toggleSettingsBtn.addEventListener('click', () => {
-            collapsibleSettings.style.display = collapsibleSettings.style.display === 'block' ? 'none' : 'block';
-        });
-
-        window.addEventListener('resize', () => {
-            chatBox.scrollTop = chatBox.scrollHeight;
-        });
-
-        async function init() {
-            updateCSSVariables();
-            await loadSettingsFromCloud();
-            // 加载本地聊天记录
-            loadMessagesFromLocal();
-            renderStoredMessages();
-        }
-        init();
-
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw-chat.js').catch(console.log);
+            saveSetBtn.addEventListener('click', async () => {
+                const ok = await saveSettingsToCloud();
+                alert(ok ? '已保存并同步云端' : '已保存到本地（云端同步失败）');
             });
-        }
-    })();
-</script>
+
+            agentAvatarUpload.addEventListener('click', () => agentAvatarFile.click());
+            agentAvatarFile.addEventListener('change', e => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = ev => {
+                        agentAvatarUrl = ev.target.result;
+                        agentAvatarPreview.innerHTML = `<img src="${agentAvatarUrl}" class="avatar-img">`;
+                        updateAgentAvatarDisplay();
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+            userAvatarUpload.addEventListener('click', () => userAvatarFile.click());
+            userAvatarFile.addEventListener('change', e => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = ev => {
+                        userAvatarUrl = ev.target.result;
+                        userAvatarPreview.innerHTML = `<img src="${userAvatarUrl}" class="avatar-img">`;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            agentNameDisplay.addEventListener('click', () => openNameEditor('agent'));
+            userNameDisplay.addEventListener('click', () => openNameEditor('user'));
+            nameEditCancel.addEventListener('click', closeNameEditor);
+            nameEditConfirm.addEventListener('click', () => {
+                const newName = nameEditInput.value.trim();
+                if (!newName) return;
+                if (currentEditTarget === 'agent') {
+                    currentAgentName = newName;
+                    agentNameSet.value = newName;
+                } else {
+                    currentUserName = newName;
+                    userNameInput.value = newName;
+                }
+                updateNameDisplays();
+                closeNameEditor();
+                saveSettingsToCloud();
+            });
+
+            [fontSizeInput, lineHeightInput, userTextColor, aiTextColor].forEach(el => {
+                el.addEventListener('input', updateCSSVariables);
+            });
+
+            sendBtn.addEventListener('click', sendMessage);
+            msgInput.addEventListener('keypress', e => { if (e.key === 'Enter') sendMessage(); });
+            clearBtn.addEventListener('click', clearChat);
+            resetScriptBtn.addEventListener('click', resetScript);
+
+            toggleSettingsBtn.addEventListener('click', () => {
+                collapsibleSettings.style.display = collapsibleSettings.style.display === 'block' ? 'none' :
+                    'block';
+            });
+
+            window.addEventListener('resize', () => {
+                chatBox.scrollTop = chatBox.scrollHeight;
+            });
+
+            async function init() {
+                updateCSSVariables();
+                await loadSettingsFromCloud();
+                loadMessagesFromLocal();
+                renderStoredMessages();
+            }
+            init();
+
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('./sw-chat.js').catch(console.log);
+                });
+            }
+        })();
+    </script>
 </body>
 </html>
