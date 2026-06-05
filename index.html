@@ -1,330 +1,3 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>黑色极简 · 剧本智能助手</title>
-    <link rel="manifest" href="manifest-chat.json">
-    <link rel="apple-touch-icon" href="icon-192.png">
-    <meta name="theme-color" content="#000000">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script>
-        tailwind.config = {
-            theme: { extend: { colors: {
-                dark: '#000000', darker: '#121212', accent: '#165DFF',
-            }, fontFamily: { sans: ['Inter', 'sans-serif'] } } }
-        }
-    </script>
-    <style>
-        :root {
-            --font-size: 16px;
-            --line-height: 1.6;
-            --user-text-color: #FFFFFF;
-            --ai-text-color: #FFFFFF;
-            --safe-bottom: env(safe-area-inset-bottom, 0px);
-        }
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        html, body {
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background: #000;
-            color: #fff;
-        }
-
-        body {
-            height: 100vh;
-            height: 100dvh;
-            position: fixed;
-            top: 0;
-            left: 0;
-        }
-
-        .layout-container {
-            width: 100%;
-            height: 100%;
-            position: relative;
-            display: grid;
-            grid-template-columns: 1fr;
-            grid-template-rows: 1fr;
-        }
-
-        .chat-main-panel {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            min-height: 0;
-        }
-
-        #chat-box {
-            flex: 1 1 auto;
-            overflow-y: auto;
-            min-height: 0;
-            padding-bottom: 16px;
-        }
-
-        /* 设置面板：全局抽屉式（所有屏幕） */
-        .left-set-panel {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 85%;
-            max-width: 400px;
-            height: 100%;
-            height: 100dvh;
-            z-index: 100;
-            background: #121212;
-            border-right: 1px solid #333;
-            transform: translateX(-100%);
-            transition: transform 0.3s ease;
-            overflow-y: auto;
-            padding: 24px 16px;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.5);
-        }
-
-        .left-set-panel.expand {
-            transform: translateX(0);
-        }
-
-        /* 遮罩层（全屏使用） */
-        .drawer-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.6);
-            z-index: 99;
-            display: none;
-        }
-
-        .drawer-overlay.show {
-            display: block;
-        }
-
-        /* 移动端输入栏：始终固定在底部 */
-        .mobile-input-bar {
-            display: flex;
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            z-index: 200;
-            background: #000;
-            border-top: 1px solid #333;
-            padding: 12px;
-            padding-bottom: calc(12px + var(--safe-bottom));
-            gap: 8px;
-        }
-
-        /* 桌面端输入区域默认隐藏，用移动端统一输入栏 */
-        #desktop-input-area {
-            display: none;
-        }
-
-        /* 聊天区域为固定输入栏留出底部空间 */
-        #chat-box {
-            padding-bottom: calc(72px + var(--safe-bottom)) !important;
-        }
-
-        /* 通用滚动条隐藏 */
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .scrollbar-hide {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
-
-        .avatar-img, .avatar-placeholder {
-            object-fit: cover;
-            width: 100%;
-            height: 100%;
-            border-radius: 4px;
-        }
-
-        /* 消息头像 */
-        .msg-avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 6px;
-            flex-shrink: 0;
-            overflow: hidden;
-            background: #1a1a1a;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            color: #888;
-        }
-
-        .chat-bubble-content {
-            word-wrap: break-word;
-            word-break: break-word;
-            white-space: pre-wrap;
-            max-width: 100%;
-            overflow-wrap: break-word;
-            overflow: hidden;
-            font-size: var(--font-size);
-            line-height: var(--line-height);
-        }
-
-        /* 气泡背景统一黑色，带细边框 */
-        .user-bubble {
-            background-color: #000 !important;
-            color: var(--user-text-color);
-            border: 1px solid #333;
-        }
-        .ai-bubble {
-            background-color: #000 !important;
-            color: var(--ai-text-color);
-            border: 1px solid #333;
-        }
-
-        .katex {
-            font-size: var(--font-size);
-            line-height: var(--line-height);
-            max-width: 100%;
-        }
-
-        .collapsible-settings { display: none; }
-
-        .name-tag {
-            cursor: pointer;
-            transition: all 0.2s;
-            border-bottom: 1px dashed transparent;
-        }
-
-        .name-tag:hover {
-            border-bottom-color: #888;
-            color: #ccc;
-        }
-
-        .name-tag .fa-pencil {
-            opacity: 0;
-            transition: opacity 0.2s;
-            font-size: 0.7em;
-            margin-left: 4px;
-        }
-
-        .name-tag:hover .fa-pencil { opacity: 0.7; }
-
-        .msg-name-label {
-            font-size: 0.7em;
-            opacity: 0.7;
-            letter-spacing: 0.5px;
-            margin-bottom: 3px;
-            display: block;
-            cursor: pointer;
-        }
-
-        .name-edit-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 300;
-            background: rgba(0,0,0,0.75);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            display: none;
-        }
-
-        .name-edit-dialog {
-            background: #1a1a1a;
-            border: 1px solid #333;
-            border-radius: 12px;
-            padding: 24px;
-            width: 90%;
-            max-width: 380px;
-        }
-
-        .chat-header, .chat-footer {
-            flex-shrink: 0;
-        }
-    </style>
-</head>
-<body>
-<div class="layout-container">
-    <!-- 左侧抽屉设置面板 -->
-    <div class="left-set-panel" id="left-panel">
-        <button class="self-end text-gray-400 hover:text-white mb-4" id="close-drawer-btn">
-            <i class="fa fa-times fa-lg"></i>
-        </button>
-        <h1 class="text-xl font-bold mb-4">剧本/人设设置</h1>
-        <textarea class="w-full h-40 bg-dark border border-gray-800 rounded p-3 text-white outline-none resize-none mb-4" placeholder="输入剧本内容，AI会根据剧本回答问题&#10;支持格式：&#10;[red:文字] 红色&#10;[b:文字] 加粗&#10;[br] 换行" id="agent-prompt"></textarea>
-
-        <button class="w-full bg-gray-800 rounded p-2 mb-3 text-sm" id="toggle-settings">
-            <i class="fa fa-cog mr-1"></i> 展开头像/样式设置
-        </button>
-        <div class="collapsible-settings bg-dark border border-gray-800 rounded p-3 mb-3 space-y-3" id="collapsible-settings">
-            <div><h3 class="text-sm text-gray-400 mb-1">智能体名称</h3><input class="w-full bg-darker rounded p-2 text-white outline-none" id="agent-name-set"></div>
-            <div><h3 class="text-sm text-gray-400 mb-1">智能体头像</h3><button class="w-full bg-accent/20 rounded p-2 text-sm mb-2" id="agent-avatar-upload">上传头像</button><input type="file" id="agent-avatar-file" class="hidden" accept="image/*"><div id="agent-avatar-preview" class="w-14 h-14 bg-accent/20 flex items-center justify-center overflow-hidden rounded-lg mx-auto"><span>预览</span></div></div>
-            <div class="border-t border-gray-700 pt-3"><h3 class="text-sm text-gray-400 mb-1">你的名称</h3><input class="w-full bg-darker rounded p-2 text-white outline-none" id="user-name"></div>
-            <div><h3 class="text-sm text-gray-400 mb-1">你的头像</h3><button class="w-full bg-accent/20 rounded p-2 text-sm mb-2" id="user-avatar-upload">上传头像</button><input type="file" id="user-avatar-file" class="hidden" accept="image/*"><div id="user-avatar-preview" class="w-14 h-14 bg-accent/20 flex items-center justify-center overflow-hidden rounded-lg mx-auto"><span>预览</span></div></div>
-            <div class="border-t border-gray-700 pt-3"><h3 class="text-sm text-gray-400 mb-1">API Key（AI模式已通过代理调用）</h3><input type="password" class="w-full bg-darker rounded p-2 text-white outline-none" id="api-key" placeholder="无需填写" disabled><p class="text-xs text-gray-500 mt-1">已通过 Supabase Edge Function 安全调用 DeepSeek API</p></div>
-            <div class="border-t border-gray-700 pt-3"><h3 class="text-sm text-gray-400 mb-2">样式</h3>
-                <div class="grid grid-cols-2 gap-2 mb-2"><div><label class="text-xs text-gray-400">字体大小</label><input type="number" id="font-size" value="16" class="w-full bg-darker rounded p-2 text-white"></div><div><label class="text-xs text-gray-400">行间距</label><input type="number" id="line-height" value="1.6" step="0.1" class="w-full bg-darker rounded p-2 text-white"></div></div>
-                <div class="grid grid-cols-2 gap-2"><div><label class="text-xs text-gray-400">我的文字</label><input type="color" id="user-text-color" value="#FFFFFF" class="w-full h-8"></div><div><label class="text-xs text-gray-400">AI文字</label><input type="color" id="ai-text-color" value="#FFFFFF" class="w-full h-8"></div></div>
-            </div>
-        </div>
-        <button class="w-full bg-accent rounded p-3" id="save-set">保存所有设置</button>
-        <p class="text-xs text-gray-500 mt-2 text-center">数据自动云端同步，多端一致</p>
-    </div>
-
-    <!-- 遮罩层 -->
-    <div class="drawer-overlay" id="drawer-overlay"></div>
-
-    <!-- 聊天全屏面板 -->
-    <div class="chat-main-panel bg-dark">
-        <!-- 头部区域 -->
-        <div class="chat-header p-3 border-b border-gray-800 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <div id="agent-avatar" class="w-10 h-10 bg-accent/20 flex items-center justify-center overflow-hidden rounded-lg"><span class="avatar-placeholder">AI</span></div>
-                <div><span class="text-xs text-gray-500">AI</span><span id="agent-name-display" class="font-medium name-tag text-white">剧本助手 <i class="fa fa-pencil"></i></span></div>
-            </div>
-            <div class="flex items-center gap-2">
-                <span id="user-name-display" class="hidden sm:flex font-medium name-tag text-gray-300 text-sm">我 <i class="fa fa-pencil"></i></span>
-                <button class="text-gray-400 hover:text-white" id="phone-open-set"><i class="fa fa-bars"></i></button>
-                <button class="text-gray-400 hover:text-white" id="reset-script">重置剧本</button>
-                <button class="text-gray-400 hover:text-white" id="clear-chat">清空</button>
-            </div>
-        </div>
-
-        <!-- 消息滚动区 -->
-        <div class="flex-1 overflow-y-auto scrollbar-hide p-4" id="chat-box"></div>
-    </div>
-</div>
-
-<!-- 统一输入栏（固定在底部） -->
-<div class="mobile-input-bar" id="mobile-input-area">
-    <input type="text" placeholder="输入消息..." class="flex-1 bg-darker border border-gray-800 rounded-lg p-3 text-white outline-none" id="msg-input">
-    <button class="bg-accent px-5 rounded-lg" id="send-btn"><i class="fa fa-paper-plane"></i></button>
-</div>
-
-<!-- 名称编辑弹窗 -->
-<div id="name-edit-modal" class="name-edit-modal">
-    <div class="name-edit-dialog">
-        <h3 class="text-lg font-bold mb-1" id="name-edit-title"></h3>
-        <p class="text-sm text-gray-400 mb-4" id="name-edit-subtitle"></p>
-        <input type="text" id="name-edit-input" class="w-full bg-dark border border-gray-700 rounded-lg p-3 text-white mb-4" placeholder="输入名称">
-        <div class="flex gap-2 justify-end">
-            <button class="px-4 py-2 bg-gray-700 rounded-lg" id="name-edit-cancel">取消</button>
-            <button class="px-4 py-2 bg-accent rounded-lg" id="name-edit-confirm">确认修改</button>
-        </div>
-    </div>
-</div>
-
 <script>
     (function() {
         const SUPABASE_URL = 'https://vkeaimeytsymepgkizqk.supabase.co';
@@ -373,6 +46,9 @@
         let userAvatarUrl = '';
         let currentEditTarget = null;
         let messages = [];
+
+        // 本地存储键名
+        const MESSAGES_STORAGE_KEY = 'chat-messages';
 
         function openDrawer() {
             leftPanel.classList.add('expand');
@@ -437,6 +113,11 @@
             currentEditTarget = null;
         }
 
+        // 保存消息到本地
+        function saveMessagesToStorage() {
+            localStorage.setItem(MESSAGES_STORAGE_KEY, JSON.stringify(messages));
+        }
+
         function typewriterEffect(fullText, msgElement) {
             const bubble = msgElement.querySelector('.chat-bubble-content');
             let index = 0;
@@ -462,6 +143,7 @@
                     clearInterval(interval);
                     const lastMsg = messages[messages.length-1];
                     if (lastMsg && lastMsg.role === 'assistant') lastMsg.content = fullText;
+                    saveMessagesToStorage(); // 保存最终内容
                     chatBox.scrollTop = chatBox.scrollHeight;
                 }
             }, 30);
@@ -470,6 +152,7 @@
         function addMessage(role, content, animate = false) {
             const msg = { role, content };
             messages.push(msg);
+            saveMessagesToStorage(); // 新消息立即保存
 
             const isUser = role === 'user';
             const avatarSrc = isUser ? userAvatarUrl : agentAvatarUrl;
@@ -477,7 +160,8 @@
             const senderName = isUser ? currentUserName : currentAgentName;
 
             const div = document.createElement('div');
-            div.className = `flex mb-4 ${isUser ? 'justify-end' : 'justify-start'} items-end gap-2`;
+            // ✅ 改动点：items-end → items-start
+            div.className = `flex mb-4 ${isUser ? 'justify-end' : 'justify-start'} items-start gap-2`;
 
             const avatarHTML = avatarSrc
                 ? `<img src="${avatarSrc}" class="avatar-img" alt="avatar">`
@@ -566,9 +250,8 @@ ${script}
             addMessage('user', value);
             msgInput.value = '';
 
-            // 加载提示
             const loadingDiv = document.createElement('div');
-            loadingDiv.className = 'flex mb-4 justify-start items-end gap-2';
+            loadingDiv.className = 'flex mb-4 justify-start items-start gap-2'; // ✅ 同步修改为 items-start
             loadingDiv.innerHTML = `
                 <div class="msg-avatar">${agentAvatarUrl ? `<img src="${agentAvatarUrl}" class="avatar-img">` : (currentAgentName || 'AI').charAt(0)}</div>
                 <div class="max-w-[80%]">
@@ -589,6 +272,7 @@ ${script}
         function clearChat() {
             messages = [];
             chatBox.innerHTML = '';
+            localStorage.removeItem(MESSAGES_STORAGE_KEY); // 同步清除存储
         }
 
         function resetScript() {
@@ -596,7 +280,26 @@ ${script}
             addMessage('assistant', '✅ 剧本已重置，可以重新开始。');
         }
 
-        // Supabase 同步
+        // 从本地存储恢复聊天记录
+        function restoreMessagesFromStorage() {
+            const stored = localStorage.getItem(MESSAGES_STORAGE_KEY);
+            if (stored) {
+                try {
+                    const parsed = JSON.parse(stored);
+                    if (Array.isArray(parsed)) {
+                        messages = []; // 清空当前，避免重复
+                        chatBox.innerHTML = '';
+                        parsed.forEach(msg => {
+                            addMessage(msg.role, msg.content, false);
+                        });
+                    }
+                } catch (e) {
+                    // 数据损坏，忽略
+                }
+            }
+        }
+
+        // Supabase 同步（仅设置，聊天记录不同步）
         const SETTINGS_TABLE = 'user_settings';
         const SETTINGS_ID = 'default';
 
@@ -737,8 +440,15 @@ ${script}
 
         async function init() {
             updateCSSVariables();
-            await loadSettingsFromCloud();
-            addMessage('assistant', '欢迎使用剧本智能助手！点击左上角按钮设置剧本。');
+            await loadSettingsFromCloud(); // 先加载设置（确保头像、名称就绪）
+
+            // ✅ 恢复聊天记录（如果没有则显示欢迎语）
+            const hasMessages = localStorage.getItem(MESSAGES_STORAGE_KEY);
+            if (hasMessages) {
+                restoreMessagesFromStorage();
+            } else {
+                addMessage('assistant', '欢迎使用剧本智能助手！点击左上角按钮设置剧本。');
+            }
         }
         init();
 
@@ -749,5 +459,3 @@ ${script}
         }
     })();
 </script>
-</body>
-</html>
