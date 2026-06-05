@@ -151,12 +151,12 @@
             border-radius: 4px;
         }
 
-        /* 消息头像 */
+        /* 消息头像：核心修复 - 禁止收缩 */
         .msg-avatar {
             width: 32px;
             height: 32px;
             border-radius: 6px;
-            flex-shrink: 0;
+            flex-shrink: 0; /* 绝对禁止头像被压缩 */
             overflow: hidden;
             background: #1a1a1a;
             display: flex;
@@ -189,14 +189,10 @@
             border: 1px solid #333;
         }
 
-        /* ★ 修复公式撑破气泡的核心样式 ★ */
         .katex {
             font-size: var(--font-size);
             line-height: var(--line-height);
-            max-width: 100% !important;
-            overflow-x: auto;
-            display: inline-block;
-            vertical-align: bottom;
+            max-width: 100%;
         }
 
         .collapsible-settings { display: none; }
@@ -512,6 +508,7 @@
         }
 
         // 核心：向DOM添加消息（不操作messages数组）
+        // 核心修复：使用flex-1 + min-w-0 + 动态计算最大宽度
         function addMessageToDOM(role, content, animate = false) {
             const isUser = role === 'user';
             const avatarSrc = isUser ? userAvatarUrl : agentAvatarUrl;
@@ -528,7 +525,7 @@
 
             if (isUser) {
                 div.innerHTML = `
-                    <div class="max-w-[80%]">
+                    <div class="flex-1 min-w-0 max-w-[calc(100%-44px)]">
                         <span class="msg-name-label text-right">${senderName}</span>
                         <div class="inline-block px-4 py-2 rounded-lg chat-bubble-content user-bubble">${content}</div>
                     </div>
@@ -537,7 +534,7 @@
             } else {
                 div.innerHTML = `
                     <div class="msg-avatar">${avatarHTML}</div>
-                    <div class="max-w-[80%]">
+                    <div class="flex-1 min-w-0 max-w-[calc(100%-44px)]">
                         <span class="msg-name-label">${senderName}</span>
                         <div class="inline-block px-4 py-2 rounded-lg chat-bubble-content ai-bubble">${content}</div>
                     </div>
