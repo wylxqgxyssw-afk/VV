@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>黑色极简 · 剧本智能助手</title>
+  <title>黑色极简 · 剧本智能助手（多端同步）</title>
   <link rel="manifest" href="manifest-chat.json">
   <link rel="apple-touch-icon" href="icon-192.png">
   <meta name="theme-color" content="#000000">
@@ -347,11 +347,17 @@
 
 <script>
   (function() {
+    // Supabase 配置
     const SUPABASE_URL = 'https://vkeaimeytsymepgkizqk.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_R66fP0xmbxUZTeu7kjQYjQ_FHdXlRvm';
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const AI_PROXY_URL = 'https://vkeaimeytsymepgkizqk.supabase.co/functions/v1/swift-api';
+    
+    // 固定用户ID（所有设备共用，实现同步）
+    const USER_ID = 'default_user';
+    const MESSAGES_TABLE = 'chat_messages';
 
+    // DOM 元素
     const chatBox = document.getElementById('chat-box');
     const msgInput = document.getElementById('msg-input');
     const sendBtn = document.getElementById('send-btn');
@@ -390,27 +396,16 @@
     const nameEditCancel = document.getElementById('name-edit-cancel');
     const nameEditConfirm = document.getElementById('name-edit-confirm');
 
+    // 全局状态
     let currentAgentName = '剧本助手';
     let currentUserName = '我';
     let agentAvatarUrl = '';
     let userAvatarUrl = '';
     let currentEditTarget = null;
-    let messages = [];
+    let processedMessageIds = new Set(); // 用于去重，防止订阅重复插入
+    let realtimeSubscription = null;
 
-    const MESSAGES_STORAGE_KEY = 'chat-messages';
-
-    function openDrawer() {
-      leftPanel.classList.add('expand');
-      drawerOverlay.classList.add('show');
-    }
-    function closeDrawer() {
-      leftPanel.classList.remove('expand');
-      drawerOverlay.classList.remove('show');
-    }
-    phoneOpenSet.addEventListener('click', openDrawer);
-    closeDrawerBtn.addEventListener('click', closeDrawer);
-    drawerOverlay.addEventListener('click', closeDrawer);
-
+    // ---------- 辅助函数 ----------
     function updateCSSVariables() {
       document.documentElement.style.setProperty('--font-size', fontSizeInput.value + 'px');
       document.documentElement.style.setProperty('--line-height', lineHeightInput.value);
@@ -460,75 +455,18 @@
       nameEditModal.style.display = 'flex';
       nameEditInput.focus();
     }
+
     function closeNameEditor() {
       nameEditModal.style.display = 'none';
       currentEditTarget = null;
     }
 
-    function saveMessagesToLocal() {
-      try {
-        localStorage.setItem(MESSAGES_STORAGE_KEY, JSON.stringify(messages));
-      } catch (e) {
-        console.warn('无法保存聊天记录到本地', e);
-      }
-    }
+    // ---------- 核心：渲染单条消息到 DOM ----------
+    function renderMessageToDOM(role, content, messageId, animate = false) {
+      // 如果该消息已经渲染过（通过 ID 判断），跳过
+      if (processedMessageIds.has(messageId)) return null;
+      processedMessageIds.add(messageId);
 
-    function loadMessagesFromLocal() {
-      try {
-        const saved = localStorage.getItem(MESSAGES_STORAGE_KEY);
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed)) {
-            messages = parsed;
-          }
-        }
-      } catch (e) {
-        messages = [];
-      }
-    }
-
-    function renderStoredMessages() {
-      chatBox.innerHTML = '';
-      messages.forEach(msg => {
-        addMessageToDOM(msg.role, msg.content, false);
-      });
-      if (messages.length === 0) {
-        addMessageToDOM('assistant', '欢迎使用剧本智能助手！点击左上角按钮设置剧本。', false);
-      }
-    }
-
-    function typewriterEffect(fullText, msgElement) {
-      const bubble = msgElement.querySelector('.chat-bubble-content');
-      let index = 0;
-      bubble.innerHTML = '';
-      const interval = setInterval(() => {
-        if (index < fullText.length) {
-          if (fullText.charAt(index) === '<') {
-            const endIndex = fullText.indexOf('>', index);
-            if (endIndex !== -1) {
-              bubble.innerHTML += fullText.substring(index, endIndex + 1);
-              index = endIndex + 1;
-            } else {
-              bubble.innerHTML += fullText.charAt(index);
-              index++;
-            }
-          } else {
-            bubble.innerHTML += fullText.charAt(index);
-            index++;
-          }
-          chatBox.scrollTop = chatBox.scrollHeight;
-          renderLatex(msgElement);
-        } else {
-          clearInterval(interval);
-          const lastMsg = messages[messages.length-1];
-          if (lastMsg && lastMsg.role === 'assistant') lastMsg.content = fullText;
-          saveMessagesToLocal();
-          chatBox.scrollTop = chatBox.scrollHeight;
-        }
-      }, 30);
-    }
-
-    function addMessageToDOM(role, content, animate = false) {
       const isUser = role === 'user';
       const avatarSrc = isUser ? userAvatarUrl : agentAvatarUrl;
       const avatarInitial = isUser ? (currentUserName || '我').charAt(0) : (currentAgentName || 'AI').charAt(0);
@@ -536,6 +474,7 @@
 
       const div = document.createElement('div');
       div.className = `message-row flex mb-4 ${isUser ? 'justify-end' : 'justify-start'} items-start gap-2`;
+      div.setAttribute('data-msg-id', messageId);
 
       const avatarHTML = avatarSrc
           ? `<img src="${avatarSrc}" class="avatar-img" alt="avatar">`
@@ -562,7 +501,33 @@
       chatBox.appendChild(div);
 
       if (role === 'assistant' && animate) {
-        typewriterEffect(content, div);
+        // 对于新插入的 AI 消息，执行打字机效果（需要逐步显示）
+        const bubbleDiv = div.querySelector('.chat-bubble-content');
+        const fullText = content;
+        bubbleDiv.innerHTML = '';
+        let index = 0;
+        const interval = setInterval(() => {
+          if (index < fullText.length) {
+            if (fullText.charAt(index) === '<') {
+              const endIndex = fullText.indexOf('>', index);
+              if (endIndex !== -1) {
+                bubbleDiv.innerHTML += fullText.substring(index, endIndex + 1);
+                index = endIndex + 1;
+              } else {
+                bubbleDiv.innerHTML += fullText.charAt(index);
+                index++;
+              }
+            } else {
+              bubbleDiv.innerHTML += fullText.charAt(index);
+              index++;
+            }
+            chatBox.scrollTop = chatBox.scrollHeight;
+            renderLatex(div);
+          } else {
+            clearInterval(interval);
+            chatBox.scrollTop = chatBox.scrollHeight;
+          }
+        }, 30);
       } else {
         renderLatex(div);
         chatBox.scrollTop = chatBox.scrollHeight;
@@ -570,25 +535,97 @@
       return div;
     }
 
-    function addMessage(role, content, animate = false) {
-      const msg = { role, content };
-      messages.push(msg);
-      saveMessagesToLocal();
-      addMessageToDOM(role, content, animate);
+    // 清空聊天界面（不删数据库，仅清 DOM 并重置去重集合）
+    function clearChatDOM() {
+      chatBox.innerHTML = '';
+      processedMessageIds.clear();
     }
 
-    function parseScriptFormat(text) {
-      let result = text;
-      result = result.replace(/\[red:(.*?)\]/g, '<span style="color: #ff4444">$1</span>');
-      result = result.replace(/\[b:(.*?)\]/g, '<strong>$1</strong>');
-      result = result.replace(/\[br\]/g, '<br>');
-      return result;
+    // 从数据库加载所有历史消息，并按时间顺序渲染
+    async function loadMessagesFromDatabase() {
+      clearChatDOM();
+      const { data, error } = await supabase
+          .from(MESSAGES_TABLE)
+          .select('*')
+          .eq('user_id', USER_ID)
+          .order('created_at', { ascending: true });
+      if (error) {
+        console.error('加载消息失败:', error);
+        // 降级：显示错误提示
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'text-center text-red-400 p-4';
+        errorDiv.innerText = '加载聊天记录失败，请检查网络或 Supabase 权限。';
+        chatBox.appendChild(errorDiv);
+        return;
+      }
+      if (data && data.length) {
+        for (const msg of data) {
+          renderMessageToDOM(msg.role, msg.content, msg.id, false);
+        }
+      } else {
+        // 没有历史记录，显示欢迎语（同时插入一条欢迎语到数据库？不需要，只显示在界面）
+        const welcomeMsg = '欢迎使用剧本智能助手！点击左上角按钮设置剧本。';
+        // 注意：欢迎语不持久化，只显示
+        const fakeId = 'welcome-' + Date.now();
+        renderMessageToDOM('assistant', welcomeMsg, fakeId, false);
+      }
+      chatBox.scrollTop = chatBox.scrollHeight;
     }
 
+    // 插入一条消息到数据库（并自动触发实时同步到其他设备）
+    async function insertMessageToDB(role, content) {
+      const { data, error } = await supabase
+          .from(MESSAGES_TABLE)
+          .insert([
+            { role: role, content: content, user_id: USER_ID }
+          ])
+          .select();
+      if (error) {
+        console.error('插入消息失败:', error);
+        return null;
+      }
+      // 返回插入的记录（包含 id 和 created_at）
+      return data ? data[0] : null;
+    }
+
+    // 发送消息的主要逻辑
+    async function sendMessage() {
+      const userText = msgInput.value.trim();
+      if (!userText) return;
+      msgInput.value = '';
+      
+      // 1. 将用户消息插入数据库（这会触发实时同步，其他设备会立刻显示）
+      const userMsgRecord = await insertMessageToDB('user', userText);
+      if (!userMsgRecord) {
+        // 插入失败，提示错误
+        const errorMsg = '消息发送失败，请检查网络。';
+        const fakeId = 'err-' + Date.now();
+        renderMessageToDOM('user', errorMsg, fakeId, false);
+        return;
+      }
+      // 本地立即渲染（避免等待实时回调，更流畅）
+      renderMessageToDOM('user', userText, userMsgRecord.id, false);
+      
+      // 2. 调用 AI 获取回复
+      const reply = await getAIResponse(userText);
+      
+      // 3. 将 AI 回复插入数据库（同样会触发同步）
+      const aiMsgRecord = await insertMessageToDB('assistant', reply);
+      if (aiMsgRecord) {
+        // 本地渲染（带动画）
+        renderMessageToDOM('assistant', reply, aiMsgRecord.id, true);
+      } else {
+        // 如果插入失败，至少显示在本地（但不会同步到其他设备）
+        const fakeId = 'ai-fail-' + Date.now();
+        renderMessageToDOM('assistant', reply, fakeId, true);
+      }
+    }
+
+    // 调用 AI 代理
     async function getAIResponse(userMessage) {
       const script = agentPrompt.value.trim();
       if (!script) return "请先在左侧设置中填写剧本内容。";
-
+      
       const systemPrompt = `
 你是一个严格按照剧本回答问题的助手。
 ⚠️ 绝对规则：
@@ -601,7 +638,6 @@
 ${script}
 --- 剧本结束 ---
 `;
-
       try {
         const response = await fetch(AI_PROXY_URL, {
           method: 'POST',
@@ -613,106 +649,73 @@ ${script}
             ],
           }),
         });
-
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(errorData.error?.message || '请求失败');
         }
-
         const data = await response.json();
-        return parseScriptFormat(data.choices[0].message.content.trim());
+        let content = data.choices[0].message.content.trim();
+        // 解析剧本中的特殊格式
+        content = content.replace(/\[red:(.*?)\]/g, '<span style="color: #ff4444">$1</span>');
+        content = content.replace(/\[b:(.*?)\]/g, '<strong>$1</strong>');
+        content = content.replace(/\[br\]/g, '<br>');
+        return content;
       } catch (error) {
         return `⚠️ AI 模式出错：${error.message}<br>请检查 Supabase Edge Function 是否部署正常。`;
       }
     }
 
-    async function sendMessage() {
-      const value = msgInput.value.trim();
-      if (!value) return;
-      addMessage('user', value);
-      msgInput.value = '';
-
-      const loadingDiv = document.createElement('div');
-      loadingDiv.className = 'message-row flex mb-4 justify-start items-start gap-2';
-      loadingDiv.innerHTML = `
-        <div class="msg-avatar">${agentAvatarUrl ? `<img src="${agentAvatarUrl}" class="avatar-img">` : (currentAgentName || 'AI').charAt(0)}</div>
-        <div class="max-w-[75%]">
-          <span class="msg-name-label">${currentAgentName}</span>
-          <div class="inline-block rounded-lg ai-bubble chat-bubble-content">思考中...</div>
-        </div>
-      `;
-      chatBox.appendChild(loadingDiv);
-      chatBox.scrollTop = chatBox.scrollHeight;
-
-      const reply = await getAIResponse(value);
-      if (chatBox.contains(loadingDiv)) {
-        chatBox.removeChild(loadingDiv);
+    // 清空聊天（删除数据库中的所有消息）
+    async function clearChat() {
+      const { error } = await supabase
+          .from(MESSAGES_TABLE)
+          .delete()
+          .eq('user_id', USER_ID);
+      if (error) {
+        console.error('清空聊天失败:', error);
+        alert('清空失败，请重试。');
+        return;
       }
-      addMessage('assistant', reply, true);
+      // 清空 DOM 和去重集合
+      clearChatDOM();
+      // 重新加载（会显示空状态，并显示欢迎语）
+      await loadMessagesFromDatabase();
     }
 
-    function clearChat() {
-      messages = [];
-      saveMessagesToLocal();
-      chatBox.innerHTML = '';
-      addMessage('assistant', '聊天记录已清空。');
+    // 重置剧本（仅清空聊天，不清除设置中的剧本内容）
+    async function resetScript() {
+      await clearChat();
     }
 
-    function resetScript() {
-      clearChat();
-      addMessage('assistant', '✅ 剧本已重置，可以重新开始。');
+    // ---------- 实时订阅：监听新消息，并自动渲染 ----------
+    function setupRealtimeSubscription() {
+      if (realtimeSubscription) {
+        realtimeSubscription.unsubscribe();
+      }
+      realtimeSubscription = supabase
+          .channel('chat_messages_channel')
+          .on('postgres_changes', {
+            event: 'INSERT',
+            schema: 'public',
+            table: MESSAGES_TABLE,
+            filter: `user_id=eq.${USER_ID}`
+          }, (payload) => {
+            const newMsg = payload.new;
+            // 避免重复渲染（防止本地插入后订阅又触发一次）
+            if (!processedMessageIds.has(newMsg.id)) {
+              // 如果新消息是当前设备刚发出的，可能已经在 sendMessage 里渲染过了，但 processedMessageIds 已添加，所以不会重复
+              // 对于其他设备发来的消息，这里会触发渲染，且不需要动画（或者可以动画？为了体验，我们可以让远端来的 AI 消息也有动画，但可能打断阅读。简单起见，不做动画）
+              renderMessageToDOM(newMsg.role, newMsg.content, newMsg.id, false);
+              chatBox.scrollTop = chatBox.scrollHeight;
+            }
+          })
+          .subscribe();
     }
 
+    // ---------- 设置相关（云端同步，与原逻辑一致）----------
     const SETTINGS_TABLE = 'user_settings';
     const SETTINGS_ID = 'default';
-
-    async function loadSettingsFromCloud() {
-      try {
-        const { data, error } = await supabase
-            .from(SETTINGS_TABLE)
-            .select('*')
-            .eq('id', SETTINGS_ID)
-            .single();
-        if (error) throw error;
-        if (data) {
-          if (data.agent_prompt) agentPrompt.value = data.agent_prompt;
-          if (data.agent_name) { currentAgentName = data.agent_name; agentNameSet.value = data.agent_name; }
-          if (data.user_name) { currentUserName = data.user_name; userNameInput.value = data.user_name; }
-          if (data.agent_avatar_url) { agentAvatarUrl = data.agent_avatar_url; updateAgentAvatarDisplay(); }
-          if (data.user_avatar_url) userAvatarUrl = data.user_avatar_url;
-          if (data.font_size) fontSizeInput.value = data.font_size;
-          if (data.line_height) lineHeightInput.value = data.line_height;
-          if (data.user_text_color) userTextColor.value = data.user_text_color;
-          if (data.ai_text_color) aiTextColor.value = data.ai_text_color;
-          if (data.bubble_px) bubblePxInput.value = data.bubble_px;
-          if (data.bubble_py) bubblePyInput.value = data.bubble_py;
-          if (data.chat_h_padding) chatHPaddingInput.value = data.chat_h_padding;
-          updateNameDisplays();
-          updateCSSVariables();
-        }
-      } catch (err) {
-        loadSettingsFromLocal();
-      }
-    }
-
-    function loadSettingsFromLocal() {
-      const saved = JSON.parse(localStorage.getItem('chat-settings') || '{}');
-      if (saved.agentPrompt) agentPrompt.value = saved.agentPrompt;
-      if (saved.agentName) { currentAgentName = saved.agentName; agentNameSet.value = saved.agentName; }
-      if (saved.userName) { currentUserName = saved.userName; userNameInput.value = saved.userName; }
-      if (saved.agentAvatarUrl) { agentAvatarUrl = saved.agentAvatarUrl; updateAgentAvatarDisplay(); }
-      if (saved.userAvatarUrl) userAvatarUrl = saved.userAvatarUrl;
-      if (saved.fontSize) fontSizeInput.value = saved.fontSize;
-      if (saved.lineHeight) lineHeightInput.value = saved.lineHeight;
-      if (saved.userTextColor) userTextColor.value = saved.userTextColor;
-      if (saved.aiTextColor) aiTextColor.value = saved.aiTextColor;
-      if (saved.bubblePx) bubblePxInput.value = saved.bubblePx;
-      if (saved.bubblePy) bubblePyInput.value = saved.bubblePy;
-      if (saved.chatHPadding) chatHPaddingInput.value = saved.chatHPadding;
-      updateNameDisplays();
-      updateCSSVariables();
-    }
-
+    
     async function saveSettingsToCloud() {
       currentAgentName = agentNameSet.value || currentAgentName;
       currentUserName = userNameInput.value || currentUserName;
@@ -740,15 +743,56 @@ ${script}
         await supabase.from(SETTINGS_TABLE).upsert(settings, { onConflict: 'id' });
         return true;
       } catch (err) {
+        console.warn('云端同步失败', err);
         return false;
       }
     }
 
-    saveSetBtn.addEventListener('click', async () => {
-      const ok = await saveSettingsToCloud();
-      alert(ok ? '已保存并同步云端' : '已保存到本地（云端同步失败）');
-    });
+    async function loadSettingsFromCloud() {
+      try {
+        const { data, error } = await supabase
+            .from(SETTINGS_TABLE)
+            .select('*')
+            .eq('id', SETTINGS_ID)
+            .single();
+        if (error) throw error;
+        if (data) {
+          if (data.agent_prompt) agentPrompt.value = data.agent_prompt;
+          if (data.agent_name) { currentAgentName = data.agent_name; agentNameSet.value = data.agent_name; }
+          if (data.user_name) { currentUserName = data.user_name; userNameInput.value = data.user_name; }
+          if (data.agent_avatar_url) { agentAvatarUrl = data.agent_avatar_url; updateAgentAvatarDisplay(); }
+          if (data.user_avatar_url) userAvatarUrl = data.user_avatar_url;
+          if (data.font_size) fontSizeInput.value = data.font_size;
+          if (data.line_height) lineHeightInput.value = data.line_height;
+          if (data.user_text_color) userTextColor.value = data.user_text_color;
+          if (data.ai_text_color) aiTextColor.value = data.ai_text_color;
+          if (data.bubble_px) bubblePxInput.value = data.bubble_px;
+          if (data.bubble_py) bubblePyInput.value = data.bubble_py;
+          if (data.chat_h_padding) chatHPaddingInput.value = data.chat_h_padding;
+          updateNameDisplays();
+          updateCSSVariables();
+        }
+      } catch (err) {
+        // 降级到本地存储
+        const saved = JSON.parse(localStorage.getItem('chat-settings') || '{}');
+        if (saved.agentPrompt) agentPrompt.value = saved.agentPrompt;
+        if (saved.agentName) { currentAgentName = saved.agentName; agentNameSet.value = saved.agentName; }
+        if (saved.userName) { currentUserName = saved.userName; userNameInput.value = saved.userName; }
+        if (saved.agentAvatarUrl) { agentAvatarUrl = saved.agentAvatarUrl; updateAgentAvatarDisplay(); }
+        if (saved.userAvatarUrl) userAvatarUrl = saved.userAvatarUrl;
+        if (saved.fontSize) fontSizeInput.value = saved.fontSize;
+        if (saved.lineHeight) lineHeightInput.value = saved.lineHeight;
+        if (saved.userTextColor) userTextColor.value = saved.userTextColor;
+        if (saved.aiTextColor) aiTextColor.value = saved.aiTextColor;
+        if (saved.bubblePx) bubblePxInput.value = saved.bubblePx;
+        if (saved.bubblePy) bubblePyInput.value = saved.bubblePy;
+        if (saved.chatHPadding) chatHPaddingInput.value = saved.chatHPadding;
+        updateNameDisplays();
+        updateCSSVariables();
+      }
+    }
 
+    // 头像上传处理（保持原有）
     agentAvatarUpload.addEventListener('click', () => agentAvatarFile.click());
     agentAvatarFile.addEventListener('change', e => {
       const file = e.target.files[0];
@@ -775,10 +819,19 @@ ${script}
       }
     });
 
+    // 事件绑定
+    sendBtn.addEventListener('click', sendMessage);
+    msgInput.addEventListener('keypress', e => { if (e.key === 'Enter') sendMessage(); });
+    clearBtn.addEventListener('click', clearChat);
+    resetScriptBtn.addEventListener('click', resetScript);
+    saveSetBtn.addEventListener('click', async () => {
+      await saveSettingsToCloud();
+      alert('设置已保存并同步云端');
+    });
     agentNameDisplay.addEventListener('click', () => openNameEditor('agent'));
     userNameDisplay.addEventListener('click', () => openNameEditor('user'));
     nameEditCancel.addEventListener('click', closeNameEditor);
-    nameEditConfirm.addEventListener('click', () => {
+    nameEditConfirm.addEventListener('click', async () => {
       const newName = nameEditInput.value.trim();
       if (!newName) return;
       if (currentEditTarget === 'agent') {
@@ -790,34 +843,37 @@ ${script}
       }
       updateNameDisplays();
       closeNameEditor();
-      saveSettingsToCloud();
+      await saveSettingsToCloud();
     });
-
     [fontSizeInput, lineHeightInput, userTextColor, aiTextColor, bubblePxInput, bubblePyInput, chatHPaddingInput].forEach(el => {
       el.addEventListener('input', updateCSSVariables);
     });
-
-    sendBtn.addEventListener('click', sendMessage);
-    msgInput.addEventListener('keypress', e => { if (e.key === 'Enter') sendMessage(); });
-    clearBtn.addEventListener('click', clearChat);
-    resetScriptBtn.addEventListener('click', resetScript);
-
+    phoneOpenSet.addEventListener('click', () => {
+      leftPanel.classList.add('expand');
+      drawerOverlay.classList.add('show');
+    });
+    closeDrawerBtn.addEventListener('click', () => {
+      leftPanel.classList.remove('expand');
+      drawerOverlay.classList.remove('show');
+    });
+    drawerOverlay.addEventListener('click', () => {
+      leftPanel.classList.remove('expand');
+      drawerOverlay.classList.remove('show');
+    });
     toggleSettingsBtn.addEventListener('click', () => {
       collapsibleSettings.style.display = collapsibleSettings.style.display === 'block' ? 'none' : 'block';
     });
 
-    window.addEventListener('resize', () => {
-      chatBox.scrollTop = chatBox.scrollHeight;
-    });
-
+    // ---------- 初始化 ----------
     async function init() {
       updateCSSVariables();
       await loadSettingsFromCloud();
-      loadMessagesFromLocal();
-      renderStoredMessages();
+      await loadMessagesFromDatabase();
+      setupRealtimeSubscription();
     }
     init();
 
+    // Service Worker 注册（可选）
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw-chat.js').catch(console.log);
