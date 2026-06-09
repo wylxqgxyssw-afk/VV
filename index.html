@@ -1,835 +1,683 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>黑色极简 · 剧本智能助手</title>
-    <link rel="manifest" href="manifest-chat.json">
-    <link rel="apple-touch-icon" href="icon-192.png">
-    <meta name="theme-color" content="#000000">
-    <script src="https://cdn.tailwindcss.com">
-    </script>
-    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js">
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js">
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
-    </script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        dark: '#000000',
-                        darker: '#121212',
-                        accent: '#165DFF',
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif']
-                    }
-                }
-            }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>黑色极简 · 剧本智能助手</title>
+  <link rel="manifest" href="manifest-chat.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <meta name="theme-color" content="#000000">
+  <script src="https://cdn.tailwindcss.com">
+  </script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js">
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js">
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+  </script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            dark: '#000000', darker: '#121212', accent: '#165DFF',
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'] }
         }
-    </script>
-    <style>
-        :root {
-            --font-size: 16px;
-            --line-height: 1.6;
-            --user-text-color: #FFFFFF;
-            --ai-text-color: #FFFFFF;
-            --bubble-px: 16px;
-            --bubble-py: 8px;
-            --chat-h-padding: 16px;
-            --safe-bottom: env(safe-area-inset-bottom, 0px);
-        }
+      }
+    }
+  </script>
+  <style>
+    :root {
+      --font-size: 16px;
+      --line-height: 1.6;
+      --user-text-color: #FFFFFF;
+      --ai-text-color: #FFFFFF;
+      --bubble-px: 16px;
+      --bubble-py: 8px;
+      --chat-h-padding: 16px;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-        html,
-        body {
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background: #000;
-            color: #fff;
-        }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+      color: #fff;
+    }
 
-        body {
-            height: 100vh;
-            height: 100dvh;
-            position: fixed;
-            top: 0;
-            left: 0;
-        }
+    body {
+      height: 100vh;
+      height: 100dvh;
+      position: fixed;
+      top: 0;
+      left: 0;
+    }
 
-        .layout-container {
-            width: 100%;
-            height: 100%;
-            position: relative;
-            display: grid;
-            grid-template-columns: 1fr;
-            grid-template-rows: 1fr;
-        }
+    .layout-container {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      display: grid;
+      grid-template-columns: 1fr;
+      grid-template-rows: 1fr;
+    }
 
-        .chat-main-panel {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            min-height: 0;
-        }
+    .chat-main-panel {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      min-height: 0;
+    }
 
-        #chat-box {
-            flex: 1 1 auto;
-            overflow-y: auto;
-            min-height: 0;
-            padding-left: var(--chat-h-padding);
-            padding-right: var(--chat-h-padding);
-            padding-bottom: 16px;
-        }
+    #chat-box {
+      flex: 1 1 auto;
+      overflow-y: auto;
+      min-height: 0;
+      padding-left: var(--chat-h-padding);
+      padding-right: var(--chat-h-padding);
+      padding-bottom: 16px;
+    }
 
-        .left-set-panel {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 85%;
-            max-width: 400px;
-            height: 100%;
-            height: 100dvh;
-            z-index: 100;
-            background: #121212;
-            border-right: 1px solid #333;
-            transform: translateX(-100%);
-            transition: transform 0.3s ease;
-            overflow-y: auto;
-            padding: 24px 16px;
-            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.5);
-        }
+    .left-set-panel {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 85%;
+      max-width: 400px;
+      height: 100%;
+      height: 100dvh;
+      z-index: 100;
+      background: #121212;
+      border-right: 1px solid #333;
+      transform: translateX(-100%);
+      transition: transform 0.3s ease;
+      overflow-y: auto;
+      padding: 24px 16px;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.5);
+    }
 
-        .left-set-panel.expand {
-            transform: translateX(0);
-        }
+    .left-set-panel.expand {
+      transform: translateX(0);
+    }
 
-        .drawer-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.6);
-            z-index: 99;
-            display: none;
-        }
+    .drawer-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.6);
+      z-index: 99;
+      display: none;
+    }
 
-        .drawer-overlay.show {
-            display: block;
-        }
+    .drawer-overlay.show {
+      display: block;
+    }
 
-        .mobile-input-bar {
-            display: flex;
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            z-index: 200;
-            background: #000;
-            border-top: 1px solid #333;
-            padding: 12px;
-            padding-bottom: calc(12px + var(--safe-bottom));
-            gap: 8px;
-        }
+    .mobile-input-bar {
+      display: flex;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      z-index: 200;
+      background: #000;
+      border-top: 1px solid #333;
+      padding: 12px;
+      padding-bottom: calc(12px + var(--safe-bottom));
+      gap: 8px;
+    }
 
-        #chat-box {
-            padding-bottom: calc(72px + var(--safe-bottom)) !important;
-        }
+    #chat-box {
+      padding-bottom: calc(72px + var(--safe-bottom)) !important;
+    }
 
-        .scrollbar-hide::-webkit-scrollbar {
-            display: none;
-        }
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+    .scrollbar-hide {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
 
-        .scrollbar-hide {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
+    .avatar-img, .avatar-placeholder {
+      object-fit: cover;
+      width: 100%;
+      height: 100%;
+      border-radius: 4px;
+    }
 
-        .avatar-img,
-        .avatar-placeholder {
-            object-fit: cover;
-            width: 100%;
-            height: 100%;
-            border-radius: 4px;
-        }
+    .msg-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      flex-shrink: 0;
+      overflow: hidden;
+      background: #1a1a1a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: #888;
+    }
 
-        .msg-avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 6px;
-            flex-shrink: 0;
-            overflow: hidden;
-            background: #1a1a1a;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            color: #888;
-        }
+    .message-row {
+      min-width: 0;
+      width: 100%;
+    }
 
-        .message-row {
-            min-width: 0;
-            width: 100%;
-        }
+    .chat-bubble-content {
+      word-wrap: break-word;
+      word-break: break-word;
+      white-space: pre-wrap;
+      max-width: 100%;
+      overflow-wrap: break-word;
+      font-size: var(--font-size);
+      line-height: var(--line-height);
+      padding: var(--bubble-py) var(--bubble-px);
+    }
 
-        .chat-bubble-content {
-            word-wrap: break-word;
-            word-break: break-word;
-            white-space: pre-wrap;
-            max-width: 100%;
-            overflow-wrap: break-word;
-            font-size: var(--font-size);
-            line-height: var(--line-height);
-            padding: var(--bubble-py) var(--bubble-px);
-        }
+    .user-bubble {
+      background-color: #000 !important;
+      color: var(--user-text-color);
+      border: 1px solid #333;
+    }
 
-        .user-bubble {
-            background-color: #000 !important;
-            color: var(--user-text-color);
-            border: 1px solid #333;
-        }
+    .ai-bubble {
+      background-color: #000 !important;
+      color: var(--ai-text-color);
+      border: 1px solid #333;
+    }
 
-        .ai-bubble {
-            background-color: #000 !important;
-            color: var(--ai-text-color);
-            border: 1px solid #333;
-        }
+    .katex {
+      font-size: var(--font-size);
+      line-height: var(--line-height);
+      max-width: 100%;
+      overflow-x: auto;
+      display: inline-block;
+      vertical-align: bottom;
+    }
 
-        .katex {
-            font-size: var(--font-size);
-            line-height: var(--line-height);
-            max-width: 100%;
-            overflow-x: auto;
-            display: inline-block;
-            vertical-align: bottom;
-        }
+    .collapsible-settings { display: none; }
 
-        .collapsible-settings {
-            display: none;
-        }
+    .name-tag {
+      cursor: pointer;
+      transition: all 0.2s;
+      border-bottom: 1px dashed transparent;
+    }
 
-        .name-tag {
-            cursor: pointer;
-            transition: all 0.2s;
-            border-bottom: 1px dashed transparent;
-        }
+    .name-tag:hover {
+      border-bottom-color: #888;
+      color: #ccc;
+    }
 
-        .name-tag:hover {
-            border-bottom-color: #888;
-            color: #ccc;
-        }
+    .name-tag .fa-pencil {
+      opacity: 0;
+      transition: opacity 0.2s;
+      font-size: 0.7em;
+      margin-left: 4px;
+    }
 
-        .name-tag .fa-pencil {
-            opacity: 0;
-            transition: opacity 0.2s;
-            font-size: 0.7em;
-            margin-left: 4px;
-        }
+    .name-tag:hover .fa-pencil { opacity: 0.7; }
 
-        .name-tag:hover .fa-pencil {
-            opacity: 0.7;
-        }
+    .msg-name-label {
+      font-size: 0.7em;
+      opacity: 0.7;
+      letter-spacing: 0.5px;
+      margin-bottom: 3px;
+      display: block;
+      cursor: pointer;
+    }
 
-        .msg-name-label {
-            font-size: 0.7em;
-            opacity: 0.7;
-            letter-spacing: 0.5px;
-            margin-bottom: 3px;
-            display: block;
-            cursor: pointer;
-        }
+    .name-edit-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 300;
+      background: rgba(0,0,0,0.75);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      display: none;
+    }
 
-        .name-edit-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 300;
-            background: rgba(0, 0, 0, 0.75);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            display: none;
-        }
+    .name-edit-dialog {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 12px;
+      padding: 24px;
+      width: 90%;
+      max-width: 380px;
+    }
 
-        .name-edit-dialog {
-            background: #1a1a1a;
-            border: 1px solid #333;
-            border-radius: 12px;
-            padding: 24px;
-            width: 90%;
-            max-width: 380px;
-        }
-
-        .chat-header,
-        .chat-footer {
-            flex-shrink: 0;
-        }
-
-        .sync-indicator {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            margin-right: 6px;
-            background: #555;
-            transition: background 0.3s;
-        }
-        .sync-indicator.synced {
-            background: #4ade80;
-        }
-        .sync-indicator.syncing {
-            background: #facc15;
-            animation: pulse 0.8s infinite;
-        }
-        .sync-indicator.offline {
-            background: #ef4444;
-        }
-        @keyframes pulse {
-            0%,
-            100% {
-                opacity: 1;
-            }
-            50% {
-                opacity: 0.3;
-            }
-        }
-    </style>
+    .chat-header, .chat-footer {
+      flex-shrink: 0;
+    }
+  </style>
 </head>
 <body>
-    <div class="layout-container">
-        <div class="left-set-panel" id="left-panel">
-            <button class="self-end text-gray-400 hover:text-white mb-4" id="close-drawer-btn">
-                <i class="fa fa-times fa-lg"></i>
-            </button>
-            <h1 class="text-xl font-bold mb-4">剧本/人设设置</h1>
-            <textarea class="w-full h-40 bg-dark border border-gray-800 rounded p-3 text-white outline-none resize-none mb-4" placeholder="输入剧本内容，AI会根据剧本回答问题&#10;支持格式：&#10;[red:文字] 红色&#10;[b:文字] 加粗&#10;[br] 换行" id="agent-prompt"></textarea>
+<div class="layout-container">
+  <!-- 左侧抽屉设置面板 -->
+  <div class="left-set-panel" id="left-panel">
+    <button class="self-end text-gray-400 hover:text-white mb-4" id="close-drawer-btn">
+      <i class="fa fa-times fa-lg"></i>
+    </button>
+    <h1 class="text-xl font-bold mb-4">剧本/人设设置</h1>
+    <textarea class="w-full h-40 bg-dark border border-gray-800 rounded p-3 text-white outline-none resize-none mb-4" placeholder="输入剧本内容，AI会根据剧本回答问题&#10;支持格式：&#10;[red:文字] 红色&#10;[b:文字] 加粗&#10;[br] 换行" id="agent-prompt"></textarea>
 
-            <button class="w-full bg-gray-800 rounded p-2 mb-3 text-sm" id="toggle-settings">
-                <i class="fa fa-cog mr-1"></i> 展开头像/样式设置
-            </button>
-            <div class="collapsible-settings bg-dark border border-gray-800 rounded p-3 mb-3 space-y-3" id="collapsible-settings">
-                <div><h3 class="text-sm text-gray-400 mb-1">智能体名称</h3><input class="w-full bg-darker rounded p-2 text-white outline-none" id="agent-name-set"></div>
-                <div><h3 class="text-sm text-gray-400 mb-1">智能体头像</h3><button class="w-full bg-accent/20 rounded p-2 text-sm mb-2" id="agent-avatar-upload">上传头像</button><input type="file" id="agent-avatar-file" class="hidden" accept="image/*"><div id="agent-avatar-preview" class="w-14 h-14 bg-accent/20 flex items-center justify-center overflow-hidden rounded-lg mx-auto"><span>预览</span></div></div>
-                <div class="border-t border-gray-700 pt-3"><h3 class="text-sm text-gray-400 mb-1">你的名称</h3><input class="w-full bg-darker rounded p-2 text-white outline-none" id="user-name"></div>
-                <div><h3 class="text-sm text-gray-400 mb-1">你的头像</h3><button class="w-full bg-accent/20 rounded p-2 text-sm mb-2" id="user-avatar-upload">上传头像</button><input type="file" id="user-avatar-file" class="hidden" accept="image/*"><div id="user-avatar-preview" class="w-14 h-14 bg-accent/20 flex items-center justify-center overflow-hidden rounded-lg mx-auto"><span>预览</span></div></div>
-                <div class="border-t border-gray-700 pt-3"><h3 class="text-sm text-gray-400 mb-1">API Key（已通过代理调用）</h3><input type="password" class="w-full bg-darker rounded p-2 text-white outline-none" id="api-key" placeholder="无需填写" disabled><p class="text-xs text-gray-500 mt-1">已通过 Supabase Edge Function 安全调用 DeepSeek API</p></div>
-                <div class="border-t border-gray-700 pt-3"><h3 class="text-sm text-gray-400 mb-2">样式</h3>
-                    <div class="grid grid-cols-2 gap-2 mb-2">
-                        <div><label class="text-xs text-gray-400">字体大小</label><input type="number" id="font-size" value="16" class="w-full bg-darker rounded p-2 text-white"></div>
-                        <div><label class="text-xs text-gray-400">行间距</label><input type="number" id="line-height" value="1.6" step="0.1" class="w-full bg-darker rounded p-2 text-white"></div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-2 mb-2">
-                        <div><label class="text-xs text-gray-400">我的文字颜色</label><input type="color" id="user-text-color" value="#FFFFFF" class="w-full h-8"></div>
-                        <div><label class="text-xs text-gray-400">AI文字颜色</label><input type="color" id="ai-text-color" value="#FFFFFF" class="w-full h-8"></div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-2 mb-2">
-                        <div><label class="text-xs text-gray-400">气泡水平边距(px)</label><input type="number" id="bubble-px" value="16" class="w-full bg-darker rounded p-2 text-white"></div>
-                        <div><label class="text-xs text-gray-400">气泡垂直边距(py)</label><input type="number" id="bubble-py" value="8" class="w-full bg-darker rounded p-2 text-white"></div>
-                    </div>
-                    <div class="mb-2">
-                        <label class="text-xs text-gray-400">屏幕边缘距离(px)</label>
-                        <input type="number" id="chat-h-padding" value="16" class="w-full bg-darker rounded p-2 text-white">
-                    </div>
-                </div>
-            </div>
-            <button class="w-full bg-accent rounded p-3" id="save-set">保存所有设置</button>
-            <p class="text-xs text-gray-500 mt-2 text-center">数据自动云端同步，多端一致</p>
+    <button class="w-full bg-gray-800 rounded p-2 mb-3 text-sm" id="toggle-settings">
+      <i class="fa fa-cog mr-1"></i> 展开头像/样式设置
+    </button>
+    <div class="collapsible-settings bg-dark border border-gray-800 rounded p-3 mb-3 space-y-3" id="collapsible-settings">
+      <div><h3 class="text-sm text-gray-400 mb-1">智能体名称</h3><input class="w-full bg-darker rounded p-2 text-white outline-none" id="agent-name-set"></div>
+      <div><h3 class="text-sm text-gray-400 mb-1">智能体头像</h3><button class="w-full bg-accent/20 rounded p-2 text-sm mb-2" id="agent-avatar-upload">上传头像</button><input type="file" id="agent-avatar-file" class="hidden" accept="image/*"><div id="agent-avatar-preview" class="w-14 h-14 bg-accent/20 flex items-center justify-center overflow-hidden rounded-lg mx-auto"><span>预览</span></div></div>
+      <div class="border-t border-gray-700 pt-3"><h3 class="text-sm text-gray-400 mb-1">你的名称</h3><input class="w-full bg-darker rounded p-2 text-white outline-none" id="user-name"></div>
+      <div><h3 class="text-sm text-gray-400 mb-1">你的头像</h3><button class="w-full bg-accent/20 rounded p-2 text-sm mb-2" id="user-avatar-upload">上传头像</button><input type="file" id="user-avatar-file" class="hidden" accept="image/*"><div id="user-avatar-preview" class="w-14 h-14 bg-accent/20 flex items-center justify-center overflow-hidden rounded-lg mx-auto"><span>预览</span></div></div>
+      <div class="border-t border-gray-700 pt-3"><h3 class="text-sm text-gray-400 mb-1">API Key（已通过代理调用）</h3><input type="password" class="w-full bg-darker rounded p-2 text-white outline-none" id="api-key" placeholder="无需填写" disabled><p class="text-xs text-gray-500 mt-1">已通过 Supabase Edge Function 安全调用 DeepSeek API</p></div>
+      <div class="border-t border-gray-700 pt-3"><h3 class="text-sm text-gray-400 mb-2">样式</h3>
+        <div class="grid grid-cols-2 gap-2 mb-2">
+          <div><label class="text-xs text-gray-400">字体大小</label><input type="number" id="font-size" value="16" class="w-full bg-darker rounded p-2 text-white"></div>
+          <div><label class="text-xs text-gray-400">行间距</label><input type="number" id="line-height" value="1.6" step="0.1" class="w-full bg-darker rounded p-2 text-white"></div>
         </div>
-
-        <div class="drawer-overlay" id="drawer-overlay"></div>
-
-        <div class="chat-main-panel bg-dark">
-            <div class="chat-header p-3 border-b border-gray-800 flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <div id="agent-avatar" class="w-10 h-10 bg-accent/20 flex items-center justify-center overflow-hidden rounded-lg"><span class="avatar-placeholder">AI</span></div>
-                    <div>
-                        <span class="text-xs text-gray-500">AI</span>
-                        <span id="agent-name-display" class="font-medium name-tag text-white">剧本助手 <i class="fa fa-pencil"></i></span>
-                    </div>
-                </div>
-                <div class="flex items-center gap-2">
-                    <span class="sync-indicator" id="sync-indicator" title="同步状态"></span>
-                    <span id="user-name-display" class="hidden sm:flex font-medium name-tag text-gray-300 text-sm">我 <i class="fa fa-pencil"></i></span>
-                    <button class="text-gray-400 hover:text-white" id="phone-open-set"><i class="fa fa-bars"></i></button>
-                    <button class="text-gray-400 hover:text-white" id="reset-script">重置剧本</button>
-                    <button class="text-gray-400 hover:text-white" id="clear-chat">清空</button>
-                </div>
-            </div>
-
-            <div class="flex-1 overflow-y-auto scrollbar-hide" id="chat-box"></div>
+        <div class="grid grid-cols-2 gap-2 mb-2">
+          <div><label class="text-xs text-gray-400">我的文字颜色</label><input type="color" id="user-text-color" value="#FFFFFF" class="w-full h-8"></div>
+          <div><label class="text-xs text-gray-400">AI文字颜色</label><input type="color" id="ai-text-color" value="#FFFFFF" class="w-full h-8"></div>
         </div>
+        <div class="grid grid-cols-2 gap-2 mb-2">
+          <div><label class="text-xs text-gray-400">气泡水平边距(px)</label><input type="number" id="bubble-px" value="16" class="w-full bg-darker rounded p-2 text-white"></div>
+          <div><label class="text-xs text-gray-400">气泡垂直边距(py)</label><input type="number" id="bubble-py" value="8" class="w-full bg-darker rounded p-2 text-white"></div>
+        </div>
+        <div class="mb-2">
+          <label class="text-xs text-gray-400">屏幕边缘距离(px)</label>
+          <input type="number" id="chat-h-padding" value="16" class="w-full bg-darker rounded p-2 text-white">
+        </div>
+      </div>
+    </div>
+    <button class="w-full bg-accent rounded p-3" id="save-set">保存所有设置</button>
+    <p class="text-xs text-gray-500 mt-2 text-center">数据自动云端同步，多端一致</p>
+  </div>
+
+  <!-- 遮罩层 -->
+  <div class="drawer-overlay" id="drawer-overlay"></div>
+
+  <!-- 聊天全屏面板 -->
+  <div class="chat-main-panel bg-dark">
+    <div class="chat-header p-3 border-b border-gray-800 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div id="agent-avatar" class="w-10 h-10 bg-accent/20 flex items-center justify-center overflow-hidden rounded-lg"><span class="avatar-placeholder">AI</span></div>
+        <div><span class="text-xs text-gray-500">AI</span><span id="agent-name-display" class="font-medium name-tag text-white">剧本助手 <i class="fa fa-pencil"></i></span></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <span id="user-name-display" class="hidden sm:flex font-medium name-tag text-gray-300 text-sm">我 <i class="fa fa-pencil"></i></span>
+        <button class="text-gray-400 hover:text-white" id="phone-open-set"><i class="fa fa-bars"></i></button>
+        <button class="text-gray-400 hover:text-white" id="reset-script">重置剧本</button>
+        <button class="text-gray-400 hover:text-white" id="clear-chat">清空</button>
+      </div>
     </div>
 
-    <div class="mobile-input-bar" id="mobile-input-area">
-        <input type="text" placeholder="输入消息..." class="flex-1 bg-darker border border-gray-800 rounded-lg p-3 text-white outline-none" id="msg-input">
-        <button class="bg-accent px-5 rounded-lg" id="send-btn"><i class="fa fa-paper-plane"></i></button>
+    <div class="flex-1 overflow-y-auto scrollbar-hide" id="chat-box"></div>
+  </div>
+</div>
+
+<!-- 统一输入栏 -->
+<div class="mobile-input-bar" id="mobile-input-area">
+  <input type="text" placeholder="输入消息..." class="flex-1 bg-darker border border-gray-800 rounded-lg p-3 text-white outline-none" id="msg-input">
+  <button class="bg-accent px-5 rounded-lg" id="send-btn"><i class="fa fa-paper-plane"></i></button>
+</div>
+
+<!-- 名称编辑弹窗 -->
+<div id="name-edit-modal" class="name-edit-modal">
+  <div class="name-edit-dialog">
+    <h3 class="text-lg font-bold mb-1" id="name-edit-title"></h3>
+    <p class="text-sm text-gray-400 mb-4" id="name-edit-subtitle"></p>
+    <input type="text" id="name-edit-input" class="w-full bg-dark border border-gray-700 rounded-lg p-3 text-white mb-4" placeholder="输入名称">
+    <div class="flex gap-2 justify-end">
+      <button class="px-4 py-2 bg-gray-700 rounded-lg" id="name-edit-cancel">取消</button>
+      <button class="px-4 py-2 bg-accent rounded-lg" id="name-edit-confirm">确认修改</button>
     </div>
+  </div>
+</div>
 
-    <div id="name-edit-modal" class="name-edit-modal">
-        <div class="name-edit-dialog">
-            <h3 class="text-lg font-bold mb-1" id="name-edit-title"></h3>
-            <p class="text-sm text-gray-400 mb-4" id="name-edit-subtitle"></p>
-            <input type="text" id="name-edit-input" class="w-full bg-dark border border-gray-700 rounded-lg p-3 text-white mb-4" placeholder="输入名称">
-            <div class="flex gap-2 justify-end">
-                <button class="px-4 py-2 bg-gray-700 rounded-lg" id="name-edit-cancel">取消</button>
-                <button class="px-4 py-2 bg-accent rounded-lg" id="name-edit-confirm">确认修改</button>
-            </div>
-        </div>
-    </div>
+<script>
+  (function() {
+    const SUPABASE_URL = 'https://vkeaimeytsymepgkizqk.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_R66fP0xmbxUZTeu7kjQYjQ_FHdXlRvm';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const AI_PROXY_URL = 'https://vkeaimeytsymepgkizqk.supabase.co/functions/v1/swift-api';
 
-    <script>
-        (function() {
-            const SUPABASE_URL = 'https://vkeaimeytsymepgkizqk.supabase.co';
-            const SUPABASE_ANON_KEY = 'sb_publishable_R66fP0xmbxUZTeu7kjQYjQ_FHdXlRvm';
-            const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-            const AI_PROXY_URL = 'https://vkeaimeytsymepgkizqk.supabase.co/functions/v1/swift-api';
+    // 消息表格名称
+    const MESSAGES_TABLE = 'chat_messages';
+    const SETTINGS_TABLE = 'user_settings';
+    const SETTINGS_ID = 'default';
+    const CONVERSATION_ID = 'default'; // 所有设备共享同一个对话
 
-            const CHAT_MESSAGES_TABLE = 'chat_messages';
+    const chatBox = document.getElementById('chat-box');
+    const msgInput = document.getElementById('msg-input');
+    const sendBtn = document.getElementById('send-btn');
+    const clearBtn = document.getElementById('clear-chat');
+    const resetScriptBtn = document.getElementById('reset-script');
+    const leftPanel = document.getElementById('left-panel');
+    const phoneOpenSet = document.getElementById('phone-open-set');
+    const closeDrawerBtn = document.getElementById('close-drawer-btn');
+    const drawerOverlay = document.getElementById('drawer-overlay');
+    const toggleSettingsBtn = document.getElementById('toggle-settings');
+    const collapsibleSettings = document.getElementById('collapsible-settings');
+    const agentPrompt = document.getElementById('agent-prompt');
+    const agentNameSet = document.getElementById('agent-name-set');
+    const userNameInput = document.getElementById('user-name');
+    const saveSetBtn = document.getElementById('save-set');
+    const agentAvatarUpload = document.getElementById('agent-avatar-upload');
+    const agentAvatarFile = document.getElementById('agent-avatar-file');
+    const agentAvatarPreview = document.getElementById('agent-avatar-preview');
+    const userAvatarUpload = document.getElementById('user-avatar-upload');
+    const userAvatarFile = document.getElementById('user-avatar-file');
+    const userAvatarPreview = document.getElementById('user-avatar-preview');
+    const fontSizeInput = document.getElementById('font-size');
+    const lineHeightInput = document.getElementById('line-height');
+    const userTextColor = document.getElementById('user-text-color');
+    const aiTextColor = document.getElementById('ai-text-color');
+    const bubblePxInput = document.getElementById('bubble-px');
+    const bubblePyInput = document.getElementById('bubble-py');
+    const chatHPaddingInput = document.getElementById('chat-h-padding');
+    const agentNameDisplay = document.getElementById('agent-name-display');
+    const userNameDisplay = document.getElementById('user-name-display');
+    const agentAvatarDiv = document.getElementById('agent-avatar');
+    const nameEditModal = document.getElementById('name-edit-modal');
+    const nameEditTitle = document.getElementById('name-edit-title');
+    const nameEditSubtitle = document.getElementById('name-edit-subtitle');
+    const nameEditInput = document.getElementById('name-edit-input');
+    const nameEditCancel = document.getElementById('name-edit-cancel');
+    const nameEditConfirm = document.getElementById('name-edit-confirm');
 
-            const chatBox = document.getElementById('chat-box');
-            const msgInput = document.getElementById('msg-input');
-            const sendBtn = document.getElementById('send-btn');
-            const clearBtn = document.getElementById('clear-chat');
-            const resetScriptBtn = document.getElementById('reset-script');
-            const leftPanel = document.getElementById('left-panel');
-            const phoneOpenSet = document.getElementById('phone-open-set');
-            const closeDrawerBtn = document.getElementById('close-drawer-btn');
-            const drawerOverlay = document.getElementById('drawer-overlay');
-            const toggleSettingsBtn = document.getElementById('toggle-settings');
-            const collapsibleSettings = document.getElementById('collapsible-settings');
-            const agentPrompt = document.getElementById('agent-prompt');
-            const agentNameSet = document.getElementById('agent-name-set');
-            const userNameInput = document.getElementById('user-name');
-            const saveSetBtn = document.getElementById('save-set');
-            const agentAvatarUpload = document.getElementById('agent-avatar-upload');
-            const agentAvatarFile = document.getElementById('agent-avatar-file');
-            const agentAvatarPreview = document.getElementById('agent-avatar-preview');
-            const userAvatarUpload = document.getElementById('user-avatar-upload');
-            const userAvatarFile = document.getElementById('user-avatar-file');
-            const userAvatarPreview = document.getElementById('user-avatar-preview');
-            const fontSizeInput = document.getElementById('font-size');
-            const lineHeightInput = document.getElementById('line-height');
-            const userTextColor = document.getElementById('user-text-color');
-            const aiTextColor = document.getElementById('ai-text-color');
-            const bubblePxInput = document.getElementById('bubble-px');
-            const bubblePyInput = document.getElementById('bubble-py');
-            const chatHPaddingInput = document.getElementById('chat-h-padding');
-            const agentNameDisplay = document.getElementById('agent-name-display');
-            const userNameDisplay = document.getElementById('user-name-display');
-            const agentAvatarDiv = document.getElementById('agent-avatar');
-            const nameEditModal = document.getElementById('name-edit-modal');
-            const nameEditTitle = document.getElementById('name-edit-title');
-            const nameEditSubtitle = document.getElementById('name-edit-subtitle');
-            const nameEditInput = document.getElementById('name-edit-input');
-            const nameEditCancel = document.getElementById('name-edit-cancel');
-            const nameEditConfirm = document.getElementById('name-edit-confirm');
-            const syncIndicator = document.getElementById('sync-indicator');
+    let currentAgentName = '剧本助手';
+    let currentUserName = '我';
+    let agentAvatarUrl = '';
+    let userAvatarUrl = '';
+    let currentEditTarget = null;
+    let messages = [];
 
-            let currentAgentName = '剧本助手';
-            let currentUserName = '我';
-            let agentAvatarUrl = '';
-            let userAvatarUrl = '';
-            let currentEditTarget = null;
-            let messages = [];
-            let cloudSyncAvailable = false;
-            let realtimeChannel = null;
-            let pollingTimer = null;
-            let knownClientIds = new Set();
+    const MESSAGES_LOCAL_KEY = 'chat-messages-local';
 
-            const MESSAGES_STORAGE_KEY = 'chat-messages';
+    // ---------- 抽屉控制 ----------
+    function openDrawer() {
+      leftPanel.classList.add('expand');
+      drawerOverlay.classList.add('show');
+    }
+    function closeDrawer() {
+      leftPanel.classList.remove('expand');
+      drawerOverlay.classList.remove('show');
+    }
+    phoneOpenSet.addEventListener('click', openDrawer);
+    closeDrawerBtn.addEventListener('click', closeDrawer);
+    drawerOverlay.addEventListener('click', closeDrawer);
 
-            function setSyncStatus(status) {
-                syncIndicator.className = 'sync-indicator ' + status;
-                if (status === 'synced') syncIndicator.title = '云端已同步';
-                else if (status === 'syncing') syncIndicator.title = '同步中...';
-                else if (status === 'offline') syncIndicator.title = '离线模式（仅本地存储）';
-                else syncIndicator.title = '同步状态未知';
+    // ---------- 样式变量更新 ----------
+    function updateCSSVariables() {
+      document.documentElement.style.setProperty('--font-size', fontSizeInput.value + 'px');
+      document.documentElement.style.setProperty('--line-height', lineHeightInput.value);
+      document.documentElement.style.setProperty('--user-text-color', userTextColor.value);
+      document.documentElement.style.setProperty('--ai-text-color', aiTextColor.value);
+      document.documentElement.style.setProperty('--bubble-px', bubblePxInput.value + 'px');
+      document.documentElement.style.setProperty('--bubble-py', bubblePyInput.value + 'px');
+      document.documentElement.style.setProperty('--chat-h-padding', chatHPaddingInput.value + 'px');
+    }
+
+    // ---------- LaTeX 渲染 ----------
+    function renderLatex(element) {
+      try {
+        renderMathInElement(element, {
+          delimiters: [
+            {left: '$$', right: '$$', display: true},
+            {left: '$', right: '$', display: false},
+            {left: '\\(', right: '\\)', display: false},
+            {left: '\\[', right: '\\]', display: true}
+          ],
+          throwOnError: false
+        });
+      } catch(e) {}
+    }
+
+    // ---------- 名称显示更新 ----------
+    function updateNameDisplays() {
+      agentNameDisplay.innerHTML = `${currentAgentName} <i class="fa fa-pencil"></i>`;
+      userNameDisplay.innerHTML = `${currentUserName} <i class="fa fa-pencil"></i>`;
+    }
+
+    function updateAgentAvatarDisplay() {
+      agentAvatarDiv.innerHTML = agentAvatarUrl
+          ? `<img src="${agentAvatarUrl}" class="avatar-img" alt="agent avatar">`
+          : '<span class="avatar-placeholder">AI</span>';
+    }
+
+    // ---------- 名称编辑弹窗 ----------
+    function openNameEditor(target) {
+      currentEditTarget = target;
+      if (target === 'agent') {
+        nameEditTitle.textContent = '修改智能体名称';
+        nameEditSubtitle.textContent = '输入新的名称';
+        nameEditInput.value = currentAgentName;
+      } else {
+        nameEditTitle.textContent = '修改你的名称';
+        nameEditSubtitle.textContent = '输入你的称呼';
+        nameEditInput.value = currentUserName;
+      }
+      nameEditModal.style.display = 'flex';
+      nameEditInput.focus();
+    }
+    function closeNameEditor() {
+      nameEditModal.style.display = 'none';
+      currentEditTarget = null;
+    }
+
+    // ---------- 本地消息缓存 ----------
+    function saveMessagesLocal() {
+      try {
+        localStorage.setItem(MESSAGES_LOCAL_KEY, JSON.stringify(messages));
+      } catch (e) {}
+    }
+
+    function loadMessagesLocal() {
+      try {
+        const saved = localStorage.getItem(MESSAGES_LOCAL_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) messages = parsed;
+        }
+      } catch (e) {
+        messages = [];
+      }
+    }
+
+    // ---------- 云端消息同步 ----------
+    async function upsertMessageToCloud(msg) {
+      if (!msg.id) return;
+      try {
+        const { error } = await supabase.from(MESSAGES_TABLE).upsert({
+          id: msg.id,
+          role: msg.role,
+          content: msg.content,
+          conversation_id: CONVERSATION_ID,
+          created_at: msg.created_at || new Date().toISOString()
+        }, { onConflict: 'id' });
+        if (error) console.warn('消息同步失败:', error);
+      } catch (e) {
+        console.warn('消息上传异常:', e);
+      }
+    }
+
+    async function fetchMessagesFromCloud() {
+      try {
+        const { data, error } = await supabase
+            .from(MESSAGES_TABLE)
+            .select('*')
+            .eq('conversation_id', CONVERSATION_ID)
+            .order('created_at', { ascending: true });
+        if (error) throw error;
+        if (data && data.length > 0) {
+          messages = data.map(d => ({ id: d.id, role: d.role, content: d.content, created_at: d.created_at }));
+          saveMessagesLocal(); // 更新本地缓存
+          return true;
+        }
+        return false;
+      } catch (e) {
+        console.warn('云端消息加载失败，使用本地缓存', e);
+        return false;
+      }
+    }
+
+    async function deleteAllMessagesFromCloud() {
+      try {
+        const { error } = await supabase
+            .from(MESSAGES_TABLE)
+            .delete()
+            .eq('conversation_id', CONVERSATION_ID);
+        if (error) console.warn('云端消息删除失败:', error);
+      } catch (e) {}
+    }
+
+    // ---------- 渲染消息到DOM ----------
+    function renderAllMessages() {
+      chatBox.innerHTML = '';
+      messages.forEach(msg => {
+        addMessageToDOM(msg.role, msg.content, false, msg.id);
+      });
+      if (messages.length === 0) {
+        // 无消息时显示欢迎语，但不存入云端
+        const welcomeId = generateId();
+        const welcomeMsg = { id: welcomeId, role: 'assistant', content: '欢迎使用剧本智能助手！点击左上角按钮设置剧本。', created_at: new Date().toISOString() };
+        messages.push(welcomeMsg);
+        saveMessagesLocal();
+        addMessageToDOM('assistant', welcomeMsg.content, false, welcomeId);
+        // 欢迎语也同步到云端，保证多端首次看到
+        upsertMessageToCloud(welcomeMsg);
+      }
+    }
+
+    function generateId() {
+      return crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).substr(2);
+    }
+
+    function typewriterEffect(fullText, msgElement, msgId) {
+      const bubble = msgElement.querySelector('.chat-bubble-content');
+      let index = 0;
+      bubble.innerHTML = '';
+      const interval = setInterval(() => {
+        if (index < fullText.length) {
+          if (fullText.charAt(index) === '<') {
+            const endIndex = fullText.indexOf('>', index);
+            if (endIndex !== -1) {
+              bubble.innerHTML += fullText.substring(index, endIndex + 1);
+              index = endIndex + 1;
+            } else {
+              bubble.innerHTML += fullText.charAt(index);
+              index++;
             }
+          } else {
+            bubble.innerHTML += fullText.charAt(index);
+            index++;
+          }
+          chatBox.scrollTop = chatBox.scrollHeight;
+          renderLatex(msgElement);
+        } else {
+          clearInterval(interval);
+          // 动画完成后更新对应消息内容并同步云端
+          const msg = messages.find(m => m.id === msgId);
+          if (msg) {
+            msg.content = fullText;
+            saveMessagesLocal();
+            upsertMessageToCloud(msg);
+          }
+          chatBox.scrollTop = chatBox.scrollHeight;
+        }
+      }, 30);
+    }
 
-            function generateClientId() {
-                return 'msg_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 10);
-            }
+    function addMessageToDOM(role, content, animate = false, msgId = null) {
+      const isUser = role === 'user';
+      const avatarSrc = isUser ? userAvatarUrl : agentAvatarUrl;
+      const avatarInitial = isUser ? (currentUserName || '我').charAt(0) : (currentAgentName || 'AI').charAt(0);
+      const senderName = isUser ? currentUserName : currentAgentName;
 
-            function openDrawer() {
-                leftPanel.classList.add('expand');
-                drawerOverlay.classList.add('show');
-            }
+      const div = document.createElement('div');
+      div.className = `message-row flex mb-4 ${isUser ? 'justify-end' : 'justify-start'} items-start gap-2`;
 
-            function closeDrawer() {
-                leftPanel.classList.remove('expand');
-                drawerOverlay.classList.remove('show');
-            }
-            phoneOpenSet.addEventListener('click', openDrawer);
-            closeDrawerBtn.addEventListener('click', closeDrawer);
-            drawerOverlay.addEventListener('click', closeDrawer);
+      const avatarHTML = avatarSrc
+          ? `<img src="${avatarSrc}" class="avatar-img" alt="avatar">`
+          : `<span>${avatarInitial}</span>`;
 
-            function updateCSSVariables() {
-                document.documentElement.style.setProperty('--font-size', fontSizeInput.value + 'px');
-                document.documentElement.style.setProperty('--line-height', lineHeightInput.value);
-                document.documentElement.style.setProperty('--user-text-color', userTextColor.value);
-                document.documentElement.style.setProperty('--ai-text-color', aiTextColor.value);
-                document.documentElement.style.setProperty('--bubble-px', bubblePxInput.value + 'px');
-                document.documentElement.style.setProperty('--bubble-py', bubblePyInput.value + 'px');
-                document.documentElement.style.setProperty('--chat-h-padding', chatHPaddingInput.value + 'px');
-            }
+      if (isUser) {
+        div.innerHTML = `
+          <div class="max-w-[75%]">
+            <span class="msg-name-label text-right">${senderName}</span>
+            <div class="inline-block rounded-lg chat-bubble-content user-bubble">${content}</div>
+          </div>
+          <div class="msg-avatar">${avatarHTML}</div>
+        `;
+      } else {
+        div.innerHTML = `
+          <div class="msg-avatar">${avatarHTML}</div>
+          <div class="max-w-[75%]">
+            <span class="msg-name-label">${senderName}</span>
+            <div class="inline-block rounded-lg chat-bubble-content ai-bubble">${content}</div>
+          </div>
+        `;
+      }
 
-            function renderLatex(element) {
-                try {
-                    renderMathInElement(element, {
-                        delimiters: [
-                            { left: '$$', right: '$$', display: true },
-                            { left: '$', right: '$', display: false },
-                            { left: '\\(', right: '\\)', display: false },
-                            { left: '\\[', right: '\\]', display: true }
-                        ],
-                        throwOnError: false
-                    });
-                } catch (e) {}
-            }
+      chatBox.appendChild(div);
 
-            function updateNameDisplays() {
-                agentNameDisplay.innerHTML = `${currentAgentName} <i class="fa fa-pencil"></i>`;
-                userNameDisplay.innerHTML = `${currentUserName} <i class="fa fa-pencil"></i>`;
-            }
+      if (role === 'assistant' && animate && msgId) {
+        typewriterEffect(content, div, msgId);
+      } else {
+        renderLatex(div);
+        chatBox.scrollTop = chatBox.scrollHeight;
+      }
+      return div;
+    }
 
-            function updateAgentAvatarDisplay() {
-                agentAvatarDiv.innerHTML = agentAvatarUrl ?
-                    `<img src="${agentAvatarUrl}" class="avatar-img" alt="agent avatar">` :
-                    '<span class="avatar-placeholder">AI</span>';
-            }
+    // ---------- 添加消息（本地+云端） ----------
+    async function addMessage(role, content, animate = false) {
+      const id = generateId();
+      const msg = {
+        id,
+        role,
+        content,
+        created_at: new Date().toISOString()
+      };
+      messages.push(msg);
+      saveMessagesLocal();
+      // 用户消息立即同步；AI消息在动画完成后同步（见typewriterEffect）
+      if (role === 'user') {
+        await upsertMessageToCloud(msg);
+      }
+      addMessageToDOM(role, content, animate, id);
+    }
 
-            function openNameEditor(target) {
-                currentEditTarget = target;
-                if (target === 'agent') {
-                    nameEditTitle.textContent = '修改智能体名称';
-                    nameEditSubtitle.textContent = '输入新的名称';
-                    nameEditInput.value = currentAgentName;
-                } else {
-                    nameEditTitle.textContent = '修改你的名称';
-                    nameEditSubtitle.textContent = '输入你的称呼';
-                    nameEditInput.value = currentUserName;
-                }
-                nameEditModal.style.display = 'flex';
-                nameEditInput.focus();
-            }
+    // ---------- 剧本格式解析 ----------
+    function parseScriptFormat(text) {
+      let result = text;
+      result = result.replace(/\[red:(.*?)\]/g, '<span style="color: #ff4444">$1</span>');
+      result = result.replace(/\[b:(.*?)\]/g, '<strong>$1</strong>');
+      result = result.replace(/\[br\]/g, '<br>');
+      return result;
+    }
 
-            function closeNameEditor() {
-                nameEditModal.style.display = 'none';
-                currentEditTarget = null;
-            }
+    // ---------- AI 回复 ----------
+    async function getAIResponse(userMessage) {
+      const script = agentPrompt.value.trim();
+      if (!script) return "请先在左侧设置中填写剧本内容。";
 
-            function saveMessagesToLocal() {
-                try {
-                    const toSave = messages.map(m => ({
-                        role: m.role,
-                        content: m.content,
-                        client_id: m.client_id
-                    }));
-                    localStorage.setItem(MESSAGES_STORAGE_KEY, JSON.stringify(toSave));
-                } catch (e) {
-                    console.warn('无法保存聊天记录到本地', e);
-                }
-            }
-
-            function loadMessagesFromLocal() {
-                try {
-                    const saved = localStorage.getItem(MESSAGES_STORAGE_KEY);
-                    if (saved) {
-                        const parsed = JSON.parse(saved);
-                        if (Array.isArray(parsed)) {
-                            const loaded = parsed.filter(m => m.role && m.content).map(m => ({
-                                role: m.role,
-                                content: m.content,
-                                client_id: m.client_id || generateClientId()
-                            }));
-                            return loaded;
-                        }
-                    }
-                } catch (e) {}
-                return [];
-            }
-
-            async function insertMessageToCloud(msg) {
-                if (!cloudSyncAvailable) return null;
-                try {
-                    const { data, error } = await supabase
-                        .from(CHAT_MESSAGES_TABLE)
-                        .insert({
-                            client_id: msg.client_id,
-                            role: msg.role,
-                            content: msg.content
-                        })
-                        .select('id, created_at')
-                        .single();
-                    if (error) throw error;
-                    return data;
-                } catch (err) {
-                    console.warn('云端插入消息失败:', err.message);
-                    if (err.code === '42P01' || err.message.includes('does not exist')) {
-                        cloudSyncAvailable = false;
-                        setSyncStatus('offline');
-                    }
-                    return null;
-                }
-            }
-
-            async function deleteAllMessagesFromCloud() {
-                if (!cloudSyncAvailable) return;
-                try {
-                    const { error } = await supabase
-                        .from(CHAT_MESSAGES_TABLE)
-                        .delete()
-                        .not('id', 'is', null);
-                    if (error) throw error;
-                } catch (err) {
-                    console.warn('云端删除消息失败:', err.message);
-                    if (err.code === '42P01' || err.message.includes('does not exist')) {
-                        cloudSyncAvailable = false;
-                        setSyncStatus('offline');
-                    }
-                }
-            }
-
-            async function loadMessagesFromCloud() {
-                if (!cloudSyncAvailable) return null;
-                try {
-                    const { data, error } = await supabase
-                        .from(CHAT_MESSAGES_TABLE)
-                        .select('*')
-                        .order('created_at', { ascending: true })
-                        .limit(500);
-                    if (error) throw error;
-                    if (Array.isArray(data)) {
-                        return data.map(row => ({
-                            role: row.role,
-                            content: row.content,
-                            client_id: row.client_id,
-                            cloud_id: row.id,
-                            created_at: row.created_at
-                        }));
-                    }
-                    return [];
-                } catch (err) {
-                    console.warn('云端加载消息失败:', err.message);
-                    if (err.code === '42P01' || err.message.includes('does not exist')) {
-                        cloudSyncAvailable = false;
-                        setSyncStatus('offline');
-                    }
-                    return null;
-                }
-            }
-
-            async function uploadLocalOnlyMessages(localMsgs) {
-                if (!cloudSyncAvailable) return;
-                for (const msg of localMsgs) {
-                    if (!knownClientIds.has(msg.client_id)) {
-                        const result = await insertMessageToCloud(msg);
-                        if (result) {
-                            knownClientIds.add(msg.client_id);
-                        }
-                    }
-                }
-            }
-
-            function mergeMessages(cloudMsgs, localMsgs) {
-                const mergedMap = new Map();
-                for (const msg of cloudMsgs) {
-                    mergedMap.set(msg.client_id, {
-                        role: msg.role,
-                        content: msg.content,
-                        client_id: msg.client_id
-                    });
-                    knownClientIds.add(msg.client_id);
-                }
-                for (const msg of localMsgs) {
-                    if (!mergedMap.has(msg.client_id)) {
-                        mergedMap.set(msg.client_id, {
-                            role: msg.role,
-                            content: msg.content,
-                            client_id: msg.client_id
-                        });
-                        knownClientIds.add(msg.client_id);
-                    }
-                }
-                const merged = Array.from(mergedMap.values());
-                if (cloudMsgs.length > 0 && merged.length > 0) {
-                    const cloudOrder = cloudMsgs.map(m => m.client_id);
-                    const inOrder = [];
-                    const extras = [];
-                    for (const msg of merged) {
-                        if (cloudOrder.includes(msg.client_id)) {
-                            inOrder.push(msg);
-                        } else {
-                            extras.push(msg);
-                        }
-                    }
-                    inOrder.sort((a, b) => cloudOrder.indexOf(a.client_id) - cloudOrder.indexOf(b.client_id));
-                    return [...inOrder, ...extras];
-                }
-                return merged;
-            }
-
-            function renderStoredMessages() {
-                chatBox.innerHTML = '';
-                messages.forEach(msg => {
-                    addMessageToDOM(msg.role, msg.content, false);
-                });
-                if (messages.length === 0) {
-                    const welcomeMsg = {
-                        role: 'assistant',
-                        content: '欢迎使用剧本智能助手！点击左上角按钮设置剧本。',
-                        client_id: generateClientId()
-                    };
-                    messages.push(welcomeMsg);
-                    saveMessagesToLocal();
-                    addMessageToDOM(welcomeMsg.role, welcomeMsg.content, false);
-                    if (cloudSyncAvailable) {
-                        insertMessageToCloud(welcomeMsg).then(result => {
-                            if (result) knownClientIds.add(welcomeMsg.client_id);
-                        });
-                    }
-                }
-                chatBox.scrollTop = chatBox.scrollHeight;
-            }
-
-            function typewriterEffect(fullText, msgElement, msgRef) {
-                const bubble = msgElement.querySelector('.chat-bubble-content');
-                let index = 0;
-                bubble.innerHTML = '';
-                const interval = setInterval(() => {
-                    if (index < fullText.length) {
-                        if (fullText.charAt(index) === '<') {
-                            const endIndex = fullText.indexOf('>', index);
-                            if (endIndex !== -1) {
-                                bubble.innerHTML += fullText.substring(index, endIndex + 1);
-                                index = endIndex + 1;
-                            } else {
-                                bubble.innerHTML += fullText.charAt(index);
-                                index++;
-                            }
-                        } else {
-                            bubble.innerHTML += fullText.charAt(index);
-                            index++;
-                        }
-                        chatBox.scrollTop = chatBox.scrollHeight;
-                        renderLatex(msgElement);
-                    } else {
-                        clearInterval(interval);
-                        if (msgRef && msgRef.role === 'assistant') {
-                            msgRef.content = fullText;
-                        }
-                        saveMessagesToLocal();
-                        if (cloudSyncAvailable && msgRef && msgRef.client_id && !knownClientIds.has(msgRef
-                                .client_id)) {
-                            insertMessageToCloud(msgRef).then(result => {
-                                if (result) {
-                                    knownClientIds.add(msgRef.client_id);
-                                    setSyncStatus('synced');
-                                }
-                            });
-                        }
-                        chatBox.scrollTop = chatBox.scrollHeight;
-                    }
-                }, 30);
-            }
-
-            function addMessageToDOM(role, content, animate = false, msgRef = null) {
-                const isUser = role === 'user';
-                const avatarSrc = isUser ? userAvatarUrl : agentAvatarUrl;
-                const avatarInitial = isUser ? (currentUserName || '我').charAt(0) : (currentAgentName || 'AI').charAt(
-                    0);
-                const senderName = isUser ? currentUserName : currentAgentName;
-
-                const div = document.createElement('div');
-                div.className = `message-row flex mb-4 ${isUser ? 'justify-end' : 'justify-start'} items-start gap-2`;
-
-                const avatarHTML = avatarSrc ?
-                    `<img src="${avatarSrc}" class="avatar-img" alt="avatar">` :
-                    `<span>${avatarInitial}</span>`;
-
-                if (isUser) {
-                    div.innerHTML = `
-                        <div class="max-w-[75%]">
-                            <span class="msg-name-label text-right">${senderName}</span>
-                            <div class="inline-block rounded-lg chat-bubble-content user-bubble">${content}</div>
-                        </div>
-                        <div class="msg-avatar">${avatarHTML}</div>
-                    `;
-                } else {
-                    div.innerHTML = `
-                        <div class="msg-avatar">${avatarHTML}</div>
-                        <div class="max-w-[75%]">
-                            <span class="msg-name-label">${senderName}</span>
-                            <div class="inline-block rounded-lg chat-bubble-content ai-bubble">${content}</div>
-                        </div>
-                    `;
-                }
-
-                chatBox.appendChild(div);
-
-                if (role === 'assistant' && animate && msgRef) {
-                    typewriterEffect(content, div, msgRef);
-                } else {
-                    renderLatex(div);
-                    chatBox.scrollTop = chatBox.scrollHeight;
-                }
-                return div;
-            }
-
-            function addMessage(role, content, animate = false) {
-                const clientId = generateClientId();
-                const msg = { role, content, client_id: clientId };
-                messages.push(msg);
-                knownClientIds.add(clientId);
-                saveMessagesToLocal();
-
-                if (cloudSyncAvailable && !animate) {
-                    setSyncStatus('syncing');
-                    insertMessageToCloud(msg).then(result => {
-                        if (result) {
-                            knownClientIds.add(clientId);
-                            setSyncStatus('synced');
-                        } else {
-                            setSyncStatus('offline');
-                        }
-                    });
-                } else if (cloudSyncAvailable && animate) {
-                    setSyncStatus('syncing');
-                } else if (!cloudSyncAvailable) {
-                    setSyncStatus('offline');
-                }
-
-                const msgElement = addMessageToDOM(role, content, animate, msg);
-                return msg;
-            }
-
-            function parseScriptFormat(text) {
-                let result = text;
-                result = result.replace(/\[red:(.*?)\]/g, '<span style="color: #ff4444">$1</span>');
-                result = result.replace(/\[b:(.*?)\]/g, '<strong>$1</strong>');
-                result = result.replace(/\[br\]/g, '<br>');
-                return result;
-            }
-
-            async function getAIResponse(userMessage) {
-                const script = agentPrompt.value.trim();
-                if (!script) return "请先在左侧设置中填写剧本内容。";
-
-                const systemPrompt = `
+      const systemPrompt = `
 你是一个严格按照剧本回答问题的助手。
 ⚠️ 绝对规则：
 1. 所有回答只能来自下面的剧本内容，绝对不能编造任何剧本里没有的信息。
@@ -842,473 +690,282 @@ ${script}
 --- 剧本结束 ---
 `;
 
-                try {
-                    const response = await fetch(AI_PROXY_URL, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            messages: [
-                                { role: 'system', content: systemPrompt },
-                                { role: 'user', content: userMessage }
-                            ],
-                        }),
-                    });
+      try {
+        const response = await fetch(AI_PROXY_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: userMessage }
+            ],
+          }),
+        });
 
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(errorData.error?.message || '请求失败');
-                    }
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error?.message || '请求失败');
+        }
 
-                    const data = await response.json();
-                    return parseScriptFormat(data.choices[0].message.content.trim());
-                } catch (error) {
-                    return `⚠️ AI 模式出错：${error.message}<br>请检查 Supabase Edge Function 是否部署正常。`;
-                }
-            }
+        const data = await response.json();
+        return parseScriptFormat(data.choices[0].message.content.trim());
+      } catch (error) {
+        return `⚠️ AI 模式出错：${error.message}<br>请检查 Supabase Edge Function 是否部署正常。`;
+      }
+    }
 
-            async function sendMessage() {
-                const value = msgInput.value.trim();
-                if (!value) return;
-                addMessage('user', value);
-                msgInput.value = '';
+    // ---------- 发送消息流程 ----------
+    async function sendMessage() {
+      const value = msgInput.value.trim();
+      if (!value) return;
+      await addMessage('user', value);
+      msgInput.value = '';
 
-                const loadingDiv = document.createElement('div');
-                loadingDiv.className = 'message-row flex mb-4 justify-start items-start gap-2';
-                loadingDiv.innerHTML = `
-                    <div class="msg-avatar">${agentAvatarUrl ? `<img src="${agentAvatarUrl}" class="avatar-img">` : (currentAgentName || 'AI').charAt(0)}</div>
-                    <div class="max-w-[75%]">
-                        <span class="msg-name-label">${currentAgentName}</span>
-                        <div class="inline-block rounded-lg ai-bubble chat-bubble-content">思考中...</div>
-                    </div>
-                `;
-                chatBox.appendChild(loadingDiv);
-                chatBox.scrollTop = chatBox.scrollHeight;
+      // 显示“思考中”占位
+      const loadingId = generateId();
+      const loadingDiv = document.createElement('div');
+      loadingDiv.className = 'message-row flex mb-4 justify-start items-start gap-2';
+      loadingDiv.innerHTML = `
+        <div class="msg-avatar">${agentAvatarUrl ? `<img src="${agentAvatarUrl}" class="avatar-img">` : (currentAgentName || 'AI').charAt(0)}</div>
+        <div class="max-w-[75%]">
+          <span class="msg-name-label">${currentAgentName}</span>
+          <div class="inline-block rounded-lg ai-bubble chat-bubble-content">思考中...</div>
+        </div>
+      `;
+      chatBox.appendChild(loadingDiv);
+      chatBox.scrollTop = chatBox.scrollHeight;
 
-                const reply = await getAIResponse(value);
-                if (chatBox.contains(loadingDiv)) {
-                    chatBox.removeChild(loadingDiv);
-                }
-                addMessage('assistant', reply, true);
-            }
+      const reply = await getAIResponse(value);
+      if (chatBox.contains(loadingDiv)) {
+        chatBox.removeChild(loadingDiv);
+      }
+      // AI 消息先存入数组并显示（动画），动画完成时会同步云端
+      const aiMsg = {
+        id: generateId(),
+        role: 'assistant',
+        content: reply,
+        created_at: new Date().toISOString()
+      };
+      messages.push(aiMsg);
+      saveMessagesLocal();
+      addMessageToDOM('assistant', reply, true, aiMsg.id);
+    }
 
-            async function clearChat() {
-                messages = [];
-                knownClientIds.clear();
-                saveMessagesToLocal();
-                chatBox.innerHTML = '';
-                if (cloudSyncAvailable) {
-                    setSyncStatus('syncing');
-                    await deleteAllMessagesFromCloud();
-                    setSyncStatus('synced');
-                }
-                const welcomeMsg = {
-                    role: 'assistant',
-                    content: '聊天记录已清空。',
-                    client_id: generateClientId()
-                };
-                messages.push(welcomeMsg);
-                knownClientIds.add(welcomeMsg.client_id);
-                saveMessagesToLocal();
-                addMessageToDOM(welcomeMsg.role, welcomeMsg.content, false);
-                if (cloudSyncAvailable) {
-                    insertMessageToCloud(welcomeMsg).then(result => {
-                        if (result) knownClientIds.add(welcomeMsg.client_id);
-                    });
-                }
-            }
+    // ---------- 清空聊天 ----------
+    async function clearChat() {
+      messages = [];
+      saveMessagesLocal();
+      chatBox.innerHTML = '';
+      await deleteAllMessagesFromCloud();
+      // 清空后显示欢迎语并同步
+      const welcomeId = generateId();
+      const welcomeMsg = { id: welcomeId, role: 'assistant', content: '聊天记录已清空。', created_at: new Date().toISOString() };
+      messages.push(welcomeMsg);
+      saveMessagesLocal();
+      addMessageToDOM('assistant', welcomeMsg.content, false, welcomeId);
+      await upsertMessageToCloud(welcomeMsg);
+    }
 
-            function resetScript() {
-                clearChat().then(() => {
-                    const resetMsg = {
-                        role: 'assistant',
-                        content: '✅ 剧本已重置，可以重新开始。',
-                        client_id: generateClientId()
-                    };
-                    messages.push(resetMsg);
-                    knownClientIds.add(resetMsg.client_id);
-                    saveMessagesToLocal();
-                    addMessageToDOM(resetMsg.role, resetMsg.content, false);
-                    if (cloudSyncAvailable) {
-                        insertMessageToCloud(resetMsg).then(result => {
-                            if (result) knownClientIds.add(resetMsg.client_id);
-                        });
-                    }
-                });
-            }
+    // ---------- 重置剧本 ----------
+    async function resetScript() {
+      await clearChat();
+      // 不再显示额外提示，clearChat 已处理
+    }
 
-            function setupRealtimeSubscription() {
-                if (!cloudSyncAvailable) return;
-                try {
-                    if (realtimeChannel) {
-                        realtimeChannel.unsubscribe();
-                        realtimeChannel = null;
-                    }
-                    realtimeChannel = supabase
-                        .channel('chat-messages-realtime')
-                        .on('postgres_changes', {
-                            event: 'INSERT',
-                            schema: 'public',
-                            table: CHAT_MESSAGES_TABLE
-                        }, (payload) => {
-                            const newMsg = payload.new;
-                            if (!newMsg || !newMsg.client_id) return;
-                            if (knownClientIds.has(newMsg.client_id)) return;
-                            knownClientIds.add(newMsg.client_id);
-                            const msgObj = {
-                                role: newMsg.role,
-                                content: newMsg.content,
-                                client_id: newMsg.client_id
-                            };
-                            const existsInMessages = messages.some(m => m.client_id === newMsg.client_id);
-                            if (!existsInMessages) {
-                                messages.push(msgObj);
-                                messages.sort((a, b) => {
-                                    return 0;
-                                });
-                                saveMessagesToLocal();
-                                addMessageToDOM(msgObj.role, msgObj.content, false);
-                                chatBox.scrollTop = chatBox.scrollHeight;
-                            }
-                        })
-                        .subscribe((status, err) => {
-                            if (status === 'SUBSCRIBED') {
-                                console.log('Realtime 订阅成功');
-                                setSyncStatus('synced');
-                            } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-                                console.warn('Realtime 订阅失败，将使用轮询:', err);
-                                setSyncStatus('offline');
-                                startPollingFallback();
-                            } else if (status === 'CLOSED') {
-                                console.log('Realtime 连接关闭，尝试轮询');
-                                startPollingFallback();
-                            }
-                        });
-                } catch (err) {
-                    console.warn('设置 Realtime 订阅失败:', err);
-                    startPollingFallback();
-                }
-            }
+    // ---------- 设置加载与保存 ----------
+    async function loadSettingsFromCloud() {
+      try {
+        const { data, error } = await supabase
+            .from(SETTINGS_TABLE)
+            .select('*')
+            .eq('id', SETTINGS_ID)
+            .single();
+        if (error) throw error;
+        if (data) {
+          if (data.agent_prompt) agentPrompt.value = data.agent_prompt;
+          if (data.agent_name) { currentAgentName = data.agent_name; agentNameSet.value = data.agent_name; }
+          if (data.user_name) { currentUserName = data.user_name; userNameInput.value = data.user_name; }
+          if (data.agent_avatar_url) { agentAvatarUrl = data.agent_avatar_url; updateAgentAvatarDisplay(); }
+          if (data.user_avatar_url) userAvatarUrl = data.user_avatar_url;
+          if (data.font_size) fontSizeInput.value = data.font_size;
+          if (data.line_height) lineHeightInput.value = data.line_height;
+          if (data.user_text_color) userTextColor.value = data.user_text_color;
+          if (data.ai_text_color) aiTextColor.value = data.ai_text_color;
+          if (data.bubble_px) bubblePxInput.value = data.bubble_px;
+          if (data.bubble_py) bubblePyInput.value = data.bubble_py;
+          if (data.chat_h_padding) chatHPaddingInput.value = data.chat_h_padding;
+          updateNameDisplays();
+          updateCSSVariables();
+          // 同时更新本地缓存
+          saveSettingsLocal();
+          return true;
+        }
+        return false;
+      } catch (err) {
+        console.warn('云端设置加载失败，尝试本地', err);
+        return false;
+      }
+    }
 
-            function startPollingFallback() {
-                if (pollingTimer) return;
-                console.log('启动轮询后备方案（每5秒检查一次）');
-                pollingTimer = setInterval(async () => {
-                    if (!cloudSyncAvailable) return;
-                    const cloudMsgs = await loadMessagesFromCloud();
-                    if (cloudMsgs === null) return;
-                    let hasNew = false;
-                    for (const cm of cloudMsgs) {
-                        if (!knownClientIds.has(cm.client_id)) {
-                            knownClientIds.add(cm.client_id);
-                            const existsInMessages = messages.some(m => m.client_id === cm.client_id);
-                            if (!existsInMessages) {
-                                messages.push({
-                                    role: cm.role,
-                                    content: cm.content,
-                                    client_id: cm.client_id
-                                });
-                                addMessageToDOM(cm.role, cm.content, false);
-                                hasNew = true;
-                            }
-                        }
-                    }
-                    if (hasNew) {
-                        saveMessagesToLocal();
-                        chatBox.scrollTop = chatBox.scrollHeight;
-                        setSyncStatus('synced');
-                    }
-                }, 5000);
-            }
+    function loadSettingsFromLocal() {
+      const saved = JSON.parse(localStorage.getItem('chat-settings') || '{}');
+      if (saved.agentPrompt) agentPrompt.value = saved.agentPrompt;
+      if (saved.agentName) { currentAgentName = saved.agentName; agentNameSet.value = saved.agentName; }
+      if (saved.userName) { currentUserName = saved.userName; userNameInput.value = saved.userName; }
+      if (saved.agentAvatarUrl) { agentAvatarUrl = saved.agentAvatarUrl; updateAgentAvatarDisplay(); }
+      if (saved.userAvatarUrl) userAvatarUrl = saved.userAvatarUrl;
+      if (saved.fontSize) fontSizeInput.value = saved.fontSize;
+      if (saved.lineHeight) lineHeightInput.value = saved.lineHeight;
+      if (saved.userTextColor) userTextColor.value = saved.userTextColor;
+      if (saved.aiTextColor) aiTextColor.value = saved.aiTextColor;
+      if (saved.bubblePx) bubblePxInput.value = saved.bubblePx;
+      if (saved.bubblePy) bubblePyInput.value = saved.bubblePy;
+      if (saved.chatHPadding) chatHPaddingInput.value = saved.chatHPadding;
+      updateNameDisplays();
+      updateCSSVariables();
+    }
 
-            function stopPolling() {
-                if (pollingTimer) {
-                    clearInterval(pollingTimer);
-                    pollingTimer = null;
-                }
-            }
+    function saveSettingsLocal() {
+      const settings = {
+        agentPrompt: agentPrompt.value,
+        agentName: currentAgentName,
+        userName: currentUserName,
+        agentAvatarUrl,
+        userAvatarUrl,
+        fontSize: fontSizeInput.value,
+        lineHeight: lineHeightInput.value,
+        userTextColor: userTextColor.value,
+        aiTextColor: aiTextColor.value,
+        bubblePx: bubblePxInput.value,
+        bubblePy: bubblePyInput.value,
+        chatHPadding: chatHPaddingInput.value
+      };
+      localStorage.setItem('chat-settings', JSON.stringify(settings));
+    }
 
-            async function checkCloudAvailability() {
-                try {
-                    const { error } = await supabase
-                        .from(CHAT_MESSAGES_TABLE)
-                        .select('id')
-                        .limit(1);
-                    if (error) {
-                        if (error.code === '42P01' || error.message.includes('does not exist')) {
-                            console.warn('chat_messages 表不存在，使用本地存储模式。请在 Supabase 中创建该表以启用云端同步。');
-                            cloudSyncAvailable = false;
-                            setSyncStatus('offline');
-                            return false;
-                        }
-                        if (error.code === 'PGRST301' || error.message.includes('permission')) {
-                            console.warn('chat_messages 表权限不足，请检查 RLS 策略。');
-                            cloudSyncAvailable = false;
-                            setSyncStatus('offline');
-                            return false;
-                        }
-                        console.warn('检查云端可用性时出错:', error.message);
-                        cloudSyncAvailable = false;
-                        setSyncStatus('offline');
-                        return false;
-                    }
-                    cloudSyncAvailable = true;
-                    setSyncStatus('synced');
-                    return true;
-                } catch (err) {
-                    console.warn('无法连接到云端:', err.message);
-                    cloudSyncAvailable = false;
-                    setSyncStatus('offline');
-                    return false;
-                }
-            }
+    async function saveSettingsToCloud() {
+      currentAgentName = agentNameSet.value || currentAgentName;
+      currentUserName = userNameInput.value || currentUserName;
+      updateNameDisplays();
+      updateCSSVariables();
+      saveSettingsLocal();
 
-            const SETTINGS_TABLE = 'user_settings';
-            const SETTINGS_ID = 'default';
+      const settings = {
+        id: SETTINGS_ID,
+        agent_prompt: agentPrompt.value,
+        agent_name: currentAgentName,
+        user_name: currentUserName,
+        agent_avatar_url: agentAvatarUrl,
+        user_avatar_url: userAvatarUrl,
+        font_size: parseInt(fontSizeInput.value) || 16,
+        line_height: parseFloat(lineHeightInput.value) || 1.6,
+        user_text_color: userTextColor.value,
+        ai_text_color: aiTextColor.value,
+        bubble_px: parseInt(bubblePxInput.value) || 16,
+        bubble_py: parseInt(bubblePyInput.value) || 8,
+        chat_h_padding: parseInt(chatHPaddingInput.value) || 16,
+        updated_at: new Date().toISOString()
+      };
+      try {
+        await supabase.from(SETTINGS_TABLE).upsert(settings, { onConflict: 'id' });
+        return true;
+      } catch (err) {
+        console.warn('云端设置保存失败', err);
+        return false;
+      }
+    }
 
-            async function loadSettingsFromCloud() {
-                try {
-                    const { data, error } = await supabase
-                        .from(SETTINGS_TABLE)
-                        .select('*')
-                        .eq('id', SETTINGS_ID)
-                        .single();
-                    if (error) throw error;
-                    if (data) {
-                        if (data.agent_prompt) agentPrompt.value = data.agent_prompt;
-                        if (data.agent_name) { currentAgentName = data.agent_name;
-                            agentNameSet.value = data.agent_name; }
-                        if (data.user_name) { currentUserName = data.user_name;
-                            userNameInput.value = data.user_name; }
-                        if (data.agent_avatar_url) { agentAvatarUrl = data.agent_avatar_url;
-                            updateAgentAvatarDisplay(); }
-                        if (data.user_avatar_url) userAvatarUrl = data.user_avatar_url;
-                        if (data.font_size) fontSizeInput.value = data.font_size;
-                        if (data.line_height) lineHeightInput.value = data.line_height;
-                        if (data.user_text_color) userTextColor.value = data.user_text_color;
-                        if (data.ai_text_color) aiTextColor.value = data.ai_text_color;
-                        if (data.bubble_px) bubblePxInput.value = data.bubble_px;
-                        if (data.bubble_py) bubblePyInput.value = data.bubble_py;
-                        if (data.chat_h_padding) chatHPaddingInput.value = data.chat_h_padding;
-                        updateNameDisplays();
-                        updateCSSVariables();
-                    }
-                } catch (err) {
-                    loadSettingsFromLocal();
-                }
-            }
+    // ---------- 事件绑定 ----------
+    saveSetBtn.addEventListener('click', async () => {
+      const ok = await saveSettingsToCloud();
+      alert(ok ? '已保存并同步云端' : '已保存到本地（云端同步失败）');
+    });
 
-            function loadSettingsFromLocal() {
-                const saved = JSON.parse(localStorage.getItem('chat-settings') || '{}');
-                if (saved.agentPrompt) agentPrompt.value = saved.agentPrompt;
-                if (saved.agentName) { currentAgentName = saved.agentName;
-                    agentNameSet.value = saved.agentName; }
-                if (saved.userName) { currentUserName = saved.userName;
-                    userNameInput.value = saved.userName; }
-                if (saved.agentAvatarUrl) { agentAvatarUrl = saved.agentAvatarUrl;
-                    updateAgentAvatarDisplay(); }
-                if (saved.userAvatarUrl) userAvatarUrl = saved.userAvatarUrl;
-                if (saved.fontSize) fontSizeInput.value = saved.fontSize;
-                if (saved.lineHeight) lineHeightInput.value = saved.lineHeight;
-                if (saved.userTextColor) userTextColor.value = saved.userTextColor;
-                if (saved.aiTextColor) aiTextColor.value = saved.aiTextColor;
-                if (saved.bubblePx) bubblePxInput.value = saved.bubblePx;
-                if (saved.bubblePy) bubblePyInput.value = saved.bubblePy;
-                if (saved.chatHPadding) chatHPaddingInput.value = saved.chatHPadding;
-                updateNameDisplays();
-                updateCSSVariables();
-            }
+    agentAvatarUpload.addEventListener('click', () => agentAvatarFile.click());
+    agentAvatarFile.addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = ev => {
+          agentAvatarUrl = ev.target.result;
+          agentAvatarPreview.innerHTML = `<img src="${agentAvatarUrl}" class="avatar-img">`;
+          updateAgentAvatarDisplay();
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+    userAvatarUpload.addEventListener('click', () => userAvatarFile.click());
+    userAvatarFile.addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = ev => {
+          userAvatarUrl = ev.target.result;
+          userAvatarPreview.innerHTML = `<img src="${userAvatarUrl}" class="avatar-img">`;
+        };
+        reader.readAsDataURL(file);
+      }
+    });
 
-            async function saveSettingsToCloud() {
-                currentAgentName = agentNameSet.value || currentAgentName;
-                currentUserName = userNameInput.value || currentUserName;
-                updateNameDisplays();
-                updateCSSVariables();
+    agentNameDisplay.addEventListener('click', () => openNameEditor('agent'));
+    userNameDisplay.addEventListener('click', () => openNameEditor('user'));
+    nameEditCancel.addEventListener('click', closeNameEditor);
+    nameEditConfirm.addEventListener('click', async () => {
+      const newName = nameEditInput.value.trim();
+      if (!newName) return;
+      if (currentEditTarget === 'agent') {
+        currentAgentName = newName;
+        agentNameSet.value = newName;
+      } else {
+        currentUserName = newName;
+        userNameInput.value = newName;
+      }
+      updateNameDisplays();
+      closeNameEditor();
+      await saveSettingsToCloud();
+    });
 
-                const settings = {
-                    id: SETTINGS_ID,
-                    agent_prompt: agentPrompt.value,
-                    agent_name: currentAgentName,
-                    user_name: currentUserName,
-                    agent_avatar_url: agentAvatarUrl,
-                    user_avatar_url: userAvatarUrl,
-                    font_size: parseInt(fontSizeInput.value) || 16,
-                    line_height: parseFloat(lineHeightInput.value) || 1.6,
-                    user_text_color: userTextColor.value,
-                    ai_text_color: aiTextColor.value,
-                    bubble_px: parseInt(bubblePxInput.value) || 16,
-                    bubble_py: parseInt(bubblePyInput.value) || 8,
-                    chat_h_padding: parseInt(chatHPaddingInput.value) || 16,
-                    updated_at: new Date().toISOString()
-                };
-                localStorage.setItem('chat-settings', JSON.stringify(settings));
-                try {
-                    await supabase.from(SETTINGS_TABLE).upsert(settings, { onConflict: 'id' });
-                    return true;
-                } catch (err) {
-                    return false;
-                }
-            }
+    [fontSizeInput, lineHeightInput, userTextColor, aiTextColor, bubblePxInput, bubblePyInput, chatHPaddingInput].forEach(el => {
+      el.addEventListener('input', updateCSSVariables);
+    });
 
-            saveSetBtn.addEventListener('click', async () => {
-                const ok = await saveSettingsToCloud();
-                alert(ok ? '已保存并同步云端' : '已保存到本地（云端同步失败）');
-            });
+    sendBtn.addEventListener('click', sendMessage);
+    msgInput.addEventListener('keypress', e => { if (e.key === 'Enter') sendMessage(); });
+    clearBtn.addEventListener('click', clearChat);
+    resetScriptBtn.addEventListener('click', resetScript);
 
-            agentAvatarUpload.addEventListener('click', () => agentAvatarFile.click());
-            agentAvatarFile.addEventListener('change', e => {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = ev => {
-                        agentAvatarUrl = ev.target.result;
-                        agentAvatarPreview.innerHTML = `<img src="${agentAvatarUrl}" class="avatar-img">`;
-                        updateAgentAvatarDisplay();
-                    };
-                    reader.readAsDataURL(file);
-                }
-            });
-            userAvatarUpload.addEventListener('click', () => userAvatarFile.click());
-            userAvatarFile.addEventListener('change', e => {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = ev => {
-                        userAvatarUrl = ev.target.result;
-                        userAvatarPreview.innerHTML = `<img src="${userAvatarUrl}" class="avatar-img">`;
-                    };
-                    reader.readAsDataURL(file);
-                }
-            });
+    toggleSettingsBtn.addEventListener('click', () => {
+      collapsibleSettings.style.display = collapsibleSettings.style.display === 'block' ? 'none' : 'block';
+    });
 
-            agentNameDisplay.addEventListener('click', () => openNameEditor('agent'));
-            userNameDisplay.addEventListener('click', () => openNameEditor('user'));
-            nameEditCancel.addEventListener('click', closeNameEditor);
-            nameEditConfirm.addEventListener('click', () => {
-                const newName = nameEditInput.value.trim();
-                if (!newName) return;
-                if (currentEditTarget === 'agent') {
-                    currentAgentName = newName;
-                    agentNameSet.value = newName;
-                } else {
-                    currentUserName = newName;
-                    userNameInput.value = newName;
-                }
-                updateNameDisplays();
-                closeNameEditor();
-                saveSettingsToCloud();
-            });
+    window.addEventListener('resize', () => {
+      chatBox.scrollTop = chatBox.scrollHeight;
+    });
 
-            [fontSizeInput, lineHeightInput, userTextColor, aiTextColor, bubblePxInput, bubblePyInput,
-                chatHPaddingInput
-            ].forEach(el => {
-                el.addEventListener('input', updateCSSVariables);
-            });
+    // ---------- 初始化 ----------
+    async function init() {
+      updateCSSVariables();
+      // 1. 优先从云端加载设置
+      const cloudSettingsLoaded = await loadSettingsFromCloud();
+      if (!cloudSettingsLoaded) {
+        loadSettingsFromLocal();
+      }
+      // 2. 从云端加载消息（优先）
+      const cloudMessagesLoaded = await fetchMessagesFromCloud();
+      if (!cloudMessagesLoaded) {
+        loadMessagesLocal();
+      }
+      // 3. 渲染所有消息
+      renderAllMessages();
+    }
+    init();
 
-            sendBtn.addEventListener('click', sendMessage);
-            msgInput.addEventListener('keypress', e => { if (e.key === 'Enter') sendMessage(); });
-            clearBtn.addEventListener('click', clearChat);
-            resetScriptBtn.addEventListener('click', resetScript);
-
-            toggleSettingsBtn.addEventListener('click', () => {
-                collapsibleSettings.style.display = collapsibleSettings.style.display === 'block' ? 'none' :
-                    'block';
-            });
-
-            window.addEventListener('resize', () => {
-                chatBox.scrollTop = chatBox.scrollHeight;
-            });
-
-            document.addEventListener('visibilitychange', () => {
-                if (document.visibilityState === 'visible' && cloudSyncAvailable) {
-                    loadMessagesFromCloud().then(cloudMsgs => {
-                        if (cloudMsgs === null) return;
-                        let hasNew = false;
-                        for (const cm of cloudMsgs) {
-                            if (!knownClientIds.has(cm.client_id)) {
-                                knownClientIds.add(cm.client_id);
-                                const existsInMessages = messages.some(m => m.client_id === cm
-                                    .client_id);
-                                if (!existsInMessages) {
-                                    messages.push({
-                                        role: cm.role,
-                                        content: cm.content,
-                                        client_id: cm.client_id
-                                    });
-                                    addMessageToDOM(cm.role, cm.content, false);
-                                    hasNew = true;
-                                }
-                            }
-                        }
-                        if (hasNew) {
-                            saveMessagesToLocal();
-                            chatBox.scrollTop = chatBox.scrollHeight;
-                            setSyncStatus('synced');
-                        }
-                    });
-                }
-            });
-
-            async function init() {
-                updateCSSVariables();
-                setSyncStatus('syncing');
-                await loadSettingsFromCloud();
-
-                const cloudAvailable = await checkCloudAvailability();
-
-                if (cloudAvailable) {
-                    const cloudMsgs = await loadMessagesFromCloud();
-                    const localMsgs = loadMessagesFromLocal();
-
-                    if (cloudMsgs !== null && cloudMsgs.length > 0) {
-                        messages = mergeMessages(cloudMsgs, localMsgs);
-                        setSyncStatus('synced');
-                    } else if (cloudMsgs !== null && cloudMsgs.length === 0 && localMsgs.length > 0) {
-                        messages = localMsgs;
-                        knownClientIds = new Set(localMsgs.map(m => m.client_id));
-                        setSyncStatus('syncing');
-                        await uploadLocalOnlyMessages(localMsgs);
-                        setSyncStatus('synced');
-                    } else if (cloudMsgs !== null && cloudMsgs.length === 0 && localMsgs.length === 0) {
-                        messages = [];
-                        knownClientIds.clear();
-                        setSyncStatus('synced');
-                    } else {
-                        messages = localMsgs;
-                        knownClientIds = new Set(localMsgs.map(m => m.client_id));
-                        setSyncStatus('offline');
-                    }
-
-                    if (localMsgs.length > 0 && cloudMsgs !== null) {
-                        await uploadLocalOnlyMessages(localMsgs);
-                    }
-
-                    setupRealtimeSubscription();
-                } else {
-                    messages = loadMessagesFromLocal();
-                    knownClientIds = new Set(messages.map(m => m.client_id));
-                    setSyncStatus('offline');
-                }
-
-                saveMessagesToLocal();
-                renderStoredMessages();
-            }
-
-            init();
-
-            window.addEventListener('beforeunload', () => {
-                stopPolling();
-                if (realtimeChannel) {
-                    realtimeChannel.unsubscribe();
-                    realtimeChannel = null;
-                }
-            });
-
-            if ('serviceWorker' in navigator) {
-                window.addEventListener('load', () => {
-                    navigator.serviceWorker.register('./sw-chat.js').catch(console.log);
-                });
-            }
-        })();
-    </script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw-chat.js').catch(console.log);
+      });
+    }
+  })();
+</script>
 </body>
 </html>
