@@ -7,12 +7,16 @@
   <link rel="manifest" href="manifest-chat.json">
   <link rel="apple-touch-icon" href="icon-192.png">
   <meta name="theme-color" content="#000000">
-  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.tailwindcss.com">
+  </script>
   <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js">
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js">
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+  </script>
   <script>
     tailwind.config = {
       theme: {
@@ -36,50 +40,250 @@
       --chat-h-padding: 16px;
       --safe-bottom: env(safe-area-inset-bottom, 0px);
     }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; overflow: hidden; background: #000; color: #fff; }
-    body { height: 100vh; height: 100dvh; position: fixed; top: 0; left: 0; }
-    .layout-container { width: 100%; height: 100%; position: relative; display: grid; grid-template-columns: 1fr; grid-template-rows: 1fr; }
-    .chat-main-panel { display: flex; flex-direction: column; height: 100%; min-height: 0; }
-    #chat-box { flex: 1 1 auto; overflow-y: auto; min-height: 0; padding-left: var(--chat-h-padding); padding-right: var(--chat-h-padding); padding-bottom: 16px; }
-    .left-set-panel { position: fixed; top: 0; left: 0; width: 85%; max-width: 400px; height: 100%; height: 100dvh; z-index: 100; background: #121212; border-right: 1px solid #333; transform: translateX(-100%); transition: transform 0.3s ease; overflow-y: auto; padding: 24px 16px; box-shadow: 2px 0 10px rgba(0,0,0,0.5); }
-    .left-set-panel.expand { transform: translateX(0); }
-    .drawer-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 99; display: none; }
-    .drawer-overlay.show { display: block; }
-    .mobile-input-bar { display: flex; position: fixed; bottom: 0; left: 0; width: 100%; z-index: 200; background: #000; border-top: 1px solid #333; padding: 12px; padding-bottom: calc(12px + var(--safe-bottom)); gap: 8px; }
-    #chat-box { padding-bottom: calc(72px + var(--safe-bottom)) !important; }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+      color: #fff;
+    }
+
+    body {
+      height: 100vh;
+      height: 100dvh;
+      position: fixed;
+      top: 0;
+      left: 0;
+    }
+
+    .layout-container {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      display: grid;
+      grid-template-columns: 1fr;
+      grid-template-rows: 1fr;
+    }
+
+    .chat-main-panel {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      min-height: 0;
+    }
+
+    #chat-box {
+      flex: 1 1 auto;
+      overflow-y: auto;
+      min-height: 0;
+      padding-left: var(--chat-h-padding);
+      padding-right: var(--chat-h-padding);
+      padding-bottom: 16px;
+    }
+
+    .left-set-panel {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 85%;
+      max-width: 400px;
+      height: 100%;
+      height: 100dvh;
+      z-index: 100;
+      background: #121212;
+      border-right: 1px solid #333;
+      transform: translateX(-100%);
+      transition: transform 0.3s ease;
+      overflow-y: auto;
+      padding: 24px 16px;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.5);
+    }
+
+    .left-set-panel.expand {
+      transform: translateX(0);
+    }
+
+    .drawer-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.6);
+      z-index: 99;
+      display: none;
+    }
+
+    .drawer-overlay.show {
+      display: block;
+    }
+
+    .mobile-input-bar {
+      display: flex;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      z-index: 200;
+      background: #000;
+      border-top: 1px solid #333;
+      padding: 12px;
+      padding-bottom: calc(12px + var(--safe-bottom));
+      gap: 8px;
+    }
+
+    #chat-box {
+      padding-bottom: calc(72px + var(--safe-bottom)) !important;
+    }
+
     .scrollbar-hide::-webkit-scrollbar { display: none; }
-    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-    .avatar-img, .avatar-placeholder { object-fit: cover; width: 100%; height: 100%; border-radius: 4px; }
-    .msg-avatar { width: 32px; height: 32px; border-radius: 6px; flex-shrink: 0; overflow: hidden; background: #1a1a1a; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #888; }
-    .message-row { min-width: 0; width: 100%; }
-    .chat-bubble-content { word-wrap: break-word; word-break: break-word; white-space: pre-wrap; max-width: 100%; overflow-wrap: break-word; font-size: var(--font-size); line-height: var(--line-height); padding: var(--bubble-py) var(--bubble-px); }
-    .user-bubble { background-color: #000 !important; color: var(--user-text-color); border: 1px solid #333; }
-    .ai-bubble { background-color: #000 !important; color: var(--ai-text-color); border: 1px solid #333; }
-    .katex { font-size: var(--font-size); line-height: var(--line-height); max-width: 100%; overflow-x: auto; display: inline-block; vertical-align: bottom; }
+    .scrollbar-hide {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    .avatar-img, .avatar-placeholder {
+      object-fit: cover;
+      width: 100%;
+      height: 100%;
+      border-radius: 4px;
+    }
+
+    .msg-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      flex-shrink: 0;
+      overflow: hidden;
+      background: #1a1a1a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: #888;
+    }
+
+    .message-row {
+      min-width: 0;
+      width: 100%;
+    }
+
+    .chat-bubble-content {
+      word-wrap: break-word;
+      word-break: break-word;
+      white-space: pre-wrap;
+      max-width: 100%;
+      overflow-wrap: break-word;
+      font-size: var(--font-size);
+      line-height: var(--line-height);
+      padding: var(--bubble-py) var(--bubble-px);
+    }
+
+    .user-bubble {
+      background-color: #000 !important;
+      color: var(--user-text-color);
+      border: 1px solid #333;
+    }
+
+    .ai-bubble {
+      background-color: #000 !important;
+      color: var(--ai-text-color);
+      border: 1px solid #333;
+    }
+
+    .katex {
+      font-size: var(--font-size);
+      line-height: var(--line-height);
+      max-width: 100%;
+      overflow-x: auto;
+      display: inline-block;
+      vertical-align: bottom;
+    }
+
     .collapsible-settings { display: none; }
-    .name-tag { cursor: pointer; transition: all 0.2s; border-bottom: 1px dashed transparent; }
-    .name-tag:hover { border-bottom-color: #888; color: #ccc; }
-    .name-tag .fa-pencil { opacity: 0; transition: opacity 0.2s; font-size: 0.7em; margin-left: 4px; }
+
+    .name-tag {
+      cursor: pointer;
+      transition: all 0.2s;
+      border-bottom: 1px dashed transparent;
+    }
+
+    .name-tag:hover {
+      border-bottom-color: #888;
+      color: #ccc;
+    }
+
+    .name-tag .fa-pencil {
+      opacity: 0;
+      transition: opacity 0.2s;
+      font-size: 0.7em;
+      margin-left: 4px;
+    }
+
     .name-tag:hover .fa-pencil { opacity: 0.7; }
-    .msg-name-label { font-size: 0.7em; opacity: 0.7; letter-spacing: 0.5px; margin-bottom: 3px; display: block; cursor: pointer; }
-    .name-edit-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 300; background: rgba(0,0,0,0.75); display: flex; align-items: center; justify-content: center; display: none; }
-    .name-edit-dialog { background: #1a1a1a; border: 1px solid #333; border-radius: 12px; padding: 24px; width: 90%; max-width: 380px; }
-    .chat-header, .chat-footer { flex-shrink: 0; }
+
+    .msg-name-label {
+      font-size: 0.7em;
+      opacity: 0.7;
+      letter-spacing: 0.5px;
+      margin-bottom: 3px;
+      display: block;
+      cursor: pointer;
+    }
+
+    .name-edit-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 300;
+      background: rgba(0,0,0,0.75);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      display: none;
+    }
+
+    .name-edit-dialog {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 12px;
+      padding: 24px;
+      width: 90%;
+      max-width: 380px;
+    }
+
+    .chat-header, .chat-footer {
+      flex-shrink: 0;
+    }
   </style>
 </head>
 <body>
 <div class="layout-container">
   <div class="left-set-panel" id="left-panel">
-    <button class="self-end text-gray-400 hover:text-white mb-4" id="close-drawer-btn"><i class="fa fa-times fa-lg"></i></button>
+    <button class="self-end text-gray-400 hover:text-white mb-4" id="close-drawer-btn">
+      <i class="fa fa-times fa-lg"></i>
+    </button>
     <h1 class="text-xl font-bold mb-4">剧本/人设设置</h1>
     <textarea class="w-full h-40 bg-dark border border-gray-800 rounded p-3 text-white outline-none resize-none mb-4" placeholder="输入剧本内容，AI会根据剧本回答问题&#10;支持格式：&#10;[red:文字] 红色&#10;[b:文字] 加粗&#10;[br] 换行" id="agent-prompt"></textarea>
-    <button class="w-full bg-gray-800 rounded p-2 mb-3 text-sm" id="toggle-settings"><i class="fa fa-cog mr-1"></i> 展开头像/样式设置</button>
+
+    <button class="w-full bg-gray-800 rounded p-2 mb-3 text-sm" id="toggle-settings">
+      <i class="fa fa-cog mr-1"></i> 展开头像/样式设置
+    </button>
     <div class="collapsible-settings bg-dark border border-gray-800 rounded p-3 mb-3 space-y-3" id="collapsible-settings">
       <div><h3 class="text-sm text-gray-400 mb-1">智能体名称</h3><input class="w-full bg-darker rounded p-2 text-white outline-none" id="agent-name-set"></div>
       <div><h3 class="text-sm text-gray-400 mb-1">智能体头像</h3><button class="w-full bg-accent/20 rounded p-2 text-sm mb-2" id="agent-avatar-upload">上传头像</button><input type="file" id="agent-avatar-file" class="hidden" accept="image/*"><div id="agent-avatar-preview" class="w-14 h-14 bg-accent/20 flex items-center justify-center overflow-hidden rounded-lg mx-auto"><span>预览</span></div></div>
       <div class="border-t border-gray-700 pt-3"><h3 class="text-sm text-gray-400 mb-1">你的名称</h3><input class="w-full bg-darker rounded p-2 text-white outline-none" id="user-name"></div>
       <div><h3 class="text-sm text-gray-400 mb-1">你的头像</h3><button class="w-full bg-accent/20 rounded p-2 text-sm mb-2" id="user-avatar-upload">上传头像</button><input type="file" id="user-avatar-file" class="hidden" accept="image/*"><div id="user-avatar-preview" class="w-14 h-14 bg-accent/20 flex items-center justify-center overflow-hidden rounded-lg mx-auto"><span>预览</span></div></div>
+      <div class="border-t border-gray-700 pt-3"><h3 class="text-sm text-gray-400 mb-1">API Key（已通过代理调用）</h3><input type="password" class="w-full bg-darker rounded p-2 text-white outline-none" id="api-key" placeholder="无需填写" disabled><p class="text-xs text-gray-500 mt-1">已通过 Supabase Edge Function 安全调用 DeepSeek API</p></div>
       <div class="border-t border-gray-700 pt-3"><h3 class="text-sm text-gray-400 mb-2">样式</h3>
         <div class="grid grid-cols-2 gap-2 mb-2">
           <div><label class="text-xs text-gray-400">字体大小</label><input type="number" id="font-size" value="16" class="w-full bg-darker rounded p-2 text-white"></div>
@@ -93,7 +297,10 @@
           <div><label class="text-xs text-gray-400">气泡水平边距(px)</label><input type="number" id="bubble-px" value="16" class="w-full bg-darker rounded p-2 text-white"></div>
           <div><label class="text-xs text-gray-400">气泡垂直边距(py)</label><input type="number" id="bubble-py" value="8" class="w-full bg-darker rounded p-2 text-white"></div>
         </div>
-        <div class="mb-2"><label class="text-xs text-gray-400">屏幕边缘距离(px)</label><input type="number" id="chat-h-padding" value="16" class="w-full bg-darker rounded p-2 text-white"></div>
+        <div class="mb-2">
+          <label class="text-xs text-gray-400">屏幕边缘距离(px)</label>
+          <input type="number" id="chat-h-padding" value="16" class="w-full bg-darker rounded p-2 text-white">
+        </div>
       </div>
     </div>
     <button class="w-full bg-accent rounded p-3" id="save-set">保存所有设置</button>
@@ -115,6 +322,7 @@
         <button class="text-gray-400 hover:text-white" id="clear-chat">清空</button>
       </div>
     </div>
+
     <div class="flex-1 overflow-y-auto scrollbar-hide" id="chat-box"></div>
   </div>
 </div>
@@ -148,7 +356,6 @@
     const SETTINGS_ID = 'default';
     const CONVERSATION_ID = 'default';
 
-    // DOM 元素
     const chatBox = document.getElementById('chat-box');
     const msgInput = document.getElementById('msg-input');
     const sendBtn = document.getElementById('send-btn');
@@ -193,14 +400,19 @@
     let userAvatarUrl = '';
     let currentEditTarget = null;
     let messages = [];
-    let localSettingsUpdatedAt = null; // 本地设置的时间戳
 
     const MESSAGES_LOCAL_KEY = 'chat-messages-local';
     const SETTINGS_LOCAL_KEY = 'chat-settings';
 
     // ---------- 抽屉控制 ----------
-    function openDrawer() { leftPanel.classList.add('expand'); drawerOverlay.classList.add('show'); }
-    function closeDrawer() { leftPanel.classList.remove('expand'); drawerOverlay.classList.remove('show'); }
+    function openDrawer() {
+      leftPanel.classList.add('expand');
+      drawerOverlay.classList.add('show');
+    }
+    function closeDrawer() {
+      leftPanel.classList.remove('expand');
+      drawerOverlay.classList.remove('show');
+    }
     phoneOpenSet.addEventListener('click', openDrawer);
     closeDrawerBtn.addEventListener('click', closeDrawer);
     drawerOverlay.addEventListener('click', closeDrawer);
@@ -241,159 +453,6 @@
           : '<span class="avatar-placeholder">AI</span>';
     }
 
-    // 应用设置到UI控件
-    function applySettingsToUI(settings) {
-      if (settings.agentPrompt) agentPrompt.value = settings.agentPrompt;
-      if (settings.agentName) { currentAgentName = settings.agentName; agentNameSet.value = settings.agentName; }
-      if (settings.userName) { currentUserName = settings.userName; userNameInput.value = settings.userName; }
-      if (settings.agentAvatarUrl) { agentAvatarUrl = settings.agentAvatarUrl; updateAgentAvatarDisplay(); }
-      if (settings.userAvatarUrl) userAvatarUrl = settings.userAvatarUrl;
-      if (settings.fontSize) fontSizeInput.value = settings.fontSize;
-      if (settings.lineHeight) lineHeightInput.value = settings.lineHeight;
-      if (settings.userTextColor) userTextColor.value = settings.userTextColor;
-      if (settings.aiTextColor) aiTextColor.value = settings.aiTextColor;
-      if (settings.bubblePx) bubblePxInput.value = settings.bubblePx;
-      if (settings.bubblePy) bubblePyInput.value = settings.bubblePy;
-      if (settings.chatHPadding) chatHPaddingInput.value = settings.chatHPadding;
-      updateNameDisplays();
-      updateCSSVariables();
-    }
-
-    // ---------- 本地设置读写 ----------
-    function loadSettingsFromLocal() {
-      const saved = JSON.parse(localStorage.getItem(SETTINGS_LOCAL_KEY) || '{}');
-      if (saved && Object.keys(saved).length > 0) {
-        applySettingsToUI(saved);
-        localSettingsUpdatedAt = saved.updated_at || null;
-        return true;
-      }
-      return false;
-    }
-
-    function saveSettingsToLocal(settings) {
-      settings.updated_at = settings.updated_at || new Date().toISOString();
-      localStorage.setItem(SETTINGS_LOCAL_KEY, JSON.stringify(settings));
-      localSettingsUpdatedAt = settings.updated_at;
-    }
-
-    // ---------- 云端设置同步 ----------
-    async function syncSettingsFromCloud() {
-      try {
-        const { data, error } = await supabase
-            .from(SETTINGS_TABLE)
-            .select('*')
-            .eq('id', SETTINGS_ID)
-            .single();
-        if (error) throw error;
-        if (data && data.updated_at) {
-          // 如果云端时间比本地新，或者本地没有记录，则覆盖本地
-          if (!localSettingsUpdatedAt || new Date(data.updated_at) > new Date(localSettingsUpdatedAt)) {
-            const settings = {
-              agentPrompt: data.agent_prompt,
-              agentName: data.agent_name,
-              userName: data.user_name,
-              agentAvatarUrl: data.agent_avatar_url,
-              userAvatarUrl: data.user_avatar_url,
-              fontSize: data.font_size,
-              lineHeight: data.line_height,
-              userTextColor: data.user_text_color,
-              aiTextColor: data.ai_text_color,
-              bubblePx: data.bubble_px,
-              bubblePy: data.bubble_py,
-              chatHPadding: data.chat_h_padding,
-              updated_at: data.updated_at
-            };
-            saveSettingsToLocal(settings);
-            applySettingsToUI(settings);
-            console.log('已从云端同步最新设置');
-          }
-        }
-      } catch (e) {
-        console.warn('云端设置同步失败，继续使用本地', e);
-      }
-    }
-
-    async function saveSettingsToCloud(settings) {
-      try {
-        const { error } = await supabase.from(SETTINGS_TABLE).upsert({
-          id: SETTINGS_ID,
-          agent_prompt: settings.agentPrompt,
-          agent_name: settings.agentName,
-          user_name: settings.userName,
-          agent_avatar_url: settings.agentAvatarUrl,
-          user_avatar_url: settings.userAvatarUrl,
-          font_size: parseInt(settings.fontSize) || 16,
-          line_height: parseFloat(settings.lineHeight) || 1.6,
-          user_text_color: settings.userTextColor,
-          ai_text_color: settings.aiTextColor,
-          bubble_px: parseInt(settings.bubblePx) || 16,
-          bubble_py: parseInt(settings.bubblePy) || 8,
-          chat_h_padding: parseInt(settings.chatHPadding) || 16,
-          updated_at: settings.updated_at || new Date().toISOString()
-        }, { onConflict: 'id' });
-        if (error) throw error;
-        return true;
-      } catch (e) {
-        console.warn('云端设置保存失败', e);
-        return false;
-      }
-    }
-
-    // 构建当前设置对象
-    function buildSettingsObject() {
-      return {
-        agentPrompt: agentPrompt.value,
-        agentName: currentAgentName,
-        userName: currentUserName,
-        agentAvatarUrl,
-        userAvatarUrl,
-        fontSize: fontSizeInput.value,
-        lineHeight: lineHeightInput.value,
-        userTextColor: userTextColor.value,
-        aiTextColor: aiTextColor.value,
-        bubblePx: bubblePxInput.value,
-        bubblePy: bubblePyInput.value,
-        chatHPadding: chatHPaddingInput.value,
-        updated_at: new Date().toISOString()
-      };
-    }
-
-    // 完整保存流程：先本地，再云端
-    async function fullSave() {
-      const settings = buildSettingsObject();
-      saveSettingsToLocal(settings); // 立即写入本地
-      const cloudOk = await saveSettingsToCloud(settings);
-      return cloudOk;
-    }
-
-    // 手动保存按钮
-    saveSetBtn.addEventListener('click', async () => {
-      const ok = await fullSave();
-      alert(ok ? '已保存并同步云端' : '已保存到本地（云端同步失败，请检查网络）');
-    });
-
-    // 自动保存（防抖2秒）
-    let autoSaveTimer;
-    function triggerAutoSave() {
-      clearTimeout(autoSaveTimer);
-      autoSaveTimer = setTimeout(async () => {
-        await fullSave();
-        console.log('自动保存完成');
-      }, 2000);
-    }
-
-    // 监听设置面板所有输入变化，触发自动保存
-    const settingInputs = [
-      agentPrompt, agentNameSet, userNameInput,
-      fontSizeInput, lineHeightInput, userTextColor, aiTextColor,
-      bubblePxInput, bubblePyInput, chatHPaddingInput
-    ];
-    settingInputs.forEach(input => {
-      input.addEventListener('input', triggerAutoSave);
-      input.addEventListener('change', triggerAutoSave); // 颜色选择器用change
-    });
-
-    // 名称编辑弹窗
     function openNameEditor(target) {
       currentEditTarget = target;
       if (target === 'agent') {
@@ -408,27 +467,405 @@
       nameEditModal.style.display = 'flex';
       nameEditInput.focus();
     }
-    function closeNameEditor() { nameEditModal.style.display = 'none'; currentEditTarget = null; }
+    function closeNameEditor() {
+      nameEditModal.style.display = 'none';
+      currentEditTarget = null;
+    }
 
-    agentNameDisplay.addEventListener('click', () => openNameEditor('agent'));
-    userNameDisplay.addEventListener('click', () => openNameEditor('user'));
-    nameEditCancel.addEventListener('click', closeNameEditor);
-    nameEditConfirm.addEventListener('click', async () => {
-      const newName = nameEditInput.value.trim();
-      if (!newName) return;
-      if (currentEditTarget === 'agent') {
-        currentAgentName = newName;
-        agentNameSet.value = newName;
-      } else {
-        currentUserName = newName;
-        userNameInput.value = newName;
-      }
+    // ---------- 本地存储辅助 ----------
+    function saveMessagesLocal() {
+      try { localStorage.setItem(MESSAGES_LOCAL_KEY, JSON.stringify(messages)); } catch (e) {}
+    }
+
+    function loadMessagesLocal() {
+      try {
+        const saved = localStorage.getItem(MESSAGES_LOCAL_KEY);
+        if (saved) messages = JSON.parse(saved);
+      } catch (e) { messages = []; }
+    }
+
+    function saveSettingsLocal(settings) {
+      try { localStorage.setItem(SETTINGS_LOCAL_KEY, JSON.stringify(settings)); } catch (e) {}
+    }
+
+    function getSettingsLocal() {
+      try {
+        const saved = localStorage.getItem(SETTINGS_LOCAL_KEY);
+        return saved ? JSON.parse(saved) : null;
+      } catch (e) { return null; }
+    }
+
+    function applySettingsToUI(settings) {
+      if (settings.agent_prompt) agentPrompt.value = settings.agent_prompt;
+      if (settings.agent_name) { currentAgentName = settings.agent_name; agentNameSet.value = settings.agent_name; }
+      if (settings.user_name) { currentUserName = settings.user_name; userNameInput.value = settings.user_name; }
+      if (settings.agent_avatar_url) { agentAvatarUrl = settings.agent_avatar_url; updateAgentAvatarDisplay(); }
+      if (settings.user_avatar_url) userAvatarUrl = settings.user_avatar_url;
+      if (settings.font_size) fontSizeInput.value = settings.font_size;
+      if (settings.line_height) lineHeightInput.value = settings.line_height;
+      if (settings.user_text_color) userTextColor.value = settings.user_text_color;
+      if (settings.ai_text_color) aiTextColor.value = settings.ai_text_color;
+      if (settings.bubble_px) bubblePxInput.value = settings.bubble_px;
+      if (settings.bubble_py) bubblePyInput.value = settings.bubble_py;
+      if (settings.chat_h_padding) chatHPaddingInput.value = settings.chat_h_padding;
       updateNameDisplays();
-      closeNameEditor();
-      await fullSave();
+      updateCSSVariables();
+    }
+
+    // ---------- 云端设置操作 ----------
+    async function fetchCloudSettings() {
+      try {
+        const { data, error } = await supabase
+            .from(SETTINGS_TABLE)
+            .select('*')
+            .eq('id', SETTINGS_ID)
+            .single();
+        if (error) throw error;
+        return data;
+      } catch (e) {
+        console.warn('云端设置拉取失败', e);
+        return null;
+      }
+    }
+
+    async function upsertCloudSettings(settings) {
+      try {
+        const { error } = await supabase
+            .from(SETTINGS_TABLE)
+            .upsert(settings, { onConflict: 'id' });
+        if (error) throw error;
+        return true;
+      } catch (e) {
+        console.warn('云端设置保存失败', e);
+        return false;
+      }
+    }
+
+    // 收集当前设置对象
+    function collectSettingsObject() {
+      return {
+        id: SETTINGS_ID,
+        agent_prompt: agentPrompt.value,
+        agent_name: currentAgentName,
+        user_name: currentUserName,
+        agent_avatar_url: agentAvatarUrl,
+        user_avatar_url: userAvatarUrl,
+        font_size: parseInt(fontSizeInput.value) || 16,
+        line_height: parseFloat(lineHeightInput.value) || 1.6,
+        user_text_color: userTextColor.value,
+        ai_text_color: aiTextColor.value,
+        bubble_px: parseInt(bubblePxInput.value) || 16,
+        bubble_py: parseInt(bubblePyInput.value) || 8,
+        chat_h_padding: parseInt(chatHPaddingInput.value) || 16,
+        updated_at: new Date().toISOString()
+      };
+    }
+
+    // 静默保存（自动保存用，不弹窗）
+    async function autoSaveSettings() {
+      currentAgentName = agentNameSet.value || currentAgentName;
+      currentUserName = userNameInput.value || currentUserName;
+      updateNameDisplays();
+      updateCSSVariables();
+      const settings = collectSettingsObject();
+      saveSettingsLocal(settings);
+      await upsertCloudSettings(settings);
+    }
+
+    // 手动保存（点击按钮，弹窗提示结果）
+    async function manualSaveSettings() {
+      currentAgentName = agentNameSet.value || currentAgentName;
+      currentUserName = userNameInput.value || currentUserName;
+      updateNameDisplays();
+      updateCSSVariables();
+      const settings = collectSettingsObject();
+      saveSettingsLocal(settings);
+      const ok = await upsertCloudSettings(settings);
+      alert(ok ? '已保存并同步云端' : '已保存到本地（云端同步失败，请检查网络）');
+    }
+
+    // 自动保存防抖定时器
+    let autoSaveTimer = null;
+    function triggerAutoSave() {
+      if (autoSaveTimer) clearTimeout(autoSaveTimer);
+      autoSaveTimer = setTimeout(autoSaveSettings, 2000);
+    }
+
+    // ---------- 消息云端同步 ----------
+    async function upsertMessageToCloud(msg) {
+      if (!msg.id) return;
+      try {
+        await supabase.from(MESSAGES_TABLE).upsert({
+          id: msg.id,
+          role: msg.role,
+          content: msg.content,
+          conversation_id: CONVERSATION_ID,
+          created_at: msg.created_at || new Date().toISOString()
+        }, { onConflict: 'id' });
+      } catch (e) {}
+    }
+
+    async function fetchMessagesFromCloud() {
+      try {
+        const { data, error } = await supabase
+            .from(MESSAGES_TABLE)
+            .select('*')
+            .eq('conversation_id', CONVERSATION_ID)
+            .order('created_at', { ascending: true });
+        if (error) throw error;
+        if (data && data.length > 0) {
+          messages = data.map(d => ({ id: d.id, role: d.role, content: d.content, created_at: d.created_at }));
+          saveMessagesLocal();
+          return true;
+        }
+        return false;
+      } catch (e) {
+        console.warn('云端消息加载失败', e);
+        return false;
+      }
+    }
+
+    async function deleteAllMessagesFromCloud() {
+      try {
+        await supabase.from(MESSAGES_TABLE).delete().eq('conversation_id', CONVERSATION_ID);
+      } catch (e) {}
+    }
+
+    function renderAllMessages() {
+      chatBox.innerHTML = '';
+      messages.forEach(msg => {
+        addMessageToDOM(msg.role, msg.content, false, msg.id);
+      });
+      if (messages.length === 0) {
+        const welcomeId = generateId();
+        const welcomeMsg = { id: welcomeId, role: 'assistant', content: '欢迎使用剧本智能助手！点击左上角按钮设置剧本。', created_at: new Date().toISOString() };
+        messages.push(welcomeMsg);
+        saveMessagesLocal();
+        addMessageToDOM('assistant', welcomeMsg.content, false, welcomeId);
+        upsertMessageToCloud(welcomeMsg);
+      }
+    }
+
+    function generateId() {
+      return crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).substr(2);
+    }
+
+    function typewriterEffect(fullText, msgElement, msgId) {
+      const bubble = msgElement.querySelector('.chat-bubble-content');
+      let index = 0;
+      bubble.innerHTML = '';
+      const interval = setInterval(() => {
+        if (index < fullText.length) {
+          if (fullText.charAt(index) === '<') {
+            const endIndex = fullText.indexOf('>', index);
+            if (endIndex !== -1) {
+              bubble.innerHTML += fullText.substring(index, endIndex + 1);
+              index = endIndex + 1;
+            } else {
+              bubble.innerHTML += fullText.charAt(index);
+              index++;
+            }
+          } else {
+            bubble.innerHTML += fullText.charAt(index);
+            index++;
+          }
+          chatBox.scrollTop = chatBox.scrollHeight;
+          renderLatex(msgElement);
+        } else {
+          clearInterval(interval);
+          const msg = messages.find(m => m.id === msgId);
+          if (msg) {
+            msg.content = fullText;
+            saveMessagesLocal();
+            upsertMessageToCloud(msg);
+          }
+          chatBox.scrollTop = chatBox.scrollHeight;
+        }
+      }, 30);
+    }
+
+    function addMessageToDOM(role, content, animate = false, msgId = null) {
+      const isUser = role === 'user';
+      const avatarSrc = isUser ? userAvatarUrl : agentAvatarUrl;
+      const avatarInitial = isUser ? (currentUserName || '我').charAt(0) : (currentAgentName || 'AI').charAt(0);
+      const senderName = isUser ? currentUserName : currentAgentName;
+
+      const div = document.createElement('div');
+      div.className = `message-row flex mb-4 ${isUser ? 'justify-end' : 'justify-start'} items-start gap-2`;
+
+      const avatarHTML = avatarSrc
+          ? `<img src="${avatarSrc}" class="avatar-img" alt="avatar">`
+          : `<span>${avatarInitial}</span>`;
+
+      if (isUser) {
+        div.innerHTML = `
+          <div class="max-w-[75%]">
+            <span class="msg-name-label text-right">${senderName}</span>
+            <div class="inline-block rounded-lg chat-bubble-content user-bubble">${content}</div>
+          </div>
+          <div class="msg-avatar">${avatarHTML}</div>
+        `;
+      } else {
+        div.innerHTML = `
+          <div class="msg-avatar">${avatarHTML}</div>
+          <div class="max-w-[75%]">
+            <span class="msg-name-label">${senderName}</span>
+            <div class="inline-block rounded-lg chat-bubble-content ai-bubble">${content}</div>
+          </div>
+        `;
+      }
+
+      chatBox.appendChild(div);
+
+      if (role === 'assistant' && animate && msgId) {
+        typewriterEffect(content, div, msgId);
+      } else {
+        renderLatex(div);
+        chatBox.scrollTop = chatBox.scrollHeight;
+      }
+      return div;
+    }
+
+    async function addMessage(role, content, animate = false) {
+      const id = generateId();
+      const msg = { id, role, content, created_at: new Date().toISOString() };
+      messages.push(msg);
+      saveMessagesLocal();
+      if (role === 'user') {
+        await upsertMessageToCloud(msg);
+      }
+      addMessageToDOM(role, content, animate, id);
+    }
+
+    function parseScriptFormat(text) {
+      let result = text;
+      result = result.replace(/\[red:(.*?)\]/g, '<span style="color: #ff4444">$1</span>');
+      result = result.replace(/\[b:(.*?)\]/g, '<strong>$1</strong>');
+      result = result.replace(/\[br\]/g, '<br>');
+      return result;
+    }
+
+    async function getAIResponse(userMessage) {
+      const script = agentPrompt.value.trim();
+      if (!script) return "请先在左侧设置中填写剧本内容。";
+
+      const systemPrompt = `
+你是一个严格按照剧本回答问题的助手。
+⚠️ 绝对规则：
+1. 所有回答只能来自下面的剧本内容，绝对不能编造任何剧本里没有的信息。
+2. 如果用户的问题剧本里没有答案，只说“这个我暂时不知道哦”。
+3. 剧本里的[red:文字]、[b:文字]、[br]这些格式标记必须原封不动保留。
+4. 不要加任何剧本以外的解释或客套话。
+
+--- 剧本开始 ---
+${script}
+--- 剧本结束 ---
+`;
+
+      try {
+        const response = await fetch(AI_PROXY_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: userMessage }
+            ],
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error?.message || '请求失败');
+        }
+
+        const data = await response.json();
+        return parseScriptFormat(data.choices[0].message.content.trim());
+      } catch (error) {
+        return `⚠️ AI 模式出错：${error.message}<br>请检查 Supabase Edge Function 是否部署正常。`;
+      }
+    }
+
+    async function sendMessage() {
+      const value = msgInput.value.trim();
+      if (!value) return;
+      await addMessage('user', value);
+      msgInput.value = '';
+
+      const loadingId = generateId();
+      const loadingDiv = document.createElement('div');
+      loadingDiv.className = 'message-row flex mb-4 justify-start items-start gap-2';
+      loadingDiv.innerHTML = `
+        <div class="msg-avatar">${agentAvatarUrl ? `<img src="${agentAvatarUrl}" class="avatar-img">` : (currentAgentName || 'AI').charAt(0)}</div>
+        <div class="max-w-[75%]">
+          <span class="msg-name-label">${currentAgentName}</span>
+          <div class="inline-block rounded-lg ai-bubble chat-bubble-content">思考中...</div>
+        </div>
+      `;
+      chatBox.appendChild(loadingDiv);
+      chatBox.scrollTop = chatBox.scrollHeight;
+
+      const reply = await getAIResponse(value);
+      if (chatBox.contains(loadingDiv)) {
+        chatBox.removeChild(loadingDiv);
+      }
+
+      const aiMsg = {
+        id: generateId(),
+        role: 'assistant',
+        content: reply,
+        created_at: new Date().toISOString()
+      };
+      messages.push(aiMsg);
+      saveMessagesLocal();
+      addMessageToDOM('assistant', reply, true, aiMsg.id);
+    }
+
+    async function clearChat() {
+      messages = [];
+      saveMessagesLocal();
+      chatBox.innerHTML = '';
+      await deleteAllMessagesFromCloud();
+      const welcomeId = generateId();
+      const welcomeMsg = { id: welcomeId, role: 'assistant', content: '聊天记录已清空。', created_at: new Date().toISOString() };
+      messages.push(welcomeMsg);
+      saveMessagesLocal();
+      addMessageToDOM('assistant', welcomeMsg.content, false, welcomeId);
+      await upsertMessageToCloud(welcomeMsg);
+    }
+
+    async function resetScript() {
+      await clearChat();
+    }
+
+    // ---------- 事件绑定 ----------
+    saveSetBtn.addEventListener('click', manualSaveSettings);
+
+    // 自动保存监听：设置面板内所有输入变化触发防抖自动保存
+    const autoSaveInputs = [
+      agentPrompt, agentNameSet, userNameInput,
+      fontSizeInput, lineHeightInput, userTextColor, aiTextColor,
+      bubblePxInput, bubblePyInput, chatHPaddingInput
+    ];
+    autoSaveInputs.forEach(input => {
+      input.addEventListener('input', () => {
+        triggerAutoSave();
+        // 实时更新样式预览
+        if (input === fontSizeInput || input === lineHeightInput || input === userTextColor ||
+            input === aiTextColor || input === bubblePxInput || input === bubblePyInput || input === chatHPaddingInput) {
+          updateCSSVariables();
+        }
+        if (input === agentNameSet) {
+          currentAgentName = agentNameSet.value || currentAgentName;
+          updateNameDisplays();
+        }
+        if (input === userNameInput) {
+          currentUserName = userNameInput.value || currentUserName;
+          updateNameDisplays();
+        }
+      });
     });
 
-    // 头像上传
     agentAvatarUpload.addEventListener('click', () => agentAvatarFile.click());
     agentAvatarFile.addEventListener('change', e => {
       const file = e.target.files[0];
@@ -457,207 +894,85 @@
       }
     });
 
-    // 样式即时预览
-    [fontSizeInput, lineHeightInput, userTextColor, aiTextColor, bubblePxInput, bubblePyInput, chatHPaddingInput].forEach(el => {
-      el.addEventListener('input', updateCSSVariables);
+    agentNameDisplay.addEventListener('click', () => openNameEditor('agent'));
+    userNameDisplay.addEventListener('click', () => openNameEditor('user'));
+    nameEditCancel.addEventListener('click', closeNameEditor);
+    nameEditConfirm.addEventListener('click', async () => {
+      const newName = nameEditInput.value.trim();
+      if (!newName) return;
+      if (currentEditTarget === 'agent') {
+        currentAgentName = newName;
+        agentNameSet.value = newName;
+      } else {
+        currentUserName = newName;
+        userNameInput.value = newName;
+      }
+      updateNameDisplays();
+      closeNameEditor();
+      await autoSaveSettings();
     });
-
-    // ---------- 消息同步 ----------
-    function generateId() { return crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).substr(2); }
-
-    async function upsertMessageToCloud(msg) {
-      if (!msg.id) return;
-      try {
-        await supabase.from(MESSAGES_TABLE).upsert({
-          id: msg.id,
-          role: msg.role,
-          content: msg.content,
-          conversation_id: CONVERSATION_ID,
-          created_at: msg.created_at || new Date().toISOString()
-        }, { onConflict: 'id' });
-      } catch (e) { console.warn('消息同步失败', e); }
-    }
-
-    async function fetchMessagesFromCloud() {
-      try {
-        const { data, error } = await supabase
-            .from(MESSAGES_TABLE)
-            .select('*')
-            .eq('conversation_id', CONVERSATION_ID)
-            .order('created_at', { ascending: true });
-        if (error) throw error;
-        if (data && data.length > 0) {
-          messages = data.map(d => ({ id: d.id, role: d.role, content: d.content, created_at: d.created_at }));
-          localStorage.setItem(MESSAGES_LOCAL_KEY, JSON.stringify(messages));
-          return true;
-        }
-        return false;
-      } catch (e) {
-        console.warn('云端消息加载失败，使用本地', e);
-        return false;
-      }
-    }
-
-    async function deleteAllMessagesFromCloud() {
-      try { await supabase.from(MESSAGES_TABLE).delete().eq('conversation_id', CONVERSATION_ID); } catch (e) {}
-    }
-
-    function saveMessagesLocal() { localStorage.setItem(MESSAGES_LOCAL_KEY, JSON.stringify(messages)); }
-    function loadMessagesLocal() {
-      const saved = localStorage.getItem(MESSAGES_LOCAL_KEY);
-      if (saved) messages = JSON.parse(saved);
-    }
-
-    function renderAllMessages() {
-      chatBox.innerHTML = '';
-      messages.forEach(msg => addMessageToDOM(msg.role, msg.content, false, msg.id));
-      if (messages.length === 0) {
-        const welcomeId = generateId();
-        const welcomeMsg = { id: welcomeId, role: 'assistant', content: '欢迎使用剧本智能助手！点击左上角按钮设置剧本。', created_at: new Date().toISOString() };
-        messages.push(welcomeMsg);
-        saveMessagesLocal();
-        addMessageToDOM('assistant', welcomeMsg.content, false, welcomeId);
-        upsertMessageToCloud(welcomeMsg);
-      }
-      chatBox.scrollTop = chatBox.scrollHeight;
-    }
-
-    function addMessageToDOM(role, content, animate = false, msgId = null) {
-      const isUser = role === 'user';
-      const avatarSrc = isUser ? userAvatarUrl : agentAvatarUrl;
-      const avatarInitial = isUser ? (currentUserName || '我').charAt(0) : (currentAgentName || 'AI').charAt(0);
-      const senderName = isUser ? currentUserName : currentAgentName;
-      const div = document.createElement('div');
-      div.className = `message-row flex mb-4 ${isUser ? 'justify-end' : 'justify-start'} items-start gap-2`;
-      const avatarHTML = avatarSrc ? `<img src="${avatarSrc}" class="avatar-img">` : `<span>${avatarInitial}</span>`;
-      if (isUser) {
-        div.innerHTML = `<div class="max-w-[75%]"><span class="msg-name-label text-right">${senderName}</span><div class="inline-block rounded-lg chat-bubble-content user-bubble">${content}</div></div><div class="msg-avatar">${avatarHTML}</div>`;
-      } else {
-        div.innerHTML = `<div class="msg-avatar">${avatarHTML}</div><div class="max-w-[75%]"><span class="msg-name-label">${senderName}</span><div class="inline-block rounded-lg chat-bubble-content ai-bubble">${content}</div></div>`;
-      }
-      chatBox.appendChild(div);
-      if (role === 'assistant' && animate && msgId) {
-        typewriterEffect(content, div, msgId);
-      } else {
-        renderLatex(div);
-        chatBox.scrollTop = chatBox.scrollHeight;
-      }
-      return div;
-    }
-
-    function typewriterEffect(fullText, msgElement, msgId) {
-      const bubble = msgElement.querySelector('.chat-bubble-content');
-      let index = 0;
-      bubble.innerHTML = '';
-      const interval = setInterval(() => {
-        if (index < fullText.length) {
-          if (fullText.charAt(index) === '<') {
-            const end = fullText.indexOf('>', index);
-            if (end !== -1) { bubble.innerHTML += fullText.substring(index, end+1); index = end+1; }
-            else { bubble.innerHTML += fullText.charAt(index); index++; }
-          } else { bubble.innerHTML += fullText.charAt(index); index++; }
-          chatBox.scrollTop = chatBox.scrollHeight;
-          renderLatex(msgElement);
-        } else {
-          clearInterval(interval);
-          const msg = messages.find(m => m.id === msgId);
-          if (msg) { msg.content = fullText; saveMessagesLocal(); upsertMessageToCloud(msg); }
-          chatBox.scrollTop = chatBox.scrollHeight;
-        }
-      }, 30);
-    }
-
-    async function addMessage(role, content, animate = false) {
-      const id = generateId();
-      const msg = { id, role, content, created_at: new Date().toISOString() };
-      messages.push(msg);
-      saveMessagesLocal();
-      if (role === 'user') await upsertMessageToCloud(msg);
-      addMessageToDOM(role, content, animate, id);
-    }
-
-    function parseScriptFormat(text) {
-      return text.replace(/\[red:(.*?)\]/g, '<span style="color:#ff4444">$1</span>')
-                 .replace(/\[b:(.*?)\]/g, '<strong>$1</strong>')
-                 .replace(/\[br\]/g, '<br>');
-    }
-
-    async function getAIResponse(userMessage) {
-      const script = agentPrompt.value.trim();
-      if (!script) return "请先在左侧设置中填写剧本内容。";
-      const systemPrompt = `你是一个严格按照剧本回答问题的助手。\n⚠️ 绝对规则：\n1. 所有回答只能来自下面的剧本内容，绝对不能编造任何剧本里没有的信息。\n2. 如果用户的问题剧本里没有答案，只说"这个我暂时不知道哦"。\n3. 剧本里的[red:文字]、[b:文字]、[br]这些格式标记必须原封不动保留。\n4. 不要加任何剧本以外的解释或客套话。\n\n--- 剧本开始 ---\n${script}\n--- 剧本结束 ---`;
-      try {
-        const response = await fetch(AI_PROXY_URL, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userMessage }] })
-        });
-        if (!response.ok) throw new Error((await response.json()).error?.message || '请求失败');
-        const data = await response.json();
-        return parseScriptFormat(data.choices[0].message.content.trim());
-      } catch (e) { return `⚠️ AI 模式出错：${e.message}`; }
-    }
-
-    async function sendMessage() {
-      const value = msgInput.value.trim();
-      if (!value) return;
-      await addMessage('user', value);
-      msgInput.value = '';
-      const loadingDiv = document.createElement('div');
-      loadingDiv.className = 'message-row flex mb-4 justify-start items-start gap-2';
-      loadingDiv.innerHTML = `<div class="msg-avatar">${agentAvatarUrl ? `<img src="${agentAvatarUrl}" class="avatar-img">` : (currentAgentName||'AI').charAt(0)}</div><div class="max-w-[75%]"><span class="msg-name-label">${currentAgentName}</span><div class="inline-block rounded-lg ai-bubble chat-bubble-content">思考中...</div></div>`;
-      chatBox.appendChild(loadingDiv);
-      const reply = await getAIResponse(value);
-      if (chatBox.contains(loadingDiv)) chatBox.removeChild(loadingDiv);
-      const aiMsg = { id: generateId(), role: 'assistant', content: reply, created_at: new Date().toISOString() };
-      messages.push(aiMsg);
-      saveMessagesLocal();
-      addMessageToDOM('assistant', reply, true, aiMsg.id);
-    }
-
-    async function clearChat() {
-      messages = [];
-      saveMessagesLocal();
-      chatBox.innerHTML = '';
-      await deleteAllMessagesFromCloud();
-      const welcomeId = generateId();
-      const welcomeMsg = { id: welcomeId, role: 'assistant', content: '聊天记录已清空。', created_at: new Date().toISOString() };
-      messages.push(welcomeMsg);
-      saveMessagesLocal();
-      addMessageToDOM('assistant', welcomeMsg.content, false, welcomeId);
-      await upsertMessageToCloud(welcomeMsg);
-    }
 
     sendBtn.addEventListener('click', sendMessage);
     msgInput.addEventListener('keypress', e => { if (e.key === 'Enter') sendMessage(); });
     clearBtn.addEventListener('click', clearChat);
-    resetScriptBtn.addEventListener('click', async () => { await clearChat(); });
+    resetScriptBtn.addEventListener('click', resetScript);
+
     toggleSettingsBtn.addEventListener('click', () => {
       collapsibleSettings.style.display = collapsibleSettings.style.display === 'block' ? 'none' : 'block';
     });
 
-    // ---------- 初始化 ----------
+    window.addEventListener('resize', () => {
+      chatBox.scrollTop = chatBox.scrollHeight;
+    });
+
+    // ---------- 初始化流程：本地优先，云端覆盖 ----------
     async function init() {
-      // 1. 立即用本地设置渲染（无闪烁）
-      const hasLocal = loadSettingsFromLocal();
-      if (!hasLocal) {
-        // 首次使用，显示默认值
-        updateCSSVariables();
-        updateNameDisplays();
+      updateCSSVariables();
+
+      // 1. 立即从本地加载设置 (如果存在)
+      const localSettings = getSettingsLocal();
+      if (localSettings) {
+        applySettingsToUI(localSettings);
+      } else {
+        // 真·第一次使用，显示默认值（已预设）
+        applySettingsToUI({
+          agent_prompt: '',
+          agent_name: '剧本助手',
+          user_name: '我',
+          agent_avatar_url: '',
+          user_avatar_url: '',
+          font_size: 16,
+          line_height: 1.6,
+          user_text_color: '#FFFFFF',
+          ai_text_color: '#FFFFFF',
+          bubble_px: 16,
+          bubble_py: 8,
+          chat_h_padding: 16
+        });
       }
 
-      // 2. 后台从云端同步设置（如果云端更新则覆盖）
-      await syncSettingsFromCloud();
+      // 2. 后台拉取云端设置并更新（覆盖本地）
+      const cloudSettings = await fetchCloudSettings();
+      if (cloudSettings) {
+        applySettingsToUI(cloudSettings);
+        // 同时更新本地缓存
+        saveSettingsLocal(cloudSettings);
+      }
 
-      // 3. 加载消息：优先云端
-      const cloudMsgLoaded = await fetchMessagesFromCloud();
-      if (!cloudMsgLoaded) loadMessagesLocal();
+      // 3. 加载消息：优先云端，失败则本地
+      const cloudMsgOk = await fetchMessagesFromCloud();
+      if (!cloudMsgOk) {
+        loadMessagesLocal();
+      }
       renderAllMessages();
     }
 
     init();
 
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => navigator.serviceWorker.register('./sw-chat.js').catch(console.log));
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw-chat.js').catch(console.log);
+      });
     }
   })();
 </script>
