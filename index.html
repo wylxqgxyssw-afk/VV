@@ -7,16 +7,12 @@
   <link rel="manifest" href="manifest-chat.json">
   <link rel="apple-touch-icon" href="icon-192.png">
   <meta name="theme-color" content="#000000">
-  <script src="https://cdn.tailwindcss.com">
-  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js">
-  </script>
-  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js">
-  </script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
-  </script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     tailwind.config = {
       theme: {
@@ -268,6 +264,7 @@
 </head>
 <body>
 <div class="layout-container">
+  <!-- 左侧抽屉设置面板 -->
   <div class="left-set-panel" id="left-panel">
     <button class="self-end text-gray-400 hover:text-white mb-4" id="close-drawer-btn">
       <i class="fa fa-times fa-lg"></i>
@@ -307,8 +304,10 @@
     <p class="text-xs text-gray-500 mt-2 text-center">数据自动云端同步，多端一致</p>
   </div>
 
+  <!-- 遮罩层 -->
   <div class="drawer-overlay" id="drawer-overlay"></div>
 
+  <!-- 聊天全屏面板 -->
   <div class="chat-main-panel bg-dark">
     <div class="chat-header p-3 border-b border-gray-800 flex items-center justify-between">
       <div class="flex items-center gap-3">
@@ -327,11 +326,13 @@
   </div>
 </div>
 
+<!-- 统一输入栏 -->
 <div class="mobile-input-bar" id="mobile-input-area">
   <input type="text" placeholder="输入消息..." class="flex-1 bg-darker border border-gray-800 rounded-lg p-3 text-white outline-none" id="msg-input">
   <button class="bg-accent px-5 rounded-lg" id="send-btn"><i class="fa fa-paper-plane"></i></button>
 </div>
 
+<!-- 名称编辑弹窗 -->
 <div id="name-edit-modal" class="name-edit-modal">
   <div class="name-edit-dialog">
     <h3 class="text-lg font-bold mb-1" id="name-edit-title"></h3>
@@ -350,11 +351,6 @@
     const SUPABASE_ANON_KEY = 'sb_publishable_R66fP0xmbxUZTeu7kjQYjQ_FHdXlRvm';
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const AI_PROXY_URL = 'https://vkeaimeytsymepgkizqk.supabase.co/functions/v1/swift-api';
-
-    const MESSAGES_TABLE = 'chat_messages';
-    const SETTINGS_TABLE = 'user_settings';
-    const SETTINGS_ID = 'default';
-    const CONVERSATION_ID = 'default';
 
     const chatBox = document.getElementById('chat-box');
     const msgInput = document.getElementById('msg-input');
@@ -401,10 +397,10 @@
     let currentEditTarget = null;
     let messages = [];
 
-    const MESSAGES_LOCAL_KEY = 'chat-messages-local';
-    const SETTINGS_LOCAL_KEY = 'chat-settings';
+    // 固定房间ID，所有设备共享同一套聊天记录
+    const ROOM_ID = 'default';
 
-    // ---------- 抽屉控制 ----------
+    // 抽屉开关
     function openDrawer() {
       leftPanel.classList.add('expand');
       drawerOverlay.classList.add('show');
@@ -417,7 +413,6 @@
     closeDrawerBtn.addEventListener('click', closeDrawer);
     drawerOverlay.addEventListener('click', closeDrawer);
 
-    // ---------- 样式变量更新 ----------
     function updateCSSVariables() {
       document.documentElement.style.setProperty('--font-size', fontSizeInput.value + 'px');
       document.documentElement.style.setProperty('--line-height', lineHeightInput.value);
@@ -472,185 +467,87 @@
       currentEditTarget = null;
     }
 
-    // ---------- 本地存储辅助 ----------
-    function saveMessagesLocal() {
-      try { localStorage.setItem(MESSAGES_LOCAL_KEY, JSON.stringify(messages)); } catch (e) {}
-    }
-
-    function loadMessagesLocal() {
-      try {
-        const saved = localStorage.getItem(MESSAGES_LOCAL_KEY);
-        if (saved) messages = JSON.parse(saved);
-      } catch (e) { messages = []; }
-    }
-
-    function saveSettingsLocal(settings) {
-      try { localStorage.setItem(SETTINGS_LOCAL_KEY, JSON.stringify(settings)); } catch (e) {}
-    }
-
-    function getSettingsLocal() {
-      try {
-        const saved = localStorage.getItem(SETTINGS_LOCAL_KEY);
-        return saved ? JSON.parse(saved) : null;
-      } catch (e) { return null; }
-    }
-
-    function applySettingsToUI(settings) {
-      if (settings.agent_prompt) agentPrompt.value = settings.agent_prompt;
-      if (settings.agent_name) { currentAgentName = settings.agent_name; agentNameSet.value = settings.agent_name; }
-      if (settings.user_name) { currentUserName = settings.user_name; userNameInput.value = settings.user_name; }
-      if (settings.agent_avatar_url) { agentAvatarUrl = settings.agent_avatar_url; updateAgentAvatarDisplay(); }
-      if (settings.user_avatar_url) userAvatarUrl = settings.user_avatar_url;
-      if (settings.font_size) fontSizeInput.value = settings.font_size;
-      if (settings.line_height) lineHeightInput.value = settings.line_height;
-      if (settings.user_text_color) userTextColor.value = settings.user_text_color;
-      if (settings.ai_text_color) aiTextColor.value = settings.ai_text_color;
-      if (settings.bubble_px) bubblePxInput.value = settings.bubble_px;
-      if (settings.bubble_py) bubblePyInput.value = settings.bubble_py;
-      if (settings.chat_h_padding) chatHPaddingInput.value = settings.chat_h_padding;
-      updateNameDisplays();
-      updateCSSVariables();
-    }
-
-    // ---------- 云端设置操作 ----------
-    async function fetchCloudSettings() {
+    // ---------- 云端消息操作 ----------
+    async function loadMessagesFromCloud() {
       try {
         const { data, error } = await supabase
-            .from(SETTINGS_TABLE)
+            .from('chat_messages')
             .select('*')
-            .eq('id', SETTINGS_ID)
-            .single();
-        if (error) throw error;
-        return data;
-      } catch (e) {
-        console.warn('云端设置拉取失败', e);
-        return null;
-      }
-    }
-
-    async function upsertCloudSettings(settings) {
-      try {
-        const { error } = await supabase
-            .from(SETTINGS_TABLE)
-            .upsert(settings, { onConflict: 'id' });
-        if (error) throw error;
-        return true;
-      } catch (e) {
-        console.warn('云端设置保存失败', e);
-        return false;
-      }
-    }
-
-    // 收集当前设置对象
-    function collectSettingsObject() {
-      return {
-        id: SETTINGS_ID,
-        agent_prompt: agentPrompt.value,
-        agent_name: currentAgentName,
-        user_name: currentUserName,
-        agent_avatar_url: agentAvatarUrl,
-        user_avatar_url: userAvatarUrl,
-        font_size: parseInt(fontSizeInput.value) || 16,
-        line_height: parseFloat(lineHeightInput.value) || 1.6,
-        user_text_color: userTextColor.value,
-        ai_text_color: aiTextColor.value,
-        bubble_px: parseInt(bubblePxInput.value) || 16,
-        bubble_py: parseInt(bubblePyInput.value) || 8,
-        chat_h_padding: parseInt(chatHPaddingInput.value) || 16,
-        updated_at: new Date().toISOString()
-      };
-    }
-
-    // 静默保存（自动保存用，不弹窗）
-    async function autoSaveSettings() {
-      currentAgentName = agentNameSet.value || currentAgentName;
-      currentUserName = userNameInput.value || currentUserName;
-      updateNameDisplays();
-      updateCSSVariables();
-      const settings = collectSettingsObject();
-      saveSettingsLocal(settings);
-      await upsertCloudSettings(settings);
-    }
-
-    // 手动保存（点击按钮，弹窗提示结果）
-    async function manualSaveSettings() {
-      currentAgentName = agentNameSet.value || currentAgentName;
-      currentUserName = userNameInput.value || currentUserName;
-      updateNameDisplays();
-      updateCSSVariables();
-      const settings = collectSettingsObject();
-      saveSettingsLocal(settings);
-      const ok = await upsertCloudSettings(settings);
-      alert(ok ? '已保存并同步云端' : '已保存到本地（云端同步失败，请检查网络）');
-    }
-
-    // 自动保存防抖定时器
-    let autoSaveTimer = null;
-    function triggerAutoSave() {
-      if (autoSaveTimer) clearTimeout(autoSaveTimer);
-      autoSaveTimer = setTimeout(autoSaveSettings, 2000);
-    }
-
-    // ---------- 消息云端同步 ----------
-    async function upsertMessageToCloud(msg) {
-      if (!msg.id) return;
-      try {
-        await supabase.from(MESSAGES_TABLE).upsert({
-          id: msg.id,
-          role: msg.role,
-          content: msg.content,
-          conversation_id: CONVERSATION_ID,
-          created_at: msg.created_at || new Date().toISOString()
-        }, { onConflict: 'id' });
-      } catch (e) {}
-    }
-
-    async function fetchMessagesFromCloud() {
-      try {
-        const { data, error } = await supabase
-            .from(MESSAGES_TABLE)
-            .select('*')
-            .eq('conversation_id', CONVERSATION_ID)
+            .eq('room_id', ROOM_ID)
             .order('created_at', { ascending: true });
         if (error) throw error;
-        if (data && data.length > 0) {
-          messages = data.map(d => ({ id: d.id, role: d.role, content: d.content, created_at: d.created_at }));
-          saveMessagesLocal();
-          return true;
+        if (data) {
+          messages = data.map(d => ({ role: d.role, content: d.content }));
+        } else {
+          messages = [];
         }
-        return false;
-      } catch (e) {
-        console.warn('云端消息加载失败', e);
-        return false;
+        // 如果云端为空，给一个欢迎消息（不保存到云端）
+        if (messages.length === 0) {
+          messages.push({ role: 'assistant', content: '欢迎使用剧本智能助手！点击左上角按钮设置剧本。' });
+        }
+        renderStoredMessages();
+      } catch (err) {
+        console.warn('云端消息加载失败，使用本地备份', err);
+        loadMessagesFromLocal();
+        renderStoredMessages();
       }
     }
 
-    async function deleteAllMessagesFromCloud() {
+    async function saveMessageToCloud(role, content) {
       try {
-        await supabase.from(MESSAGES_TABLE).delete().eq('conversation_id', CONVERSATION_ID);
+        const { error } = await supabase
+            .from('chat_messages')
+            .insert([{ room_id: ROOM_ID, role, content }]);
+        if (error) throw error;
+      } catch (err) {
+        console.warn('保存消息到云端失败', err);
+      }
+      // 同时备份到本地
+      saveMessagesToLocal();
+    }
+
+    async function clearMessagesInCloud() {
+      try {
+        const { error } = await supabase
+            .from('chat_messages')
+            .delete()
+            .eq('room_id', ROOM_ID);
+        if (error) throw error;
+      } catch (err) {
+        console.warn('清空云端消息失败', err);
+      }
+      messages = [];
+      saveMessagesToLocal();
+    }
+
+    // 本地备份（作为离线补充）
+    function saveMessagesToLocal() {
+      try {
+        localStorage.setItem('chat-messages-backup', JSON.stringify(messages));
       } catch (e) {}
     }
 
-    function renderAllMessages() {
-      chatBox.innerHTML = '';
-      messages.forEach(msg => {
-        addMessageToDOM(msg.role, msg.content, false, msg.id);
-      });
-      if (messages.length === 0) {
-        const welcomeId = generateId();
-        const welcomeMsg = { id: welcomeId, role: 'assistant', content: '欢迎使用剧本智能助手！点击左上角按钮设置剧本。', created_at: new Date().toISOString() };
-        messages.push(welcomeMsg);
-        saveMessagesLocal();
-        addMessageToDOM('assistant', welcomeMsg.content, false, welcomeId);
-        upsertMessageToCloud(welcomeMsg);
+    function loadMessagesFromLocal() {
+      try {
+        const saved = localStorage.getItem('chat-messages-backup');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) messages = parsed;
+        }
+      } catch (e) {
+        messages = [];
       }
     }
 
-    function generateId() {
-      return crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).substr(2);
+    function renderStoredMessages() {
+      chatBox.innerHTML = '';
+      messages.forEach(msg => {
+        addMessageToDOM(msg.role, msg.content, false);
+      });
+      chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    function typewriterEffect(fullText, msgElement, msgId) {
+    function typewriterEffect(fullText, msgElement) {
       const bubble = msgElement.querySelector('.chat-bubble-content');
       let index = 0;
       bubble.innerHTML = '';
@@ -673,18 +570,13 @@
           renderLatex(msgElement);
         } else {
           clearInterval(interval);
-          const msg = messages.find(m => m.id === msgId);
-          if (msg) {
-            msg.content = fullText;
-            saveMessagesLocal();
-            upsertMessageToCloud(msg);
-          }
+          // 已经通过 addMessage 存入，无需再更新
           chatBox.scrollTop = chatBox.scrollHeight;
         }
       }, 30);
     }
 
-    function addMessageToDOM(role, content, animate = false, msgId = null) {
+    function addMessageToDOM(role, content, animate = false) {
       const isUser = role === 'user';
       const avatarSrc = isUser ? userAvatarUrl : agentAvatarUrl;
       const avatarInitial = isUser ? (currentUserName || '我').charAt(0) : (currentAgentName || 'AI').charAt(0);
@@ -717,8 +609,8 @@
 
       chatBox.appendChild(div);
 
-      if (role === 'assistant' && animate && msgId) {
-        typewriterEffect(content, div, msgId);
+      if (role === 'assistant' && animate) {
+        typewriterEffect(content, div);
       } else {
         renderLatex(div);
         chatBox.scrollTop = chatBox.scrollHeight;
@@ -726,15 +618,12 @@
       return div;
     }
 
+    // 添加消息（同时写云端）
     async function addMessage(role, content, animate = false) {
-      const id = generateId();
-      const msg = { id, role, content, created_at: new Date().toISOString() };
-      messages.push(msg);
-      saveMessagesLocal();
-      if (role === 'user') {
-        await upsertMessageToCloud(msg);
-      }
-      addMessageToDOM(role, content, animate, id);
+      messages.push({ role, content });
+      // 先保存到云端
+      await saveMessageToCloud(role, content);
+      addMessageToDOM(role, content, animate);
     }
 
     function parseScriptFormat(text) {
@@ -753,7 +642,7 @@
 你是一个严格按照剧本回答问题的助手。
 ⚠️ 绝对规则：
 1. 所有回答只能来自下面的剧本内容，绝对不能编造任何剧本里没有的信息。
-2. 如果用户的问题剧本里没有答案，只说“这个我暂时不知道哦”。
+2. 如果用户的问题剧本里没有答案，只说"这个我暂时不知道哦"。
 3. 剧本里的[red:文字]、[b:文字]、[br]这些格式标记必须原封不动保留。
 4. 不要加任何剧本以外的解释或客套话。
 
@@ -792,7 +681,6 @@ ${script}
       await addMessage('user', value);
       msgInput.value = '';
 
-      const loadingId = generateId();
       const loadingDiv = document.createElement('div');
       loadingDiv.className = 'message-row flex mb-4 justify-start items-start gap-2';
       loadingDiv.innerHTML = `
@@ -809,61 +697,108 @@ ${script}
       if (chatBox.contains(loadingDiv)) {
         chatBox.removeChild(loadingDiv);
       }
-
-      const aiMsg = {
-        id: generateId(),
-        role: 'assistant',
-        content: reply,
-        created_at: new Date().toISOString()
-      };
-      messages.push(aiMsg);
-      saveMessagesLocal();
-      addMessageToDOM('assistant', reply, true, aiMsg.id);
+      await addMessage('assistant', reply, true);
     }
 
     async function clearChat() {
-      messages = [];
-      saveMessagesLocal();
+      await clearMessagesInCloud();
       chatBox.innerHTML = '';
-      await deleteAllMessagesFromCloud();
-      const welcomeId = generateId();
-      const welcomeMsg = { id: welcomeId, role: 'assistant', content: '聊天记录已清空。', created_at: new Date().toISOString() };
-      messages.push(welcomeMsg);
-      saveMessagesLocal();
-      addMessageToDOM('assistant', welcomeMsg.content, false, welcomeId);
-      await upsertMessageToCloud(welcomeMsg);
+      // 添加一条清空提示（也会存入云端）
+      await addMessage('assistant', '聊天记录已清空。');
     }
 
     async function resetScript() {
       await clearChat();
+      await addMessage('assistant', '✅ 剧本已重置，可以重新开始。');
     }
 
-    // ---------- 事件绑定 ----------
-    saveSetBtn.addEventListener('click', manualSaveSettings);
+    // ---------- 设置云同步（保持原有逻辑，但去掉本地回退时的干扰） ----------
+    const SETTINGS_TABLE = 'user_settings';
+    const SETTINGS_ID = 'default';
 
-    // 自动保存监听：设置面板内所有输入变化触发防抖自动保存
-    const autoSaveInputs = [
-      agentPrompt, agentNameSet, userNameInput,
-      fontSizeInput, lineHeightInput, userTextColor, aiTextColor,
-      bubblePxInput, bubblePyInput, chatHPaddingInput
-    ];
-    autoSaveInputs.forEach(input => {
-      input.addEventListener('input', () => {
-        triggerAutoSave();
-        // 实时更新样式预览
-        if (input === fontSizeInput || input === lineHeightInput || input === userTextColor ||
-            input === aiTextColor || input === bubblePxInput || input === bubblePyInput || input === chatHPaddingInput) {
+    async function loadSettingsFromCloud() {
+      try {
+        const { data, error } = await supabase
+            .from(SETTINGS_TABLE)
+            .select('*')
+            .eq('id', SETTINGS_ID)
+            .single();
+        if (error) throw error;
+        if (data) {
+          if (data.agent_prompt) agentPrompt.value = data.agent_prompt;
+          if (data.agent_name) { currentAgentName = data.agent_name; agentNameSet.value = data.agent_name; }
+          if (data.user_name) { currentUserName = data.user_name; userNameInput.value = data.user_name; }
+          if (data.agent_avatar_url) { agentAvatarUrl = data.agent_avatar_url; updateAgentAvatarDisplay(); }
+          if (data.user_avatar_url) userAvatarUrl = data.user_avatar_url;
+          if (data.font_size) fontSizeInput.value = data.font_size;
+          if (data.line_height) lineHeightInput.value = data.line_height;
+          if (data.user_text_color) userTextColor.value = data.user_text_color;
+          if (data.ai_text_color) aiTextColor.value = data.ai_text_color;
+          if (data.bubble_px) bubblePxInput.value = data.bubble_px;
+          if (data.bubble_py) bubblePyInput.value = data.bubble_py;
+          if (data.chat_h_padding) chatHPaddingInput.value = data.chat_h_padding;
+          updateNameDisplays();
           updateCSSVariables();
         }
-        if (input === agentNameSet) {
-          currentAgentName = agentNameSet.value || currentAgentName;
-          updateNameDisplays();
-        }
-        if (input === userNameInput) {
-          currentUserName = userNameInput.value || currentUserName;
-          updateNameDisplays();
-        }
-      });
+      } catch (err) {
+        console.warn('云端设置加载失败，尝试本地', err);
+        loadSettingsFromLocal();
+      }
+    }
+
+    function loadSettingsFromLocal() {
+      const saved = JSON.parse(localStorage.getItem('chat-settings') || '{}');
+      if (saved.agentPrompt) agentPrompt.value = saved.agentPrompt;
+      if (saved.agentName) { currentAgentName = saved.agentName; agentNameSet.value = saved.agentName; }
+      if (saved.userName) { currentUserName = saved.userName; userNameInput.value = saved.userName; }
+      if (saved.agentAvatarUrl) { agentAvatarUrl = saved.agentAvatarUrl; updateAgentAvatarDisplay(); }
+      if (saved.userAvatarUrl) userAvatarUrl = saved.userAvatarUrl;
+      if (saved.fontSize) fontSizeInput.value = saved.fontSize;
+      if (saved.lineHeight) lineHeightInput.value = saved.lineHeight;
+      if (saved.userTextColor) userTextColor.value = saved.userTextColor;
+      if (saved.aiTextColor) aiTextColor.value = saved.aiTextColor;
+      if (saved.bubblePx) bubblePxInput.value = saved.bubblePx;
+      if (saved.bubblePy) bubblePyInput.value = saved.bubblePy;
+      if (saved.chatHPadding) chatHPaddingInput.value = saved.chatHPadding;
+      updateNameDisplays();
+      updateCSSVariables();
+    }
+
+    async function saveSettingsToCloud() {
+      currentAgentName = agentNameSet.value || currentAgentName;
+      currentUserName = userNameInput.value || currentUserName;
+      updateNameDisplays();
+      updateCSSVariables();
+
+      const settings = {
+        id: SETTINGS_ID,
+        agent_prompt: agentPrompt.value,
+        agent_name: currentAgentName,
+        user_name: currentUserName,
+        agent_avatar_url: agentAvatarUrl,
+        user_avatar_url: userAvatarUrl,
+        font_size: parseInt(fontSizeInput.value) || 16,
+        line_height: parseFloat(lineHeightInput.value) || 1.6,
+        user_text_color: userTextColor.value,
+        ai_text_color: aiTextColor.value,
+        bubble_px: parseInt(bubblePxInput.value) || 16,
+        bubble_py: parseInt(bubblePyInput.value) || 8,
+        chat_h_padding: parseInt(chatHPaddingInput.value) || 16,
+        updated_at: new Date().toISOString()
+      };
+      localStorage.setItem('chat-settings', JSON.stringify(settings));
+      try {
+        await supabase.from(SETTINGS_TABLE).upsert(settings, { onConflict: 'id' });
+        return true;
+      } catch (err) {
+        return false;
+      }
+    }
+
+    // 事件绑定
+    saveSetBtn.addEventListener('click', async () => {
+      const ok = await saveSettingsToCloud();
+      alert(ok ? '已保存并同步云端' : '已保存到本地（云端同步失败）');
     });
 
     agentAvatarUpload.addEventListener('click', () => agentAvatarFile.click());
@@ -875,7 +810,6 @@ ${script}
           agentAvatarUrl = ev.target.result;
           agentAvatarPreview.innerHTML = `<img src="${agentAvatarUrl}" class="avatar-img">`;
           updateAgentAvatarDisplay();
-          triggerAutoSave();
         };
         reader.readAsDataURL(file);
       }
@@ -888,7 +822,6 @@ ${script}
         reader.onload = ev => {
           userAvatarUrl = ev.target.result;
           userAvatarPreview.innerHTML = `<img src="${userAvatarUrl}" class="avatar-img">`;
-          triggerAutoSave();
         };
         reader.readAsDataURL(file);
       }
@@ -909,7 +842,11 @@ ${script}
       }
       updateNameDisplays();
       closeNameEditor();
-      await autoSaveSettings();
+      await saveSettingsToCloud();
+    });
+
+    [fontSizeInput, lineHeightInput, userTextColor, aiTextColor, bubblePxInput, bubblePyInput, chatHPaddingInput].forEach(el => {
+      el.addEventListener('input', updateCSSVariables);
     });
 
     sendBtn.addEventListener('click', sendMessage);
@@ -925,48 +862,12 @@ ${script}
       chatBox.scrollTop = chatBox.scrollHeight;
     });
 
-    // ---------- 初始化流程：本地优先，云端覆盖 ----------
+    // 启动：先加载设置，再加载云端消息（覆盖本地）
     async function init() {
       updateCSSVariables();
-
-      // 1. 立即从本地加载设置 (如果存在)
-      const localSettings = getSettingsLocal();
-      if (localSettings) {
-        applySettingsToUI(localSettings);
-      } else {
-        // 真·第一次使用，显示默认值（已预设）
-        applySettingsToUI({
-          agent_prompt: '',
-          agent_name: '剧本助手',
-          user_name: '我',
-          agent_avatar_url: '',
-          user_avatar_url: '',
-          font_size: 16,
-          line_height: 1.6,
-          user_text_color: '#FFFFFF',
-          ai_text_color: '#FFFFFF',
-          bubble_px: 16,
-          bubble_py: 8,
-          chat_h_padding: 16
-        });
-      }
-
-      // 2. 后台拉取云端设置并更新（覆盖本地）
-      const cloudSettings = await fetchCloudSettings();
-      if (cloudSettings) {
-        applySettingsToUI(cloudSettings);
-        // 同时更新本地缓存
-        saveSettingsLocal(cloudSettings);
-      }
-
-      // 3. 加载消息：优先云端，失败则本地
-      const cloudMsgOk = await fetchMessagesFromCloud();
-      if (!cloudMsgOk) {
-        loadMessagesLocal();
-      }
-      renderAllMessages();
+      await loadSettingsFromCloud();   // 云端设置优先，失败则用本地
+      await loadMessagesFromCloud();   // 云端消息优先
     }
-
     init();
 
     if ('serviceWorker' in navigator) {
