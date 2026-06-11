@@ -75,7 +75,8 @@
       min-height: 0;
       padding-left: var(--chat-h-padding);
       padding-right: var(--chat-h-padding);
-      padding-bottom: 16px;
+      padding-bottom: 60px; /* 为输入栏留空 */
+      padding-bottom: calc(60px + var(--safe-bottom));
     }
     .left-set-panel {
       position: fixed;
@@ -119,12 +120,9 @@
       z-index: 200;
       background: #000;
       border-top: 1px solid #333;
-      padding: 12px;
-      padding-bottom: calc(12px + var(--safe-bottom));
+      padding: 8px 12px;
+      padding-bottom: calc(8px + var(--safe-bottom)); /* 更紧凑贴底 */
       gap: 8px;
-    }
-    #chat-box {
-      padding-bottom: calc(72px + var(--safe-bottom)) !important;
     }
     .scrollbar-hide::-webkit-scrollbar { display: none; }
     .scrollbar-hide {
@@ -246,6 +244,14 @@
       <i class="fa fa-times fa-lg"></i>
     </button>
     <h1 class="text-xl font-bold mb-4">剧本/人设设置</h1>
+
+    <!-- 新增：云端状态 + 快捷操作 -->
+    <div class="text-xs text-gray-400 mb-3 text-center" id="header-sync-status">正在连接云端...</div>
+    <div class="flex gap-2 mb-4">
+      <button class="flex-1 bg-gray-800 rounded p-2 text-sm" id="clear-chat">清空聊天</button>
+      <button class="flex-1 bg-gray-800 rounded p-2 text-sm" id="reset-script">重置剧本</button>
+    </div>
+
     <textarea class="w-full h-40 bg-dark border border-gray-800 rounded p-3 text-white outline-none resize-none mb-4" placeholder="输入剧本内容，AI会根据剧本回答问题&#10;支持格式：&#10;[red:文字] 红色&#10;[b:文字] 加粗&#10;[br] 换行" id="agent-prompt"></textarea>
     <button class="w-full bg-gray-800 rounded p-2 mb-3 text-sm" id="toggle-settings">
       <i class="fa fa-cog mr-1"></i> 展开头像/样式设置
@@ -285,18 +291,9 @@
     <div class="chat-header p-3 border-b border-gray-800 flex items-center justify-between">
       <div class="flex items-center gap-3">
         <div id="agent-avatar" class="w-10 h-10 bg-accent/20 flex items-center justify-center overflow-hidden rounded-lg"><span class="avatar-placeholder">AI</span></div>
-        <div>
-          <span class="text-xs text-gray-500">AI</span>
-          <span id="agent-name-display" class="font-medium name-tag text-white">剧本助手 <i class="fa fa-pencil"></i></span>
-          <div class="sync-status" id="header-sync-status">正在连接云端...</div>
-        </div>
+        <span id="agent-name-display" class="font-medium name-tag text-white">剧本助手 <i class="fa fa-pencil"></i></span>
       </div>
-      <div class="flex items-center gap-2">
-        <span id="user-name-display" class="hidden sm:flex font-medium name-tag text-gray-300 text-sm">我 <i class="fa fa-pencil"></i></span>
-        <button class="text-gray-400 hover:text-white" id="phone-open-set"><i class="fa fa-bars"></i></button>
-        <button class="text-gray-400 hover:text-white" id="reset-script">重置剧本</button>
-        <button class="text-gray-400 hover:text-white" id="clear-chat">清空</button>
-      </div>
+      <button class="text-gray-400 hover:text-white" id="phone-open-set"><i class="fa fa-bars"></i></button>
     </div>
     <div class="flex-1 overflow-y-auto scrollbar-hide" id="chat-box"></div>
   </div>
@@ -361,7 +358,7 @@
     const bubblePyInput = document.getElementById('bubble-py');
     const chatHPaddingInput = document.getElementById('chat-h-padding');
     const agentNameDisplay = document.getElementById('agent-name-display');
-    const userNameDisplay = document.getElementById('user-name-display');
+    // 已移除顶部用户名显示，只保留设置面板内的输入
     const agentAvatarDiv = document.getElementById('agent-avatar');
     const nameEditModal = document.getElementById('name-edit-modal');
     const nameEditTitle = document.getElementById('name-edit-title');
@@ -421,7 +418,7 @@
 
     function updateNameDisplays() {
       agentNameDisplay.innerHTML = `${currentAgentName} <i class="fa fa-pencil"></i>`;
-      userNameDisplay.innerHTML = `${currentUserName} <i class="fa fa-pencil"></i>`;
+      // 顶部不再显示用户名称，无需更新
     }
 
     function updateAgentAvatarDisplay() {
@@ -443,10 +440,11 @@
     }
 
     function openNameEditor(target) {
+      if (target !== 'agent') return; // 用户名称直接在设置面板修改，不弹窗
       currentEditTarget = target;
-      nameEditTitle.textContent = target === 'agent' ? '修改智能体名称' : '修改你的名称';
-      nameEditSubtitle.textContent = target === 'agent' ? '输入新的名称' : '输入你的称呼';
-      nameEditInput.value = target === 'agent' ? currentAgentName : currentUserName;
+      nameEditTitle.textContent = '修改智能体名称';
+      nameEditSubtitle.textContent = '输入新的名称';
+      nameEditInput.value = currentAgentName;
       nameEditModal.style.display = 'flex';
       nameEditInput.focus();
     }
@@ -486,7 +484,6 @@
           messages = data;
           saveMessagesToLocal();
         } else {
-          // 云端为空，同步本地历史到云端
           loadMessagesFromLocal();
           if (messages.length > 0) await syncLocalMessagesToCloud();
         }
@@ -517,7 +514,6 @@
     function setupRealtimeSubscription() {
       console.log('🔌 建立实时同步连接...');
       
-      // 先取消旧订阅
       if (realtimeSubscription) supabase.removeChannel(realtimeSubscription);
       
       realtimeSubscription = supabase
@@ -527,14 +523,11 @@
           (payload) => {
             console.log('📡 收到新消息（实时同步）', payload.new);
             const newMsg = { role: payload.new.role, content: payload.new.content };
-            
-            // 避免重复添加自己发的消息
             const isDuplicate = messages.some(msg => 
               msg.role === newMsg.role && 
               msg.content === newMsg.content &&
               Math.abs(Date.now() - new Date(payload.new.created_at).getTime()) < 3000
             );
-            
             if (!isDuplicate) {
               messages.push(newMsg);
               saveMessagesToLocal();
@@ -595,7 +588,6 @@
           if (lastMsg && lastMsg.role === 'assistant') {
             lastMsg.content = fullText;
             saveMessagesToLocal();
-            // 打字机结束后同步AI回复到云端
             (async () => {
               const { error } = await supabase.from('chat_messages').insert([{
                 user_id: USER_ID, role: 'assistant', content: fullText
@@ -645,13 +637,12 @@
       return div;
     }
 
-    // ==================== 发送消息（新版语法，修复catch错误）====================
+    // ==================== 发送消息 ====================
     async function addMessage(role, content, animate = false) {
       const msg = { role, content };
       messages.push(msg);
       saveMessagesToLocal();
       
-      // 同步用户消息到云端
       if (role === 'user') {
         const { error } = await supabase.from('chat_messages').insert([{
           user_id: USER_ID, role, content
@@ -746,7 +737,6 @@ ${script}
       messages = [];
       saveMessagesToLocal();
       
-      // 清空云端聊天记录
       const { error } = await supabase.from('chat_messages').delete().eq('user_id', USER_ID);
       if (error) {
         console.error('❌ 云端清空失败', error);
@@ -757,14 +747,16 @@ ${script}
       
       chatBox.innerHTML = '';
       addMessageToDOM('assistant', '聊天记录已清空。', false);
+      closeDrawer(); // 操作后自动关闭设置面板
     }
 
     function resetScript() {
       clearChat();
       addMessageToDOM('assistant', '✅ 剧本已重置，可以重新开始。', false);
+      closeDrawer(); // 操作后自动关闭设置面板
     }
 
-    // ==================== 设置同步（新版语法，修复catch错误）====================
+    // ==================== 设置同步（新版语法）====================
     async function loadSettingsFromCloud() {
       console.log('📥 从云端加载设置...');
       try {
@@ -892,21 +884,16 @@ ${script}
     });
 
     agentNameDisplay.addEventListener('click', () => openNameEditor('agent'));
-    userNameDisplay.addEventListener('click', () => openNameEditor('user'));
+    // 用户名称不再通过点击顶部修改，直接通过设置面板输入框修改
     nameEditCancel.addEventListener('click', closeNameEditor);
     nameEditConfirm.addEventListener('click', async () => {
       const newName = nameEditInput.value.trim();
       if (!newName) return;
-      
       if (currentEditTarget === 'agent') {
         currentAgentName = newName;
         agentNameSet.value = newName;
-      } else {
-        currentUserName = newName;
-        userNameInput.value = newName;
+        updateNameDisplays();
       }
-      
-      updateNameDisplays();
       closeNameEditor();
       await saveSettingsToCloud();
     });
@@ -931,18 +918,15 @@ ${script}
     async function init() {
       updateCSSVariables();
       updateSyncStatus('syncing', '正在连接云端...');
-      
       await loadSettingsFromCloud();
       await loadMessagesFromCloud();
       renderStoredMessages();
       setupRealtimeSubscription();
-      
       console.log('🚀 应用初始化完成');
     }
 
     init();
 
-    // Service Worker（可选，用于离线缓存）
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw-chat.js').catch(console.log);
