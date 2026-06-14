@@ -75,7 +75,7 @@
       min-height: 0;
       padding-left: var(--chat-h-padding);
       padding-right: var(--chat-h-padding);
-      padding-bottom: 60px; /* 为输入栏留空 */
+      padding-bottom: 60px;
       padding-bottom: calc(60px + var(--safe-bottom));
     }
     .left-set-panel {
@@ -121,7 +121,7 @@
       background: #000;
       border-top: 1px solid #333;
       padding: 8px 12px;
-      padding-bottom: calc(8px + var(--safe-bottom)); /* 更紧凑贴底 */
+      padding-bottom: calc(8px + var(--safe-bottom));
       gap: 8px;
     }
     .scrollbar-hide::-webkit-scrollbar { display: none; }
@@ -245,14 +245,14 @@
     </button>
     <h1 class="text-xl font-bold mb-4">剧本/人设设置</h1>
 
-    <!-- 新增：云端状态 + 快捷操作 -->
+    <!-- 云端状态 + 快捷操作 -->
     <div class="text-xs text-gray-400 mb-3 text-center" id="header-sync-status">正在连接云端...</div>
     <div class="flex gap-2 mb-4">
       <button class="flex-1 bg-gray-800 rounded p-2 text-sm" id="clear-chat">清空聊天</button>
       <button class="flex-1 bg-gray-800 rounded p-2 text-sm" id="reset-script">重置剧本</button>
     </div>
 
-    <textarea class="w-full h-40 bg-dark border border-gray-800 rounded p-3 text-white outline-none resize-none mb-4" placeholder="输入剧本内容，AI会根据剧本回答问题&#10;支持格式：&#10;[red:文字] 红色&#10;[b:文字] 加粗&#10;[br] 换行" id="agent-prompt"></textarea>
+    <textarea class="w-full h-40 bg-dark border border-gray-800 rounded p-3 text-white outline-none resize-none mb-4" placeholder="输入剧本内容，AI会根据剧本回答问题&#10;支持格式：&#10;[red:文字] 红色&#10;[b:文字] 加粗&#10;[br] 换行&#10;【动作】自动应用动作提示样式" id="agent-prompt"></textarea>
     <button class="w-full bg-gray-800 rounded p-2 mb-3 text-sm" id="toggle-settings">
       <i class="fa fa-cog mr-1"></i> 展开头像/样式设置
     </button>
@@ -262,7 +262,7 @@
       <div class="border-t border-gray-700 pt-3"><h3 class="text-sm text-gray-400 mb-1">你的名称</h3><input class="w-full bg-darker rounded p-2 text-white outline-none" id="user-name"></div>
       <div><h3 class="text-sm text-gray-400 mb-1">你的头像</h3><button class="w-full bg-accent/20 rounded p-2 text-sm mb-2" id="user-avatar-upload">上传头像</button><input type="file" id="user-avatar-file" class="hidden" accept="image/*"><div id="user-avatar-preview" class="w-14 h-14 bg-accent/20 flex items-center justify-center overflow-hidden rounded-lg mx-auto"><span>预览</span></div></div>
       <div class="border-t border-gray-700 pt-3"><h3 class="text-sm text-gray-400 mb-1">API Key（已通过代理调用）</h3><input type="password" class="w-full bg-darker rounded p-2 text-white outline-none" id="api-key" placeholder="无需填写" disabled><p class="text-xs text-gray-500 mt-1">已通过 Supabase Edge Function 安全调用 DeepSeek API</p></div>
-      <div class="border-t border-gray-700 pt-3"><h3 class="text-sm text-gray-400 mb-2">样式</h3>
+      <div class="border-t border-gray-700 pt-3"><h3 class="text-sm text-gray-400 mb-2">全局气泡样式</h3>
         <div class="grid grid-cols-2 gap-2 mb-2">
           <div><label class="text-xs text-gray-400">字体大小</label><input type="number" id="font-size" value="16" class="w-full bg-darker rounded p-2 text-white"></div>
           <div><label class="text-xs text-gray-400">行间距</label><input type="number" id="line-height" value="1.6" step="0.1" class="w-full bg-darker rounded p-2 text-white"></div>
@@ -279,6 +279,27 @@
           <label class="text-xs text-gray-400">屏幕边缘距离(px)</label>
           <input type="number" id="chat-h-padding" value="16" class="w-full bg-darker rounded p-2 text-white">
         </div>
+      </div>
+
+      <!-- 新增：动作提示样式配置 -->
+      <div class="border-t border-gray-700 pt-3">
+        <h3 class="text-sm text-gray-400 mb-2">动作提示样式（符号包裹自动生效）</h3>
+        <div class="grid grid-cols-2 gap-2 mb-2">
+          <div><label class="text-xs text-gray-400">起始符号</label><input type="text" id="wrap-start" value="【" class="w-full bg-darker rounded p-2 text-white outline-none"></div>
+          <div><label class="text-xs text-gray-400">结束符号</label><input type="text" id="wrap-end" value="】" class="w-full bg-darker rounded p-2 text-white outline-none"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-2 mb-2">
+          <div><label class="text-xs text-gray-400">文字颜色</label><input type="color" id="wrap-color" value="#888888" class="w-full h-8"></div>
+          <div><label class="text-xs text-gray-400">字号比例</label><input type="number" id="wrap-font-scale" value="0.9" step="0.1" class="w-full bg-darker rounded p-2 text-white outline-none"></div>
+        </div>
+        <div class="mb-2">
+          <label class="text-xs text-gray-400">字体粗细</label>
+          <select id="wrap-weight" class="w-full bg-darker rounded p-2 text-white outline-none">
+            <option value="normal">正常细体</option>
+            <option value="bold">加粗</option>
+          </select>
+        </div>
+        <p class="text-xs text-gray-500">剧本中用上述符号包裹的内容会自动应用此样式；起止符号留空则关闭该功能</p>
       </div>
     </div>
     <button class="w-full bg-accent rounded p-3" id="save-set">保存所有设置</button>
@@ -317,13 +338,13 @@
 </div>
 <script>
   (function() {
-    // ==================== 配置项（已全部填好）====================
+    // ==================== 配置项 ====================
     const SUPABASE_URL = 'https://vkeaimeytsymepgkizqk.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_R66fP0xmbxUZTeu7kjQYjQ_FHdXlRvm';
     const AI_PROXY_URL = 'https://vkeaimeytsymepgkizqk.supabase.co/functions/v1/swift-api';
-    const USER_ID = 'default'; // 单用户使用固定ID
+    const USER_ID = 'default';
 
-    // ==================== 初始化Supabase客户端（新版语法）====================
+    // ==================== 初始化Supabase客户端 ====================
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       realtime: { params: { eventsPerSecond: 10 } }
     });
@@ -358,7 +379,6 @@
     const bubblePyInput = document.getElementById('bubble-py');
     const chatHPaddingInput = document.getElementById('chat-h-padding');
     const agentNameDisplay = document.getElementById('agent-name-display');
-    // 已移除顶部用户名显示，只保留设置面板内的输入
     const agentAvatarDiv = document.getElementById('agent-avatar');
     const nameEditModal = document.getElementById('name-edit-modal');
     const nameEditTitle = document.getElementById('name-edit-title');
@@ -368,6 +388,12 @@
     const nameEditConfirm = document.getElementById('name-edit-confirm');
     const syncStatusText = document.getElementById('sync-status-text');
     const headerSyncStatus = document.getElementById('header-sync-status');
+    // 新增：动作提示样式DOM
+    const wrapStartInput = document.getElementById('wrap-start');
+    const wrapEndInput = document.getElementById('wrap-end');
+    const wrapColorInput = document.getElementById('wrap-color');
+    const wrapWeightSelect = document.getElementById('wrap-weight');
+    const wrapFontScaleInput = document.getElementById('wrap-font-scale');
 
     // ==================== 全局状态 ====================
     let currentAgentName = '剧本助手';
@@ -378,6 +404,12 @@
     let messages = [];
     let realtimeSubscription = null;
     let isOnline = false;
+    // 新增：动作提示样式状态
+    let wrapStart = '【';
+    let wrapEnd = '】';
+    let wrapColor = '#888888';
+    let wrapWeight = 'normal';
+    let wrapFontScale = 0.9;
 
     // ==================== 基础工具函数 ====================
     function openDrawer() {
@@ -418,7 +450,6 @@
 
     function updateNameDisplays() {
       agentNameDisplay.innerHTML = `${currentAgentName} <i class="fa fa-pencil"></i>`;
-      // 顶部不再显示用户名称，无需更新
     }
 
     function updateAgentAvatarDisplay() {
@@ -440,7 +471,7 @@
     }
 
     function openNameEditor(target) {
-      if (target !== 'agent') return; // 用户名称直接在设置面板修改，不弹窗
+      if (target !== 'agent') return;
       currentEditTarget = target;
       nameEditTitle.textContent = '修改智能体名称';
       nameEditSubtitle.textContent = '输入新的名称';
@@ -467,7 +498,7 @@
       } catch (e) { messages = []; }
     }
 
-    // ==================== 云端聊天记录同步（新版语法）====================
+    // ==================== 云端聊天记录同步 ====================
     async function loadMessagesFromCloud() {
       console.log('📥 从云端加载聊天记录...');
       try {
@@ -510,7 +541,7 @@
       }
     }
 
-    // ==================== 实时自动同步（核心功能）====================
+    // ==================== 实时自动同步 ====================
     function setupRealtimeSubscription() {
       console.log('🔌 建立实时同步连接...');
       
@@ -658,9 +689,23 @@
       addMessageToDOM(role, content, animate);
     }
 
-    // ==================== AI调用 ====================
+    // ==================== AI调用与文本样式解析 ====================
     function parseScriptFormat(text) {
       let result = text;
+
+      // 处理自定义符号包裹的动作提示样式
+      if (wrapStart && wrapEnd) {
+        // 转义正则特殊字符，避免括号、星号等符号导致正则报错
+        const escapeReg = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const startReg = escapeReg(wrapStart);
+        const endReg = escapeReg(wrapEnd);
+        const regex = new RegExp(`${startReg}(.*?)${endReg}`, 'g');
+        const style = `color: ${wrapColor}; font-weight: ${wrapWeight}; font-size: ${wrapFontScale}em;`;
+        // 保留原符号，只修改样式
+        result = result.replace(regex, `<span style="${style}">${wrapStart}$1${wrapEnd}</span>`);
+      }
+
+      // 保留原有自定义标记
       result = result.replace(/\[red:(.*?)\]/g, '<span style="color: #ff4444">$1</span>');
       result = result.replace(/\[b:(.*?)\]/g, '<strong>$1</strong>');
       result = result.replace(/\[br\]/g, '<br>');
@@ -676,7 +721,7 @@
 ⚠️ 绝对规则：
 1. 所有回答只能来自下面的剧本内容，绝对不能编造任何剧本里没有的信息。
 2. 如果用户的问题剧本里没有答案，只说"这个我暂时不知道哦"。
-3. 剧本里的[red:文字]、[b:文字]、[br]这些格式标记必须原封不动保留。
+3. 剧本里的【】、[red:]、[b:]、[br]这些格式标记必须原封不动保留。
 4. 不要加任何剧本以外的解释或客套话。
 --- 剧本开始 ---
 ${script}
@@ -732,7 +777,7 @@ ${script}
       await addMessage('assistant', reply, true);
     }
 
-    // ==================== 清空和重置（新版语法，修复catch错误）====================
+    // ==================== 清空和重置 ====================
     async function clearChat() {
       messages = [];
       saveMessagesToLocal();
@@ -747,16 +792,16 @@ ${script}
       
       chatBox.innerHTML = '';
       addMessageToDOM('assistant', '聊天记录已清空。', false);
-      closeDrawer(); // 操作后自动关闭设置面板
+      closeDrawer();
     }
 
     function resetScript() {
       clearChat();
       addMessageToDOM('assistant', '✅ 剧本已重置，可以重新开始。', false);
-      closeDrawer(); // 操作后自动关闭设置面板
+      closeDrawer();
     }
 
-    // ==================== 设置同步（新版语法）====================
+    // ==================== 设置同步 ====================
     async function loadSettingsFromCloud() {
       console.log('📥 从云端加载设置...');
       try {
@@ -782,6 +827,13 @@ ${script}
           if (data.bubble_px) bubblePxInput.value = data.bubble_px;
           if (data.bubble_py) bubblePyInput.value = data.bubble_py;
           if (data.chat_h_padding) chatHPaddingInput.value = data.chat_h_padding;
+          // 加载动作提示样式
+          if (data.wrap_start !== undefined) { wrapStart = data.wrap_start; wrapStartInput.value = data.wrap_start; }
+          if (data.wrap_end !== undefined) { wrapEnd = data.wrap_end; wrapEndInput.value = data.wrap_end; }
+          if (data.wrap_color) { wrapColor = data.wrap_color; wrapColorInput.value = data.wrap_color; }
+          if (data.wrap_weight) { wrapWeight = data.wrap_weight; wrapWeightSelect.value = data.wrap_weight; }
+          if (data.wrap_font_scale) { wrapFontScale = data.wrap_font_scale; wrapFontScaleInput.value = data.wrap_font_scale; }
+
           updateNameDisplays();
           updateCSSVariables();
         }
@@ -807,6 +859,13 @@ ${script}
       if (saved.bubblePx) bubblePxInput.value = saved.bubblePx;
       if (saved.bubblePy) bubblePyInput.value = saved.bubblePy;
       if (saved.chatHPadding) chatHPaddingInput.value = saved.chatHPadding;
+      // 加载本地动作提示样式
+      if (saved.wrapStart !== undefined) { wrapStart = saved.wrapStart; wrapStartInput.value = saved.wrapStart; }
+      if (saved.wrapEnd !== undefined) { wrapEnd = saved.wrapEnd; wrapEndInput.value = saved.wrapEnd; }
+      if (saved.wrapColor) { wrapColor = saved.wrapColor; wrapColorInput.value = saved.wrapColor; }
+      if (saved.wrapWeight) { wrapWeight = saved.wrapWeight; wrapWeightSelect.value = saved.wrapWeight; }
+      if (saved.wrapFontScale) { wrapFontScale = saved.wrapFontScale; wrapFontScaleInput.value = saved.wrapFontScale; }
+
       updateNameDisplays();
       updateCSSVariables();
     }
@@ -814,6 +873,13 @@ ${script}
     async function saveSettingsToCloud() {
       currentAgentName = agentNameSet.value || currentAgentName;
       currentUserName = userNameInput.value || currentUserName;
+      // 更新动作提示样式变量
+      wrapStart = wrapStartInput.value;
+      wrapEnd = wrapEndInput.value;
+      wrapColor = wrapColorInput.value;
+      wrapWeight = wrapWeightSelect.value;
+      wrapFontScale = parseFloat(wrapFontScaleInput.value) || 0.9;
+
       updateNameDisplays();
       updateCSSVariables();
       
@@ -831,6 +897,11 @@ ${script}
         bubble_px: parseInt(bubblePxInput.value) || 16,
         bubble_py: parseInt(bubblePyInput.value) || 8,
         chat_h_padding: parseInt(chatHPaddingInput.value) || 16,
+        wrap_start: wrapStart,
+        wrap_end: wrapEnd,
+        wrap_color: wrapColor,
+        wrap_weight: wrapWeight,
+        wrap_font_scale: wrapFontScale,
         updated_at: new Date().toISOString()
       };
       
@@ -884,7 +955,6 @@ ${script}
     });
 
     agentNameDisplay.addEventListener('click', () => openNameEditor('agent'));
-    // 用户名称不再通过点击顶部修改，直接通过设置面板输入框修改
     nameEditCancel.addEventListener('click', closeNameEditor);
     nameEditConfirm.addEventListener('click', async () => {
       const newName = nameEditInput.value.trim();
