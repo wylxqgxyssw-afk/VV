@@ -7,12 +7,16 @@
   <link rel="manifest" href="manifest-chat.json">
   <link rel="apple-touch-icon" href="icon-192.png">
   <meta name="theme-color" content="#000000">
-  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.tailwindcss.com">
+  </script>
   <link href="https://cdn.bootcdn.net/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.9/katex.min.css">
-  <script src="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
-  <script src="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.0/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.9/katex.min.js">
+  </script>
+  <script src="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js">
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.0/dist/umd/supabase.min.js">
+  </script>
   <script>
     tailwind.config = {
       theme: {
@@ -83,7 +87,7 @@
       top: 0;
       left: 0;
       width: 85%;
-      max-width: 400px;
+      max-width: 420px;
       height: 100%;
       height: 100dvh;
       z-index: 100;
@@ -93,7 +97,7 @@
       transition: transform 0.3s ease;
       overflow-y: auto;
       padding: 24px 16px;
-      box-shadow: 2px 0 10px rgba(0,0,0,0.5);
+      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.5);
     }
     .left-set-panel.expand {
       transform: translateX(0);
@@ -104,7 +108,7 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0,0,0,0.6);
+      background: rgba(0, 0, 0, 0.6);
       z-index: 99;
       display: none;
     }
@@ -212,7 +216,7 @@
       width: 100%;
       height: 100%;
       z-index: 300;
-      background: rgba(0,0,0,0.75);
+      background: rgba(0, 0, 0, 0.75);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -234,6 +238,36 @@
       opacity: 0.5;
       margin-top: 2px;
     }
+    /* 规则列表样式 */
+    .rule-item {
+      background: #1e1e1e;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 8px;
+      margin-bottom: 8px;
+    }
+    .rule-item input, .rule-item select {
+      background: #000;
+      border: 1px solid #444;
+      color: #fff;
+      border-radius: 4px;
+      padding: 4px 6px;
+      font-size: 12px;
+    }
+    .rule-item input[type="color"] {
+      padding: 0;
+      height: 28px;
+      width: 36px;
+    }
+    .add-rule-btn {
+      background: #1a1a1a;
+      border: 1px dashed #555;
+      color: #aaa;
+      border-radius: 6px;
+      padding: 6px;
+      width: 100%;
+      font-size: 13px;
+    }
   </style>
 </head>
 <body>
@@ -245,14 +279,13 @@
     </button>
     <h1 class="text-xl font-bold mb-4">剧本/人设设置</h1>
 
-    <!-- 云端状态 + 快捷操作 -->
     <div class="text-xs text-gray-400 mb-3 text-center" id="header-sync-status">正在连接云端...</div>
     <div class="flex gap-2 mb-4">
       <button class="flex-1 bg-gray-800 rounded p-2 text-sm" id="clear-chat">清空聊天</button>
       <button class="flex-1 bg-gray-800 rounded p-2 text-sm" id="reset-script">重置剧本</button>
     </div>
 
-    <textarea class="w-full h-40 bg-dark border border-gray-800 rounded p-3 text-white outline-none resize-none mb-4" placeholder="输入剧本内容，AI会根据剧本回答问题&#10;支持格式：&#10;[red:文字] 红色&#10;[b:文字] 加粗&#10;[br] 换行&#10;【动作】自动应用动作提示样式" id="agent-prompt"></textarea>
+    <textarea class="w-full h-40 bg-dark border border-gray-800 rounded p-3 text-white outline-none resize-none mb-4" placeholder="输入剧本内容，AI会根据剧本回答问题&#10;支持格式：&#10;[red:文字] 红色&#10;[b:文字] 加粗&#10;[br] 换行" id="agent-prompt"></textarea>
     <button class="w-full bg-gray-800 rounded p-2 mb-3 text-sm" id="toggle-settings">
       <i class="fa fa-cog mr-1"></i> 展开头像/样式设置
     </button>
@@ -262,7 +295,7 @@
       <div class="border-t border-gray-700 pt-3"><h3 class="text-sm text-gray-400 mb-1">你的名称</h3><input class="w-full bg-darker rounded p-2 text-white outline-none" id="user-name"></div>
       <div><h3 class="text-sm text-gray-400 mb-1">你的头像</h3><button class="w-full bg-accent/20 rounded p-2 text-sm mb-2" id="user-avatar-upload">上传头像</button><input type="file" id="user-avatar-file" class="hidden" accept="image/*"><div id="user-avatar-preview" class="w-14 h-14 bg-accent/20 flex items-center justify-center overflow-hidden rounded-lg mx-auto"><span>预览</span></div></div>
       <div class="border-t border-gray-700 pt-3"><h3 class="text-sm text-gray-400 mb-1">API Key（已通过代理调用）</h3><input type="password" class="w-full bg-darker rounded p-2 text-white outline-none" id="api-key" placeholder="无需填写" disabled><p class="text-xs text-gray-500 mt-1">已通过 Supabase Edge Function 安全调用 DeepSeek API</p></div>
-      <div class="border-t border-gray-700 pt-3"><h3 class="text-sm text-gray-400 mb-2">全局气泡样式</h3>
+      <div class="border-t border-gray-700 pt-3"><h3 class="text-sm text-gray-400 mb-2">样式</h3>
         <div class="grid grid-cols-2 gap-2 mb-2">
           <div><label class="text-xs text-gray-400">字体大小</label><input type="number" id="font-size" value="16" class="w-full bg-darker rounded p-2 text-white"></div>
           <div><label class="text-xs text-gray-400">行间距</label><input type="number" id="line-height" value="1.6" step="0.1" class="w-full bg-darker rounded p-2 text-white"></div>
@@ -280,26 +313,13 @@
           <input type="number" id="chat-h-padding" value="16" class="w-full bg-darker rounded p-2 text-white">
         </div>
       </div>
-
-      <!-- 新增：动作提示样式配置 -->
+      <!-- 新增：自定义文本样式规则 -->
       <div class="border-t border-gray-700 pt-3">
-        <h3 class="text-sm text-gray-400 mb-2">动作提示样式（符号包裹自动生效）</h3>
-        <div class="grid grid-cols-2 gap-2 mb-2">
-          <div><label class="text-xs text-gray-400">起始符号</label><input type="text" id="wrap-start" value="【" class="w-full bg-darker rounded p-2 text-white outline-none"></div>
-          <div><label class="text-xs text-gray-400">结束符号</label><input type="text" id="wrap-end" value="】" class="w-full bg-darker rounded p-2 text-white outline-none"></div>
-        </div>
-        <div class="grid grid-cols-2 gap-2 mb-2">
-          <div><label class="text-xs text-gray-400">文字颜色</label><input type="color" id="wrap-color" value="#888888" class="w-full h-8"></div>
-          <div><label class="text-xs text-gray-400">字号比例</label><input type="number" id="wrap-font-scale" value="0.9" step="0.1" class="w-full bg-darker rounded p-2 text-white outline-none"></div>
-        </div>
-        <div class="mb-2">
-          <label class="text-xs text-gray-400">字体粗细</label>
-          <select id="wrap-weight" class="w-full bg-darker rounded p-2 text-white outline-none">
-            <option value="normal">正常细体</option>
-            <option value="bold">加粗</option>
-          </select>
-        </div>
-        <p class="text-xs text-gray-500">剧本中用上述符号包裹的内容会自动应用此样式；起止符号留空则关闭该功能</p>
+        <h3 class="text-sm text-gray-400 mb-2">自定义文本样式规则</h3>
+        <p class="text-xs text-gray-500 mb-2">用特定符号包裹的文字将显示为不同样式（如【微笑】显示为灰色细体）</p>
+        <div id="format-rules-container"></div>
+        <button class="add-rule-btn" id="add-format-rule"><i class="fa fa-plus-circle"></i> 添加规则</button>
+        <p class="text-xs text-gray-600 mt-1">⚠️ 为避免XSS，请勿使用 &lt; &gt; &amp; 等HTML特殊字符作为标记</p>
       </div>
     </div>
     <button class="w-full bg-accent rounded p-3" id="save-set">保存所有设置</button>
@@ -338,13 +358,12 @@
 </div>
 <script>
   (function() {
-    // ==================== 配置项 ====================
+    // ==================== 配置项（已全部填好）====================
     const SUPABASE_URL = 'https://vkeaimeytsymepgkizqk.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_R66fP0xmbxUZTeu7kjQYjQ_FHdXlRvm';
     const AI_PROXY_URL = 'https://vkeaimeytsymepgkizqk.supabase.co/functions/v1/swift-api';
     const USER_ID = 'default';
 
-    // ==================== 初始化Supabase客户端 ====================
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       realtime: { params: { eventsPerSecond: 10 } }
     });
@@ -388,12 +407,8 @@
     const nameEditConfirm = document.getElementById('name-edit-confirm');
     const syncStatusText = document.getElementById('sync-status-text');
     const headerSyncStatus = document.getElementById('header-sync-status');
-    // 新增：动作提示样式DOM
-    const wrapStartInput = document.getElementById('wrap-start');
-    const wrapEndInput = document.getElementById('wrap-end');
-    const wrapColorInput = document.getElementById('wrap-color');
-    const wrapWeightSelect = document.getElementById('wrap-weight');
-    const wrapFontScaleInput = document.getElementById('wrap-font-scale');
+    const formatRulesContainer = document.getElementById('format-rules-container');
+    const addFormatRuleBtn = document.getElementById('add-format-rule');
 
     // ==================== 全局状态 ====================
     let currentAgentName = '剧本助手';
@@ -404,12 +419,7 @@
     let messages = [];
     let realtimeSubscription = null;
     let isOnline = false;
-    // 新增：动作提示样式状态
-    let wrapStart = '【';
-    let wrapEnd = '】';
-    let wrapColor = '#888888';
-    let wrapWeight = 'normal';
-    let wrapFontScale = 0.9;
+    let formatRules = []; // 自定义样式规则
 
     // ==================== 基础工具函数 ====================
     function openDrawer() {
@@ -507,9 +517,7 @@
           .select('role, content, created_at')
           .eq('user_id', USER_ID)
           .order('created_at', { ascending: true });
-        
         if (error) throw error;
-        
         console.log(`✅ 云端加载了 ${data.length} 条消息`);
         if (data.length > 0) {
           messages = data;
@@ -541,21 +549,18 @@
       }
     }
 
-    // ==================== 实时自动同步 ====================
     function setupRealtimeSubscription() {
       console.log('🔌 建立实时同步连接...');
-      
       if (realtimeSubscription) supabase.removeChannel(realtimeSubscription);
-      
       realtimeSubscription = supabase
         .channel('public:chat_messages')
-        .on('postgres_changes', 
+        .on('postgres_changes',
           { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `user_id=eq.${USER_ID}` },
           (payload) => {
             console.log('📡 收到新消息（实时同步）', payload.new);
             const newMsg = { role: payload.new.role, content: payload.new.content };
-            const isDuplicate = messages.some(msg => 
-              msg.role === newMsg.role && 
+            const isDuplicate = messages.some(msg =>
+              msg.role === newMsg.role &&
               msg.content === newMsg.content &&
               Math.abs(Date.now() - new Date(payload.new.created_at).getTime()) < 3000
             );
@@ -583,6 +588,60 @@
         });
     }
 
+    // ==================== 核心：自定义规则渲染 ====================
+    function escapeRegExp(string) {
+      return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    function applyFormatRules(rawText) {
+      // 先转义HTML，防止XSS
+      let escaped = rawText
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+      
+      // 应用每条自定义规则
+      formatRules.forEach(rule => {
+        if (!rule.startTag || !rule.endTag) return;
+        const startEscaped = escapeRegExp(rule.startTag);
+        const endEscaped = escapeRegExp(rule.endTag);
+        const regex = new RegExp(`(${startEscaped}.*?${endEscaped})`, 'g');
+        escaped = escaped.replace(regex, (match) => {
+          const color = rule.color || '#888';
+          const fontWeight = rule.fontWeight || 'normal';
+          const fontSize = rule.fontSize || '0.85em';
+          return `<span style="color:${color}; font-weight:${fontWeight}; font-size:${fontSize};">${match}</span>`;
+        });
+      });
+      return escaped;
+    }
+
+    function parseScriptFormat(text) {
+      // 适用于已经安全转义后的HTML字符串
+      let result = text;
+      result = result.replace(/\[red:(.*?)\]/g, '<span style="color: #ff4444">$1</span>');
+      result = result.replace(/\[b:(.*?)\]/g, '<strong>$1</strong>');
+      result = result.replace(/\[br\]/g, '<br>');
+      return result;
+    }
+
+    function renderMessageContent(rawText) {
+      // 1. 先应用自定义规则（内部已做HTML转义）
+      let html = applyFormatRules(rawText);
+      // 2. 再处理剧本格式标记
+      html = parseScriptFormat(html);
+      return html;
+    }
+
+    function contentHasCustomRules(rawText) {
+      return formatRules.some(rule => {
+        if (!rule.startTag || !rule.endTag) return false;
+        return rawText.includes(rule.startTag) && rawText.includes(rule.endTag);
+      });
+    }
+
     // ==================== 消息渲染 ====================
     function renderStoredMessages() {
       chatBox.innerHTML = '';
@@ -592,23 +651,31 @@
       }
     }
 
-    function typewriterEffect(fullText, msgElement) {
+    function typewriterEffect(fullRawText, msgElement) {
+      // 如果包含自定义规则，直接设置innerHTML，避免动画破坏标签
+      if (contentHasCustomRules(fullRawText)) {
+        const bubble = msgElement.querySelector('.chat-bubble-content');
+        bubble.innerHTML = renderMessageContent(fullRawText);
+        chatBox.scrollTop = chatBox.scrollHeight;
+        renderLatex(msgElement);
+        return;
+      }
       const bubble = msgElement.querySelector('.chat-bubble-content');
       let index = 0;
       bubble.innerHTML = '';
       const interval = setInterval(() => {
-        if (index < fullText.length) {
-          if (fullText.charAt(index) === '<') {
-            const endIndex = fullText.indexOf('>', index);
+        if (index < fullRawText.length) {
+          if (fullRawText.charAt(index) === '<') {
+            const endIndex = fullRawText.indexOf('>', index);
             if (endIndex !== -1) {
-              bubble.innerHTML += fullText.substring(index, endIndex + 1);
+              bubble.innerHTML += fullRawText.substring(index, endIndex + 1);
               index = endIndex + 1;
             } else {
-              bubble.innerHTML += fullText.charAt(index);
+              bubble.innerHTML += fullRawText.charAt(index);
               index++;
             }
           } else {
-            bubble.innerHTML += fullText.charAt(index);
+            bubble.innerHTML += fullRawText.charAt(index);
             index++;
           }
           chatBox.scrollTop = chatBox.scrollHeight;
@@ -617,11 +684,11 @@
           clearInterval(interval);
           const lastMsg = messages[messages.length-1];
           if (lastMsg && lastMsg.role === 'assistant') {
-            lastMsg.content = fullText;
+            lastMsg.content = fullRawText;
             saveMessagesToLocal();
             (async () => {
               const { error } = await supabase.from('chat_messages').insert([{
-                user_id: USER_ID, role: 'assistant', content: fullText
+                user_id: USER_ID, role: 'assistant', content: fullRawText
               }]);
               if (error) console.error('❌ AI回复同步失败', error);
             })();
@@ -648,7 +715,7 @@
         div.innerHTML = `
           <div class="max-w-[75%]">
             <span class="msg-name-label text-right">${senderName}</span>
-            <div class="inline-block rounded-lg chat-bubble-content user-bubble">${content}</div>
+            <div class="inline-block rounded-lg chat-bubble-content user-bubble"></div>
           </div>
           <div class="msg-avatar">${avatarHTML}</div>
         `;
@@ -657,14 +724,21 @@
           <div class="msg-avatar">${avatarHTML}</div>
           <div class="max-w-[75%]">
             <span class="msg-name-label">${senderName}</span>
-            <div class="inline-block rounded-lg chat-bubble-content ai-bubble">${content}</div>
+            <div class="inline-block rounded-lg chat-bubble-content ai-bubble"></div>
           </div>
         `;
       }
       
       chatBox.appendChild(div);
-      if (role === 'assistant' && animate) typewriterEffect(content, div);
-      else { renderLatex(div); chatBox.scrollTop = chatBox.scrollHeight; }
+      const bubble = div.querySelector('.chat-bubble-content');
+      
+      if (animate && role === 'assistant') {
+        typewriterEffect(content, div);
+      } else {
+        bubble.innerHTML = renderMessageContent(content);
+        chatBox.scrollTop = chatBox.scrollHeight;
+        renderLatex(div);
+      }
       return div;
     }
 
@@ -689,29 +763,7 @@
       addMessageToDOM(role, content, animate);
     }
 
-    // ==================== AI调用与文本样式解析 ====================
-    function parseScriptFormat(text) {
-      let result = text;
-
-      // 处理自定义符号包裹的动作提示样式
-      if (wrapStart && wrapEnd) {
-        // 转义正则特殊字符，避免括号、星号等符号导致正则报错
-        const escapeReg = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const startReg = escapeReg(wrapStart);
-        const endReg = escapeReg(wrapEnd);
-        const regex = new RegExp(`${startReg}(.*?)${endReg}`, 'g');
-        const style = `color: ${wrapColor}; font-weight: ${wrapWeight}; font-size: ${wrapFontScale}em;`;
-        // 保留原符号，只修改样式
-        result = result.replace(regex, `<span style="${style}">${wrapStart}$1${wrapEnd}</span>`);
-      }
-
-      // 保留原有自定义标记
-      result = result.replace(/\[red:(.*?)\]/g, '<span style="color: #ff4444">$1</span>');
-      result = result.replace(/\[b:(.*?)\]/g, '<strong>$1</strong>');
-      result = result.replace(/\[br\]/g, '<br>');
-      return result;
-    }
-
+    // ==================== AI调用 ====================
     async function getAIResponse(userMessage) {
       const script = agentPrompt.value.trim();
       if (!script) return "请先在左侧设置中填写剧本内容。";
@@ -721,7 +773,7 @@
 ⚠️ 绝对规则：
 1. 所有回答只能来自下面的剧本内容，绝对不能编造任何剧本里没有的信息。
 2. 如果用户的问题剧本里没有答案，只说"这个我暂时不知道哦"。
-3. 剧本里的【】、[red:]、[b:]、[br]这些格式标记必须原封不动保留。
+3. 剧本里的[red:文字]、[b:文字]、[br]这些格式标记必须原封不动保留。
 4. 不要加任何剧本以外的解释或客套话。
 --- 剧本开始 ---
 ${script}
@@ -746,7 +798,7 @@ ${script}
         }
         
         const data = await response.json();
-        return parseScriptFormat(data.choices[0].message.content.trim());
+        return data.choices[0].message.content.trim();
       } catch (error) {
         return `⚠️ AI 模式出错：${error.message}<br>请检查 Supabase Edge Function 是否部署正常。`;
       }
@@ -801,6 +853,75 @@ ${script}
       closeDrawer();
     }
 
+    // ==================== 规则管理UI ====================
+    function createRuleElement(rule, index) {
+      const div = document.createElement('div');
+      div.className = 'rule-item grid grid-cols-2 gap-2 text-xs';
+      div.innerHTML = `
+        <div class="col-span-2 flex justify-between items-center">
+          <span class="text-gray-400">规则 ${index+1}</span>
+          <button class="text-red-400 hover:text-red-300 delete-rule-btn"><i class="fa fa-trash"></i></button>
+        </div>
+        <div>
+          <label class="text-gray-500">开始标记</label>
+          <input type="text" class="w-full rule-start" value="${rule.startTag || ''}" placeholder="如【">
+        </div>
+        <div>
+          <label class="text-gray-500">结束标记</label>
+          <input type="text" class="w-full rule-end" value="${rule.endTag || ''}" placeholder="如】">
+        </div>
+        <div>
+          <label class="text-gray-500">文字颜色</label>
+          <input type="color" class="rule-color" value="${rule.color || '#888888'}">
+        </div>
+        <div>
+          <label class="text-gray-500">粗细</label>
+          <select class="w-full rule-weight">
+            <option value="normal" ${rule.fontWeight === 'normal' ? 'selected' : ''}>正常</option>
+            <option value="bold" ${rule.fontWeight === 'bold' ? 'selected' : ''}>粗体</option>
+            <option value="lighter" ${rule.fontWeight === 'lighter' ? 'selected' : ''}>细体</option>
+          </select>
+        </div>
+        <div class="col-span-2">
+          <label class="text-gray-500">字体大小 (如 0.85em, 12px)</label>
+          <input type="text" class="w-full rule-size" value="${rule.fontSize || '0.85em'}" placeholder="0.85em">
+        </div>
+      `;
+      div.querySelector('.delete-rule-btn').addEventListener('click', () => {
+        formatRules.splice(index, 1);
+        renderFormatRulesUI();
+      });
+      return div;
+    }
+
+    function renderFormatRulesUI() {
+      formatRulesContainer.innerHTML = '';
+      formatRules.forEach((rule, idx) => {
+        formatRulesContainer.appendChild(createRuleElement(rule, idx));
+      });
+    }
+
+    function collectFormatRulesFromUI() {
+      const ruleDivs = formatRulesContainer.querySelectorAll('.rule-item');
+      const rules = [];
+      ruleDivs.forEach(div => {
+        const start = div.querySelector('.rule-start').value.trim();
+        const end = div.querySelector('.rule-end').value.trim();
+        const color = div.querySelector('.rule-color').value;
+        const weight = div.querySelector('.rule-weight').value;
+        const size = div.querySelector('.rule-size').value.trim() || '0.85em';
+        if (start && end) {
+          rules.push({ startTag: start, endTag: end, color, fontWeight: weight, fontSize: size });
+        }
+      });
+      return rules;
+    }
+
+    addFormatRuleBtn.addEventListener('click', () => {
+      formatRules.push({ startTag: '', endTag: '', color: '#888888', fontWeight: 'normal', fontSize: '0.85em' });
+      renderFormatRulesUI();
+    });
+
     // ==================== 设置同步 ====================
     async function loadSettingsFromCloud() {
       console.log('📥 从云端加载设置...');
@@ -827,15 +948,19 @@ ${script}
           if (data.bubble_px) bubblePxInput.value = data.bubble_px;
           if (data.bubble_py) bubblePyInput.value = data.bubble_py;
           if (data.chat_h_padding) chatHPaddingInput.value = data.chat_h_padding;
-          // 加载动作提示样式
-          if (data.wrap_start !== undefined) { wrapStart = data.wrap_start; wrapStartInput.value = data.wrap_start; }
-          if (data.wrap_end !== undefined) { wrapEnd = data.wrap_end; wrapEndInput.value = data.wrap_end; }
-          if (data.wrap_color) { wrapColor = data.wrap_color; wrapColorInput.value = data.wrap_color; }
-          if (data.wrap_weight) { wrapWeight = data.wrap_weight; wrapWeightSelect.value = data.wrap_weight; }
-          if (data.wrap_font_scale) { wrapFontScale = data.wrap_font_scale; wrapFontScaleInput.value = data.wrap_font_scale; }
-
+          // 加载自定义规则
+          if (data.format_rules) {
+            try {
+              formatRules = JSON.parse(data.format_rules);
+            } catch (e) {
+              formatRules = [];
+            }
+          } else {
+            formatRules = [];
+          }
           updateNameDisplays();
           updateCSSVariables();
+          renderFormatRulesUI();
         }
         return true;
       } catch (err) {
@@ -859,29 +984,24 @@ ${script}
       if (saved.bubblePx) bubblePxInput.value = saved.bubblePx;
       if (saved.bubblePy) bubblePyInput.value = saved.bubblePy;
       if (saved.chatHPadding) chatHPaddingInput.value = saved.chatHPadding;
-      // 加载本地动作提示样式
-      if (saved.wrapStart !== undefined) { wrapStart = saved.wrapStart; wrapStartInput.value = saved.wrapStart; }
-      if (saved.wrapEnd !== undefined) { wrapEnd = saved.wrapEnd; wrapEndInput.value = saved.wrapEnd; }
-      if (saved.wrapColor) { wrapColor = saved.wrapColor; wrapColorInput.value = saved.wrapColor; }
-      if (saved.wrapWeight) { wrapWeight = saved.wrapWeight; wrapWeightSelect.value = saved.wrapWeight; }
-      if (saved.wrapFontScale) { wrapFontScale = saved.wrapFontScale; wrapFontScaleInput.value = saved.wrapFontScale; }
-
+      if (saved.formatRules) {
+        try { formatRules = JSON.parse(saved.formatRules); } catch (e) { formatRules = []; }
+      } else {
+        formatRules = [];
+      }
       updateNameDisplays();
       updateCSSVariables();
+      renderFormatRulesUI();
     }
 
     async function saveSettingsToCloud() {
       currentAgentName = agentNameSet.value || currentAgentName;
       currentUserName = userNameInput.value || currentUserName;
-      // 更新动作提示样式变量
-      wrapStart = wrapStartInput.value;
-      wrapEnd = wrapEndInput.value;
-      wrapColor = wrapColorInput.value;
-      wrapWeight = wrapWeightSelect.value;
-      wrapFontScale = parseFloat(wrapFontScaleInput.value) || 0.9;
-
       updateNameDisplays();
       updateCSSVariables();
+      
+      // 从UI收集规则
+      formatRules = collectFormatRulesFromUI();
       
       const settings = {
         id: USER_ID,
@@ -897,11 +1017,7 @@ ${script}
         bubble_px: parseInt(bubblePxInput.value) || 16,
         bubble_py: parseInt(bubblePyInput.value) || 8,
         chat_h_padding: parseInt(chatHPaddingInput.value) || 16,
-        wrap_start: wrapStart,
-        wrap_end: wrapEnd,
-        wrap_color: wrapColor,
-        wrap_weight: wrapWeight,
-        wrap_font_scale: wrapFontScale,
+        format_rules: JSON.stringify(formatRules),
         updated_at: new Date().toISOString()
       };
       
