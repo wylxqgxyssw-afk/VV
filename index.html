@@ -250,6 +250,31 @@
       color: #fff;
       font-family: monospace;
     }
+    .preset-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .preset-row.full { grid-template-columns: 1fr; }
+    .preset-label {
+      font-size: 11px;
+      color: #888;
+      margin-bottom: 2px;
+    }
+    .preset-input {
+      width: 100%;
+      background: #000;
+      border: 1px solid #333;
+      border-radius: 4px;
+      padding: 4px 6px;
+      color: #fff;
+      font-size: 12px;
+      outline: none;
+    }
+    select.preset-input {
+      height: 26px;
+    }
   </style>
 </head>
 <body>
@@ -274,13 +299,68 @@
       <i class="fa fa-info-circle mr-1"></i> 查看样式标记写法
     </button>
     <div class="mark-help mb-3" id="mark-help-box" style="display:none;">
-      常用标记（直接写在剧本里即可）：<br>
-      <code>[b:文字]</code> 加粗文字<br>
-      <code>[gray:文字]</code> 灰色细体（适合动作/表情）<br>
+      预设标记（样式可在下方自定义）：<br>
+      <code>[action:微笑]</code> 动作/表情备注，自动加前后符号<br>
+      <code>[emph:重点]</code> 重点强调文字<br><br>
+      自定义标记（灵活调整单处效果）：<br>
+      <code>[b:文字]</code> 加粗<br>
+      <code>[gray:文字]</code> 灰色细体<br>
       <code>[red:文字]</code> 红色文字<br>
-      <code>[color:#ffaa00:文字]</code> 自定义任意颜色<br>
-      <code>[size:20:文字]</code> 自定义字号（单位像素）<br>
+      <code>[color:#ffaa00:文字]</code> 任意颜色<br>
+      <code>[size:20:文字]</code> 任意字号（像素）<br>
       <code>[br]</code> 强制换行
+    </div>
+
+    <!-- 新增：样式预设配置区 -->
+    <div class="bg-dark border border-gray-800 rounded p-3 mb-3">
+      <h3 class="text-sm font-medium mb-2">🎨 样式预设（全局生效，改完保存即可）</h3>
+      
+      <div class="mb-3">
+        <div class="text-xs text-gray-400 mb-1">【动作备注】对应 [action:xxx]</div>
+        <div class="preset-row">
+          <div>
+            <div class="preset-label">文字颜色</div>
+            <input type="color" class="preset-input h-6" id="action-color" value="#888888">
+          </div>
+          <div>
+            <div class="preset-label">字重</div>
+            <select class="preset-input" id="action-weight">
+              <option value="300">细体</option>
+              <option value="400">正常</option>
+              <option value="700">粗体</option>
+            </select>
+          </div>
+        </div>
+        <div class="preset-row">
+          <div>
+            <div class="preset-label">前缀符号</div>
+            <input type="text" class="preset-input" id="action-prefix" value="【">
+          </div>
+          <div>
+            <div class="preset-label">后缀符号</div>
+            <input type="text" class="preset-input" id="action-suffix" value="】">
+          </div>
+        </div>
+        <p class="text-[10px] text-gray-500 mt-1">想不用符号就把前后缀都清空即可</p>
+      </div>
+
+      <div>
+        <div class="text-xs text-gray-400 mb-1">【重点强调】对应 [emph:xxx]</div>
+        <div class="preset-row">
+          <div>
+            <div class="preset-label">文字颜色</div>
+            <input type="color" class="preset-input h-6" id="emph-color" value="#ffcc00">
+          </div>
+          <div>
+            <div class="preset-label">字重</div>
+            <select class="preset-input" id="emph-weight">
+              <option value="300">细体</option>
+              <option value="400">正常</option>
+              <option value="700">粗体</option>
+            </select>
+          </div>
+        </div>
+      </div>
     </div>
 
     <button class="w-full bg-gray-800 rounded p-2 mb-3 text-sm" id="toggle-settings">
@@ -400,6 +480,14 @@
     const nameEditConfirm = document.getElementById('name-edit-confirm');
     const syncStatusText = document.getElementById('sync-status-text');
     const headerSyncStatus = document.getElementById('header-sync-status');
+    
+    // 样式预设相关DOM
+    const actionColorInput = document.getElementById('action-color');
+    const actionWeightInput = document.getElementById('action-weight');
+    const actionPrefixInput = document.getElementById('action-prefix');
+    const actionSuffixInput = document.getElementById('action-suffix');
+    const emphColorInput = document.getElementById('emph-color');
+    const emphWeightInput = document.getElementById('emph-weight');
 
     // ==================== 全局状态 ====================
     let currentAgentName = '剧本助手';
@@ -410,6 +498,12 @@
     let messages = [];
     let realtimeSubscription = null;
     let isOnline = false;
+    
+    // 样式预设全局变量
+    let stylePresets = {
+      action: { color: '#888888', weight: '300', prefix: '【', suffix: '】' },
+      emph: { color: '#ffcc00', weight: '700' }
+    };
 
     // ==================== 基础工具函数 ====================
     function openDrawer() {
@@ -436,6 +530,16 @@
       document.documentElement.style.setProperty('--bubble-px', bubblePxInput.value + 'px');
       document.documentElement.style.setProperty('--bubble-py', bubblePyInput.value + 'px');
       document.documentElement.style.setProperty('--chat-h-padding', chatHPaddingInput.value + 'px');
+    }
+    
+    // 从输入框同步预设到全局变量
+    function syncPresetsFromInput() {
+      stylePresets.action.color = actionColorInput.value;
+      stylePresets.action.weight = actionWeightInput.value;
+      stylePresets.action.prefix = actionPrefixInput.value;
+      stylePresets.action.suffix = actionSuffixInput.value;
+      stylePresets.emph.color = emphColorInput.value;
+      stylePresets.emph.weight = emphWeightInput.value;
     }
 
     function renderLatex(element) {
@@ -596,12 +700,14 @@
       }
     }
 
+    // 打字机效果：过程中实时渲染样式
     function typewriterEffect(fullText, msgElement) {
       const bubble = msgElement.querySelector('.chat-bubble-content');
       let index = 0;
       bubble.innerHTML = '';
       const interval = setInterval(() => {
         if (index < fullText.length) {
+          // 遇到HTML标签直接整段输出，保证样式即时生效
           if (fullText.charAt(index) === '<') {
             const endIndex = fullText.indexOf('>', index);
             if (endIndex !== -1) {
@@ -693,21 +799,40 @@
       addMessageToDOM(role, content, animate);
     }
 
-    // ==================== 剧本样式解析（核心修改）====================
+    // ==================== 剧本样式解析（核心整合）====================
     function parseScriptFormat(text) {
       let result = text;
-      // 1. 先处理换行
+      // 0. 先同步最新预设
+      syncPresetsFromInput();
+      
+      // 1. 预设样式：动作备注
+      const a = stylePresets.action;
+      result = result.replace(/\[action:(.*?)\]/g, 
+        `<span style="color:${a.color};font-weight:${a.weight};">${a.prefix}$1${a.suffix}</span>`);
+      
+      // 2. 预设样式：重点强调
+      const e = stylePresets.emph;
+      result = result.replace(/\[emph:(.*?)\]/g, 
+        `<span style="color:${e.color};font-weight:${e.weight};">$1</span>`);
+      
+      // 3. 换行
       result = result.replace(/\[br\]/g, '<br>');
-      // 2. 加粗
+      
+      // 4. 加粗
       result = result.replace(/\[b:(.*?)\]/g, '<strong>$1</strong>');
-      // 3. 灰色细体（动作表情专用）
+      
+      // 5. 灰色细体（兼容旧版）
       result = result.replace(/\[gray:(.*?)\]/g, '<span style="color:#888888;font-weight:300;">$1</span>');
-      // 4. 兼容旧版红色标记
+      
+      // 6. 红色（兼容旧版）
       result = result.replace(/\[red:(.*?)\]/g, '<span style="color:#ff4444;">$1</span>');
-      // 5. 自定义颜色 [color:#色值:内容]
+      
+      // 7. 自定义颜色
       result = result.replace(/\[color:([#a-zA-Z0-9]+):(.*?)\]/g, '<span style="color:$1;">$2</span>');
-      // 6. 自定义字号 [size:数字:内容]
+      
+      // 8. 自定义字号
       result = result.replace(/\[size:(\d+):(.*?)\]/g, '<span style="font-size:$1px;line-height:1.4;">$2</span>');
+      
       return result;
     }
 
@@ -721,7 +846,7 @@
 ⚠️ 绝对规则：
 1. 所有回答只能来自下面的剧本内容，绝对不能编造任何剧本里没有的信息。
 2. 如果用户的问题剧本里没有答案，只说"这个我暂时不知道哦"。
-3. 剧本里的 [b:]、[gray:]、[color:]、[size:]、[br] 这些样式标记必须原封不动保留，输出时不要删除。
+3. 剧本里所有 [action:]、[emph:]、[b:]、[gray:]、[color:]、[size:]、[br] 样式标记必须原封不动保留，输出时不要删除。
 4. 不要加任何剧本以外的解释或客套话。
 --- 剧本开始 ---
 ${script}
@@ -801,7 +926,7 @@ ${script}
       closeDrawer();
     }
 
-    // ==================== 设置同步 ====================
+    // ==================== 设置同步（含新增预设字段）====================
     async function loadSettingsFromCloud() {
       console.log('📥 从云端加载设置...');
       try {
@@ -815,6 +940,7 @@ ${script}
         
         if (data) {
           console.log('✅ 云端设置加载成功');
+          // 基础设置
           if (data.agent_prompt) agentPrompt.value = data.agent_prompt;
           if (data.agent_name) { currentAgentName = data.agent_name; agentNameSet.value = data.agent_name; }
           if (data.user_name) { currentUserName = data.user_name; userNameInput.value = data.user_name; }
@@ -827,6 +953,16 @@ ${script}
           if (data.bubble_px) bubblePxInput.value = data.bubble_px;
           if (data.bubble_py) bubblePyInput.value = data.bubble_py;
           if (data.chat_h_padding) chatHPaddingInput.value = data.chat_h_padding;
+          
+          // 样式预设（新增字段，兼容旧数据）
+          if (data.action_color) actionColorInput.value = data.action_color;
+          if (data.action_weight) actionWeightInput.value = data.action_weight;
+          if (data.action_prefix !== undefined) actionPrefixInput.value = data.action_prefix;
+          if (data.action_suffix !== undefined) actionSuffixInput.value = data.action_suffix;
+          if (data.emph_color) emphColorInput.value = data.emph_color;
+          if (data.emph_weight) emphWeightInput.value = data.emph_weight;
+          
+          syncPresetsFromInput();
           updateNameDisplays();
           updateCSSVariables();
         }
@@ -840,6 +976,7 @@ ${script}
 
     function loadSettingsFromLocal() {
       const saved = JSON.parse(localStorage.getItem('chat-settings') || '{}');
+      // 基础设置
       if (saved.agentPrompt) agentPrompt.value = saved.agentPrompt;
       if (saved.agentName) { currentAgentName = saved.agentName; agentNameSet.value = saved.agentName; }
       if (saved.userName) { currentUserName = saved.userName; userNameInput.value = saved.userName; }
@@ -852,6 +989,18 @@ ${script}
       if (saved.bubblePx) bubblePxInput.value = saved.bubblePx;
       if (saved.bubblePy) bubblePyInput.value = saved.bubblePy;
       if (saved.chatHPadding) chatHPaddingInput.value = saved.chatHPadding;
+      
+      // 样式预设
+      if (saved.stylePresets) {
+        stylePresets = saved.stylePresets;
+        actionColorInput.value = stylePresets.action.color;
+        actionWeightInput.value = stylePresets.action.weight;
+        actionPrefixInput.value = stylePresets.action.prefix;
+        actionSuffixInput.value = stylePresets.action.suffix;
+        emphColorInput.value = stylePresets.emph.color;
+        emphWeightInput.value = stylePresets.emph.weight;
+      }
+      
       updateNameDisplays();
       updateCSSVariables();
     }
@@ -859,6 +1008,7 @@ ${script}
     async function saveSettingsToCloud() {
       currentAgentName = agentNameSet.value || currentAgentName;
       currentUserName = userNameInput.value || currentUserName;
+      syncPresetsFromInput();
       updateNameDisplays();
       updateCSSVariables();
       
@@ -876,10 +1026,20 @@ ${script}
         bubble_px: parseInt(bubblePxInput.value) || 16,
         bubble_py: parseInt(bubblePyInput.value) || 8,
         chat_h_padding: parseInt(chatHPaddingInput.value) || 16,
+        // 新增预设字段
+        action_color: stylePresets.action.color,
+        action_weight: stylePresets.action.weight,
+        action_prefix: stylePresets.action.prefix,
+        action_suffix: stylePresets.action.suffix,
+        emph_color: stylePresets.emph.color,
+        emph_weight: stylePresets.emph.weight,
         updated_at: new Date().toISOString()
       };
       
-      localStorage.setItem('chat-settings', JSON.stringify(settings));
+      localStorage.setItem('chat-settings', JSON.stringify({
+        ...settings,
+        stylePresets: JSON.parse(JSON.stringify(stylePresets))
+      }));
       
       try {
         updateSyncStatus('syncing', '正在保存设置...');
@@ -961,6 +1121,7 @@ ${script}
     // ==================== 初始化 ====================
     async function init() {
       updateCSSVariables();
+      syncPresetsFromInput();
       updateSyncStatus('syncing', '正在连接云端...');
       await loadSettingsFromCloud();
       await loadMessagesFromCloud();
