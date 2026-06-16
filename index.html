@@ -1,265 +1,107 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>黑色极简 · 剧本智能助手</title>
-<link rel="manifest" href="manifest-chat.json">
-<link rel="apple-touch-icon" href="icon-192.png">
-<meta name="theme-color" content="#000000">
-<script src="https://cdn.tailwindcss.com"></script>
-<link href="https://cdn.bootcdn.net/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.9/katex.min.css">
-<script src="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
-<script src="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.0/dist/umd/supabase.min.js"></script>
-<script>
-tailwind.config = {
-  theme: {
-    extend: {
-      colors: {
-        dark: '#000000', darker: '#121212', accent: '#165DFF',
-      },
-      fontFamily: { sans: ['Inter', 'sans-serif'] }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>黑色极简 · 剧本智能助手</title>
+  <link rel="manifest" href="manifest-chat.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <meta name="theme-color" content="#000000">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.bootcdn.net/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.9/katex.min.css">
+  <script src="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+  <script src="https://cdn.bootcdn.net/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.0/dist/umd/supabase.min.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            dark: '#000000', darker: '#121212', accent: '#165DFF',
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'] }
+        }
+      }
     }
-  }
-}
-</script>
-<style>
-:root {
-  --font-size: 16px;
-  --line-height: 1.6;
-  --user-text-color: #FFFFFF;
-  --ai-text-color: #FFFFFF;
-  --bubble-px: 16px;
-  --bubble-py: 8px;
-  --chat-h-padding: 16px;
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
-}
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-html, body {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  background: #000;
-  color: #fff;
-}
-body {
-  height: 100vh;
-  height: 100dvh;
-  position: fixed;
-  top: 0;
-  left: 0;
-}
-.layout-container {
-  width: 100%;
-  height: 100%;
-  position: relative;
-  display: grid;
-  grid-template-columns: 1fr;
-  grid-template-rows: 1fr;
-}
-.chat-main-panel {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  min-height: 0;
-}
-#chat-box {
-  flex: 1 1 auto;
-  overflow-y: auto;
-  min-height: 0;
-  padding-left: var(--chat-h-padding);
-  padding-right: var(--chat-h-padding);
-  padding-bottom: 60px;
-  padding-bottom: calc(60px + var(--safe-bottom));
-}
-.left-set-panel {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 85%;
-  max-width: 400px;
-  height: 100%;
-  height: 100dvh;
-  z-index: 100;
-  background: #121212;
-  border-right: 1px solid #333;
-  transform: translateX(-100%);
-  transition: transform 0.3s ease;
-  overflow-y: auto;
-  padding: 24px 16px;
-  box-shadow: 2px 0 10px rgba(0,0,0,0.5);
-}
-.left-set-panel.expand {
-  transform: translateX(0);
-}
-.drawer-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.6);
-  z-index: 99;
-  display: none;
-}
-.drawer-overlay.show {
-  display: block;
-}
-.mobile-input-bar {
-  display: flex;
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  z-index: 200;
-  background: #000;
-  border-top: 1px solid #333;
-  padding: 8px 12px;
-  padding-bottom: calc(8px + var(--safe-bottom));
-  gap: 8px;
-}
-.scrollbar-hide::-webkit-scrollbar { display: none; }
-.scrollbar-hide {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-.avatar-img, .avatar-placeholder {
-  object-fit: cover;
-  width: 100%;
-  height: 100%;
-  border-radius: 4px;
-}
-.msg-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
-  flex-shrink: 0;
-  overflow: hidden;
-  background: #1a1a1a;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  color: #888;
-}
-.message-row {
-  min-width: 0;
-  width: 100%;
-}
-.chat-bubble-content {
-  word-wrap: break-word;
-  word-break: break-word;
-  white-space: pre-wrap;
-  max-width: 100%;
-  overflow-wrap: break-word;
-  font-size: var(--font-size);
-  line-height: var(--line-height);
-  padding: var(--bubble-py) var(--bubble-px);
-}
-.user-bubble {
-  background-color: #000 !important;
-  color: var(--user-text-color);
-  border: 1px solid #333;
-}
-.ai-bubble {
-  background-color: #000 !important;
-  color: var(--ai-text-color);
-  border: 1px solid #333;
-}
-.katex {
-  font-size: var(--font-size);
-  line-height: var(--line-height);
-  max-width: 100%;
-  overflow-x: auto;
-  display: inline-block;
-  vertical-align: bottom;
-}
-.collapsible-settings { display: none; }
-.name-tag {
-  cursor: pointer;
-  transition: all 0.2s;
-  border-bottom: 1px dashed transparent;
-}
-.name-tag:hover {
-  border-bottom-color: #888;
-  color: #ccc;
-}
-.name-tag .fa-pencil {
-  opacity: 0;
-  transition: opacity 0.2s;
-  font-size: 0.7em;
-  margin-left: 4px;
-}
-.name-tag:hover .fa-pencil { opacity: 0.7; }
-.msg-name-label {
-  font-size: 0.7em;
-  opacity: 0.7;
-  letter-spacing: 0.5px;
-  margin-bottom: 3px;
-  display: block;
-  cursor: pointer;
-}
-.name-edit-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 300;
-  background: rgba(0,0,0,0.75);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  display: none;
-}
-.name-edit-dialog {
-  background: #1a1a1a;
-  border: 1px solid #333;
-  border-radius: 12px;
-  padding: 24px;
-  width: 90%;
-  max-width: 380px;
-}
-.chat-header, .chat-footer {
-  flex-shrink: 0;
-}
-.sync-status {
-  font-size: 10px;
-  opacity: 0.5;
-  margin-top: 2px;
-}
-.format-tip {
-  background: #0a0a0a;
-  border: 1px solid #333;
-  border-radius: 6px;
-  padding: 8px 10px;
-  font-size: 11px;
-  line-height: 1.7;
-  color: #aaa;
-  margin-bottom: 12px;
-}
-.format-tip code {
-  background: #222;
-  padding: 1px 4px;
-  border-radius: 3px;
-  color: #fff;
-  font-family: monospace;
-}
-</style>
+  </script>
+  <style>
+    :root {
+      --font-size: 16px;
+      --line-height: 1.6;
+      --user-text-color: #FFFFFF;
+      --ai-text-color: #FFFFFF;
+      --bubble-px: 16px;
+      --bubble-py: 8px;
+      --chat-h-padding: 16px;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #000; color: #fff; }
+    body { height: 100vh; height: 100dvh; position: fixed; top: 0; left: 0; }
+    .layout-container { width: 100%; height: 100%; position: relative; display: grid; grid-template-columns: 1fr; grid-template-rows: 1fr; }
+    .chat-main-panel { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+    #chat-box {
+      flex: 1 1 auto; overflow-y: auto; min-height: 0;
+      padding-left: var(--chat-h-padding); padding-right: var(--chat-h-padding);
+      padding-bottom: calc(60px + var(--safe-bottom));
+    }
+    .left-set-panel {
+      position: fixed; top: 0; left: 0; width: 85%; max-width: 400px; height: 100%; height: 100dvh;
+      z-index: 100; background: #121212; border-right: 1px solid #333; transform: translateX(-100%);
+      transition: transform 0.3s ease; overflow-y: auto; padding: 24px 16px; box-shadow: 2px 0 10px rgba(0,0,0,0.5);
+    }
+    .left-set-panel.expand { transform: translateX(0); }
+    .drawer-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 99; display: none; }
+    .drawer-overlay.show { display: block; }
+    .mobile-input-bar {
+      display: flex; position: fixed; bottom: 0; left: 0; width: 100%; z-index: 200;
+      background: #000; border-top: 1px solid #333; padding: 8px 12px; padding-bottom: calc(8px + var(--safe-bottom)); gap: 8px;
+    }
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    .avatar-img, .avatar-placeholder { object-fit: cover; width: 100%; height: 100%; border-radius: 4px; }
+    .msg-avatar {
+      width: 32px; height: 32px; border-radius: 6px; flex-shrink: 0; overflow: hidden;
+      background: #1a1a1a; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #888;
+    }
+    .message-row { min-width: 0; width: 100%; }
+    .chat-bubble-content {
+      word-wrap: break-word; word-break: break-word; white-space: pre-wrap; max-width: 100%;
+      overflow-wrap: break-word; font-size: var(--font-size); line-height: var(--line-height);
+      padding: var(--bubble-py) var(--bubble-px);
+    }
+    .user-bubble { background-color: #000 !important; color: var(--user-text-color); border: 1px solid #333; }
+    .ai-bubble { background-color: #000 !important; color: var(--ai-text-color); border: 1px solid #333; }
+    .katex { font-size: var(--font-size); line-height: var(--line-height); max-width: 100%; overflow-x: auto; display: inline-block; vertical-align: bottom; }
+    .collapsible-settings { display: none; }
+    .name-tag { cursor: pointer; transition: all 0.2s; border-bottom: 1px dashed transparent; }
+    .name-tag:hover { border-bottom-color: #888; color: #ccc; }
+    .name-tag .fa-pencil { opacity: 0; transition: opacity 0.2s; font-size: 0.7em; margin-left: 4px; }
+    .name-tag:hover .fa-pencil { opacity: 0.7; }
+    .msg-name-label { font-size: 0.7em; opacity: 0.7; letter-spacing: 0.5px; margin-bottom: 3px; display: block; cursor: pointer; }
+    .name-edit-modal {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 300;
+      background: rgba(0,0,0,0.75); display: flex; align-items: center; justify-content: center; display: none;
+    }
+    .name-edit-dialog { background: #1a1a1a; border: 1px solid #333; border-radius: 12px; padding: 24px; width: 90%; max-width: 380px; }
+    .chat-header, .chat-footer { flex-shrink: 0; }
+    .sync-status { font-size: 10px; opacity: 0.5; margin-top: 2px; }
+    .mark-help { background: #0a0a0a; border: 1px solid #333; border-radius: 6px; padding: 8px 10px; font-size: 11px; line-height: 1.7; color: #aaa; display: none; }
+    .mark-help code { background: #222; padding: 1px 4px; border-radius: 3px; color: #fff; font-family: monospace; }
+    .preset-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+    .preset-row.full { grid-template-columns: 1fr; }
+    .preset-label { font-size: 11px; color: #888; margin-bottom: 2px; }
+    .preset-input { width: 100%; background: #000; border: 1px solid #333; border-radius: 4px; padding: 4px 6px; color: #fff; font-size: 12px; outline: none; }
+    select.preset-input { height: 26px; }
+    .preset-group-title { font-size: 12px; color: #ccc; margin: 10px 0 6px; padding-left: 4px; border-left: 2px solid #165DFF; }
+  </style>
 </head>
 <body>
 <div class="layout-container">
   <!-- 左侧抽屉设置面板 -->
   <div class="left-set-panel" id="left-panel">
-    <button class="self-end text-gray-400 hover:text-white mb-4" id="close-drawer-btn">
-      <i class="fa fa-times fa-lg"></i>
-    </button>
+    <button class="self-end text-gray-400 hover:text-white mb-4" id="close-drawer-btn"><i class="fa fa-times fa-lg"></i></button>
     <h1 class="text-xl font-bold mb-4">剧本/人设设置</h1>
 
     <!-- 云端状态 + 快捷操作 -->
@@ -269,24 +111,62 @@ body {
       <button class="flex-1 bg-gray-800 rounded p-2 text-sm" id="reset-script">重置剧本</button>
     </div>
 
-    <textarea class="w-full h-40 bg-dark border border-gray-800 rounded p-3 text-white outline-none resize-none mb-2" 
-      placeholder="输入剧本内容，AI会根据剧本回答问题&#10;动作神态用【】包裹会自动变灰色小字" 
-      id="agent-prompt"></textarea>
+    <textarea class="w-full h-40 bg-dark border border-gray-800 rounded p-3 text-white outline-none resize-none mb-2" placeholder="输入剧本内容，AI会根据剧本回答问题&#10;支持内联样式标记（见下方说明）" id="agent-prompt"></textarea>
 
-    <!-- 格式说明 -->
-    <div class="format-tip">
-      内置格式规则：<br>
-      <code>【微笑】</code> 括号+内容自动变为灰色细体小字<br>
-      <code>[b:文字]</code> 加粗
-      <code>[red:文字]</code> 红色<br>
-      <code>[color:#ffaa00:文字]</code> 自定义颜色<br>
-      <code>[size:20:文字]</code> 自定义字号<br>
+    <button class="w-full bg-gray-800 rounded p-2 mb-3 text-sm" id="toggle-mark-help"><i class="fa fa-info-circle mr-1"></i> 查看样式标记写法</button>
+    <div class="mark-help mb-3" id="mark-help-box">
+      预设标记（样式可在下方自定义）：<br>
+      <code>[action:微笑]</code> 动作/表情备注，符号和内文样式分开设置<br>
+      <code>[emph:重点]</code> 重点强调文字<br><br>
+      自定义标记（灵活调整单处效果）：<br>
+      <code>[b:文字]</code> 加粗<br>
+      <code>[gray:文字]</code> 灰色细体<br>
+      <code>[red:文字]</code> 红色文字<br>
+      <code>[color:#ffaa00:文字]</code> 任意颜色<br>
+      <code>[size:20:文字]</code> 任意字号（像素）<br>
       <code>[br]</code> 强制换行
     </div>
 
-    <button class="w-full bg-gray-800 rounded p-2 mb-3 text-sm" id="toggle-settings">
-      <i class="fa fa-cog mr-1"></i> 展开头像/全局样式设置
-    </button>
+    <!-- 样式预设配置区（内置默认，无需修改即可生效） -->
+    <div class="bg-dark border border-gray-800 rounded p-3 mb-3">
+      <h3 class="text-sm font-medium mb-2">🎨 样式预设（全局生效，改完保存即可）</h3>
+
+      <div class="mb-3">
+        <div class="text-xs text-gray-400 mb-1">【动作备注】对应 [action:xxx] 或直接使用下方符号包裹</div>
+
+        <div class="preset-group-title">符号外（包裹符号）</div>
+        <div class="preset-row">
+          <div><div class="preset-label">文字颜色</div><input type="color" class="preset-input h-6" id="action-outer-color" value="#888888"></div>
+          <div><div class="preset-label">字重</div><select class="preset-input" id="action-outer-weight"><option value="300" selected>细体</option><option value="400">正常</option><option value="700">粗体</option></select></div>
+        </div>
+        <div class="preset-row full"><div><div class="preset-label">字号（像素）</div><input type="number" class="preset-input" id="action-outer-size" value="14" min="10" max="40"></div></div>
+
+        <div class="preset-group-title">符号内容</div>
+        <div class="preset-row">
+          <div><div class="preset-label">前缀符号</div><input type="text" class="preset-input" id="action-prefix" value="【"></div>
+          <div><div class="preset-label">后缀符号</div><input type="text" class="preset-input" id="action-suffix" value="】"></div>
+        </div>
+        <p class="text-[10px] text-gray-500 mt-1">想不用符号就把前后缀都清空即可</p>
+
+        <div class="preset-group-title">符号内（中间文字）</div>
+        <div class="preset-row">
+          <div><div class="preset-label">文字颜色</div><input type="color" class="preset-input h-6" id="action-inner-color" value="#888888"></div>
+          <div><div class="preset-label">字重</div><select class="preset-input" id="action-inner-weight"><option value="300" selected>细体</option><option value="400">正常</option><option value="700">粗体</option></select></div>
+        </div>
+        <div class="preset-row full"><div><div class="preset-label">字号（像素）</div><input type="number" class="preset-input" id="action-inner-size" value="14" min="10" max="40"></div></div>
+      </div>
+
+      <div>
+        <div class="text-xs text-gray-400 mb-1">【重点强调】对应 [emph:xxx]</div>
+        <div class="preset-row">
+          <div><div class="preset-label">文字颜色</div><input type="color" class="preset-input h-6" id="emph-color" value="#ffcc00"></div>
+          <div><div class="preset-label">字重</div><select class="preset-input" id="emph-weight"><option value="300">细体</option><option value="400">正常</option><option value="700" selected>粗体</option></select></div>
+        </div>
+        <div class="preset-row full"><div><div class="preset-label">字号（像素）</div><input type="number" class="preset-input" id="emph-size" value="16" min="10" max="40"></div></div>
+      </div>
+    </div>
+
+    <button class="w-full bg-gray-800 rounded p-2 mb-3 text-sm" id="toggle-settings"><i class="fa fa-cog mr-1"></i> 展开头像/全局样式设置</button>
     <div class="collapsible-settings bg-dark border border-gray-800 rounded p-3 mb-3 space-y-3" id="collapsible-settings">
       <div><h3 class="text-sm text-gray-400 mb-1">智能体名称</h3><input class="w-full bg-darker rounded p-2 text-white outline-none" id="agent-name-set"></div>
       <div><h3 class="text-sm text-gray-400 mb-1">智能体头像</h3><button class="w-full bg-accent/20 rounded p-2 text-sm mb-2" id="agent-avatar-upload">上传头像</button><input type="file" id="agent-avatar-file" class="hidden" accept="image/*"><div id="agent-avatar-preview" class="w-14 h-14 bg-accent/20 flex items-center justify-center overflow-hidden rounded-lg mx-auto"><span>预览</span></div></div>
@@ -294,7 +174,7 @@ body {
       <div><h3 class="text-sm text-gray-400 mb-1">你的头像</h3><button class="w-full bg-accent/20 rounded p-2 text-sm mb-2" id="user-avatar-upload">上传头像</button><input type="file" id="user-avatar-file" class="hidden" accept="image/*"><div id="user-avatar-preview" class="w-14 h-14 bg-accent/20 flex items-center justify-center overflow-hidden rounded-lg mx-auto"><span>预览</span></div></div>
       <div class="border-t border-gray-700 pt-3"><h3 class="text-sm text-gray-400 mb-1">API Key（已通过代理调用）</h3><input type="password" class="w-full bg-darker rounded p-2 text-white outline-none" id="api-key" placeholder="无需填写" disabled><p class="text-xs text-gray-500 mt-1">已通过 Supabase Edge Function 安全调用 DeepSeek API</p></div>
       <div class="border-t border-gray-700 pt-3"><h3 class="text-sm text-gray-400 mb-2">全局默认样式</h3>
-        <p class="text-xs text-gray-500 mb-2">这里改整体正文效果，【】内样式固定为灰色小字</p>
+        <p class="text-xs text-gray-500 mb-2">这里改整体效果，局部样式用上面的标记写在剧本里</p>
         <div class="grid grid-cols-2 gap-2 mb-2">
           <div><label class="text-xs text-gray-400">字体大小</label><input type="number" id="font-size" value="16" class="w-full bg-darker rounded p-2 text-white"></div>
           <div><label class="text-xs text-gray-400">行间距</label><input type="number" id="line-height" value="1.6" step="0.1" class="w-full bg-darker rounded p-2 text-white"></div>
@@ -307,20 +187,15 @@ body {
           <div><label class="text-xs text-gray-400">气泡水平边距(px)</label><input type="number" id="bubble-px" value="16" class="w-full bg-darker rounded p-2 text-white"></div>
           <div><label class="text-xs text-gray-400">气泡垂直边距(py)</label><input type="number" id="bubble-py" value="8" class="w-full bg-darker rounded p-2 text-white"></div>
         </div>
-        <div class="mb-2">
-          <label class="text-xs text-gray-400">屏幕边缘距离(px)</label>
-          <input type="number" id="chat-h-padding" value="16" class="w-full bg-darker rounded p-2 text-white">
-        </div>
+        <div class="mb-2"><label class="text-xs text-gray-400">屏幕边缘距离(px)</label><input type="number" id="chat-h-padding" value="16" class="w-full bg-darker rounded p-2 text-white"></div>
       </div>
     </div>
     <button class="w-full bg-accent rounded p-3" id="save-set">保存所有设置</button>
     <p class="text-xs text-gray-500 mt-2 text-center" id="sync-status-text">数据自动云端同步，多端一致</p>
   </div>
 
-  <!-- 遮罩层 -->
   <div class="drawer-overlay" id="drawer-overlay"></div>
 
-  <!-- 聊天全屏面板 -->
   <div class="chat-main-panel bg-dark">
     <div class="chat-header p-3 border-b border-gray-800 flex items-center justify-between">
       <div class="flex items-center gap-3">
@@ -333,13 +208,11 @@ body {
   </div>
 </div>
 
-<!-- 统一输入栏 -->
 <div class="mobile-input-bar" id="mobile-input-area">
   <input type="text" placeholder="输入消息..." class="flex-1 bg-darker border border-gray-800 rounded-lg p-3 text-white outline-none" id="msg-input">
   <button class="bg-accent px-5 rounded-lg" id="send-btn"><i class="fa fa-paper-plane"></i></button>
 </div>
 
-<!-- 名称编辑弹窗 -->
 <div id="name-edit-modal" class="name-edit-modal">
   <div class="name-edit-dialog">
     <h3 class="text-lg font-bold mb-1" id="name-edit-title"></h3>
@@ -354,18 +227,16 @@ body {
 
 <script>
 (function() {
-  // ==================== 配置项 ====================
   const SUPABASE_URL = 'https://vkeaimeytsymepgkizqk.supabase.co';
   const SUPABASE_ANON_KEY = 'sb_publishable_R66fP0xmbxUZTeu7kjQYjQ_FHdXlRvm';
   const AI_PROXY_URL = 'https://vkeaimeytsymepgkizqk.supabase.co/functions/v1/swift-api';
   const USER_ID = 'default';
 
-  // ==================== 初始化Supabase客户端 ====================
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     realtime: { params: { eventsPerSecond: 10 } }
   });
 
-  // ==================== DOM元素 ====================
+  // DOM元素
   const chatBox = document.getElementById('chat-box');
   const msgInput = document.getElementById('msg-input');
   const sendBtn = document.getElementById('send-btn');
@@ -377,6 +248,8 @@ body {
   const drawerOverlay = document.getElementById('drawer-overlay');
   const toggleSettingsBtn = document.getElementById('toggle-settings');
   const collapsibleSettings = document.getElementById('collapsible-settings');
+  const toggleMarkHelpBtn = document.getElementById('toggle-mark-help');
+  const markHelpBox = document.getElementById('mark-help-box');
   const agentPrompt = document.getElementById('agent-prompt');
   const agentNameSet = document.getElementById('agent-name-set');
   const userNameInput = document.getElementById('user-name');
@@ -405,7 +278,18 @@ body {
   const syncStatusText = document.getElementById('sync-status-text');
   const headerSyncStatus = document.getElementById('header-sync-status');
 
-  // ==================== 全局状态 ====================
+  const actionOuterColorInput = document.getElementById('action-outer-color');
+  const actionOuterSizeInput = document.getElementById('action-outer-size');
+  const actionOuterWeightInput = document.getElementById('action-outer-weight');
+  const actionPrefixInput = document.getElementById('action-prefix');
+  const actionSuffixInput = document.getElementById('action-suffix');
+  const actionInnerColorInput = document.getElementById('action-inner-color');
+  const actionInnerSizeInput = document.getElementById('action-inner-size');
+  const actionInnerWeightInput = document.getElementById('action-inner-weight');
+  const emphColorInput = document.getElementById('emph-color');
+  const emphSizeInput = document.getElementById('emph-size');
+  const emphWeightInput = document.getElementById('emph-weight');
+
   let currentAgentName = '剧本助手';
   let currentUserName = '我';
   let agentAvatarUrl = '';
@@ -415,18 +299,26 @@ body {
   let realtimeSubscription = null;
   let isOnline = false;
 
-  // ==================== 基础工具函数 ====================
-  function openDrawer() {
-    leftPanel.classList.add('expand');
-    drawerOverlay.classList.add('show');
-  }
-  function closeDrawer() {
-    leftPanel.classList.remove('expand');
-    drawerOverlay.classList.remove('show');
-  }
+  // 样式预设（已内置默认值，满足“白色正文+灰色小号备注”）
+  let stylePresets = {
+    action: {
+      outer: { color: '#888888', size: 14, weight: '300' },
+      inner: { color: '#888888', size: 14, weight: '300' },
+      prefix: '【',
+      suffix: '】'
+    },
+    emph: { color: '#ffcc00', size: 16, weight: '700' }
+  };
+
+  function openDrawer() { leftPanel.classList.add('expand'); drawerOverlay.classList.add('show'); }
+  function closeDrawer() { leftPanel.classList.remove('expand'); drawerOverlay.classList.remove('show'); }
   phoneOpenSet.addEventListener('click', openDrawer);
   closeDrawerBtn.addEventListener('click', closeDrawer);
   drawerOverlay.addEventListener('click', closeDrawer);
+
+  toggleMarkHelpBtn.addEventListener('click', () => {
+    markHelpBox.style.display = markHelpBox.style.display === 'block' ? 'none' : 'block';
+  });
 
   function updateCSSVariables() {
     document.documentElement.style.setProperty('--font-size', fontSizeInput.value + 'px');
@@ -436,6 +328,20 @@ body {
     document.documentElement.style.setProperty('--bubble-px', bubblePxInput.value + 'px');
     document.documentElement.style.setProperty('--bubble-py', bubblePyInput.value + 'px');
     document.documentElement.style.setProperty('--chat-h-padding', chatHPaddingInput.value + 'px');
+  }
+
+  function syncPresetsFromInput() {
+    stylePresets.action.outer.color = actionOuterColorInput.value;
+    stylePresets.action.outer.size = parseInt(actionOuterSizeInput.value) || 14;
+    stylePresets.action.outer.weight = actionOuterWeightInput.value;
+    stylePresets.action.prefix = actionPrefixInput.value;
+    stylePresets.action.suffix = actionSuffixInput.value;
+    stylePresets.action.inner.color = actionInnerColorInput.value;
+    stylePresets.action.inner.size = parseInt(actionInnerSizeInput.value) || 14;
+    stylePresets.action.inner.weight = actionInnerWeightInput.value;
+    stylePresets.emph.color = emphColorInput.value;
+    stylePresets.emph.size = parseInt(emphSizeInput.value) || 16;
+    stylePresets.emph.weight = emphWeightInput.value;
   }
 
   function renderLatex(element) {
@@ -489,7 +395,6 @@ body {
     currentEditTarget = null;
   }
 
-  // ==================== 本地存储（离线兜底）====================
   function saveMessagesToLocal() {
     try { localStorage.setItem('chat-messages', JSON.stringify(messages)); }
     catch (e) { console.warn('本地存储失败', e); }
@@ -502,19 +407,14 @@ body {
     } catch (e) { messages = []; }
   }
 
-  // ==================== 云端聊天记录同步 ====================
   async function loadMessagesFromCloud() {
-    console.log('📥 从云端加载聊天记录...');
     try {
       const { data, error } = await supabase
         .from('chat_messages')
         .select('role, content, created_at')
         .eq('user_id', USER_ID)
         .order('created_at', { ascending: true });
-
       if (error) throw error;
-
-      console.log(`✅ 云端加载了 ${data.length} 条消息`);
       if (data.length > 0) {
         messages = data;
         saveMessagesToLocal();
@@ -524,7 +424,7 @@ body {
       }
       return true;
     } catch (err) {
-      console.warn('⚠️ 云端加载失败，使用本地数据', err);
+      console.warn('云端加载失败，使用本地数据', err);
       loadMessagesFromLocal();
       return false;
     }
@@ -537,30 +437,23 @@ body {
       }));
       const { error } = await supabase.from('chat_messages').insert(messagesWithUserId);
       if (error) throw error;
-      console.log(`✅ 本地 ${messages.length} 条历史同步到云端`);
       return true;
     } catch (err) {
-      console.error('❌ 本地历史同步失败', err);
+      console.error('本地历史同步失败', err);
       return false;
     }
   }
 
-  // ==================== 实时自动同步 ====================
   function setupRealtimeSubscription() {
-    console.log('🔌 建立实时同步连接...');
-
     if (realtimeSubscription) supabase.removeChannel(realtimeSubscription);
-
     realtimeSubscription = supabase
       .channel('public:chat_messages')
       .on('postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `user_id=eq.${USER_ID}` },
         (payload) => {
-          console.log('📡 收到新消息（实时同步）', payload.new);
           const newMsg = { role: payload.new.role, content: payload.new.content };
           const isDuplicate = messages.some(msg =>
-            msg.role === newMsg.role &&
-            msg.content === newMsg.content &&
+            msg.role === newMsg.role && msg.content === newMsg.content &&
             Math.abs(Date.now() - new Date(payload.new.created_at).getTime()) < 3000
           );
           if (!isDuplicate) {
@@ -573,7 +466,6 @@ body {
       .on('postgres_changes',
         { event: 'DELETE', schema: 'public', table: 'chat_messages', filter: `user_id=eq.${USER_ID}` },
         () => {
-          console.log('📡 收到清空指令（实时同步）');
           messages = [];
           saveMessagesToLocal();
           chatBox.innerHTML = '';
@@ -581,13 +473,11 @@ body {
         }
       )
       .subscribe((status) => {
-        console.log('🔌 实时同步状态:', status);
         if (status === 'SUBSCRIBED') updateSyncStatus('online', '实时同步已开启');
         else updateSyncStatus('offline', '实时同步未连接');
       });
   }
 
-  // ==================== 消息渲染 ====================
   function renderStoredMessages() {
     chatBox.innerHTML = '';
     messages.forEach(msg => addMessageToDOM(msg.role, msg.content, false));
@@ -596,25 +486,24 @@ body {
     }
   }
 
-  // 打字机效果：遇到HTML标签整段输出，样式即时生效
-  function typewriterEffect(fullText, msgElement) {
+  // 核心：打字机效果，直接输出已包含HTML样式的字符串，样式即时生效
+  function typewriterEffect(fullHtml, msgElement) {
     const bubble = msgElement.querySelector('.chat-bubble-content');
     let index = 0;
     bubble.innerHTML = '';
     const interval = setInterval(() => {
-      if (index < fullText.length) {
-        // 遇到标签直接整段输出，保证样式立即显示
-        if (fullText.charAt(index) === '<') {
-          const endIndex = fullText.indexOf('>', index);
+      if (index < fullHtml.length) {
+        if (fullHtml.charAt(index) === '<') {
+          const endIndex = fullHtml.indexOf('>', index);
           if (endIndex !== -1) {
-            bubble.innerHTML += fullText.substring(index, endIndex + 1);
+            bubble.innerHTML += fullHtml.substring(index, endIndex + 1);
             index = endIndex + 1;
           } else {
-            bubble.innerHTML += fullText.charAt(index);
+            bubble.innerHTML += fullHtml.charAt(index);
             index++;
           }
         } else {
-          bubble.innerHTML += fullText.charAt(index);
+          bubble.innerHTML += fullHtml.charAt(index);
           index++;
         }
         chatBox.scrollTop = chatBox.scrollHeight;
@@ -623,13 +512,13 @@ body {
         clearInterval(interval);
         const lastMsg = messages[messages.length-1];
         if (lastMsg && lastMsg.role === 'assistant') {
-          lastMsg.content = fullText;
+          lastMsg.content = fullHtml;
           saveMessagesToLocal();
           (async () => {
             const { error } = await supabase.from('chat_messages').insert([{
-              user_id: USER_ID, role: 'assistant', content: fullText
+              user_id: USER_ID, role: 'assistant', content: fullHtml
             }]);
-            if (error) console.error('❌ AI回复同步失败', error);
+            if (error) console.error('AI回复同步失败', error);
           })();
         }
         chatBox.scrollTop = chatBox.scrollHeight;
@@ -674,71 +563,81 @@ body {
     return div;
   }
 
-  // ==================== 发送消息 ====================
   async function addMessage(role, content, animate = false) {
     const msg = { role, content };
     messages.push(msg);
     saveMessagesToLocal();
-
     if (role === 'user') {
       const { error } = await supabase.from('chat_messages').insert([{
         user_id: USER_ID, role, content
       }]);
-      if (error) {
-        console.error('❌ 用户消息同步失败', error);
-        updateSyncStatus('error', '消息同步失败');
-      } else {
-        console.log('✅ 用户消息已同步到云端');
-      }
+      if (error) console.error('用户消息同步失败', error);
     }
-
     addMessageToDOM(role, content, animate);
   }
 
-  // ==================== 剧本样式解析（规则硬编码）====================
+  // 关键：解析文本，将【】自动转为带样式的HTML，同时兼容[action:]等标记
   function parseScriptFormat(text) {
+    syncPresetsFromInput();
     let result = text;
 
-    // 1. 核心规则：【】包裹的内容全部变为灰色细体14px
-    result = result.replace(/【([^】]+)】/g, 
-      '<span style="color:#888888;font-weight:300;font-size:14px;line-height:1.4;">【$1】</span>');
+    // 1. 处理自定义符号包裹的内容（如默认【微笑】），优先级高于[action:]
+    const prefix = stylePresets.action.prefix;
+    const suffix = stylePresets.action.suffix;
+    if (prefix && suffix) {
+      const escapedPrefix = prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const escapedSuffix = suffix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`${escapedPrefix}(.*?)${escapedSuffix}`, 'g');
+      const outerStyle = `color:${stylePresets.action.outer.color};font-size:${stylePresets.action.outer.size}px;font-weight:${stylePresets.action.outer.weight};line-height:1.4;`;
+      const innerStyle = `color:${stylePresets.action.inner.color};font-size:${stylePresets.action.inner.size}px;font-weight:${stylePresets.action.inner.weight};line-height:1.4;`;
+      result = result.replace(regex, (match, innerText) => {
+        return `<span style="${outerStyle}">${prefix}</span><span style="${innerStyle}">${innerText}</span><span style="${outerStyle}">${suffix}</span>`;
+      });
+    }
 
-    // 2. 换行
+    // 2. 兼容旧的 [action:xxx] 标记（如果用户仍使用）
+    const outerStyleAct = `color:${stylePresets.action.outer.color};font-size:${stylePresets.action.outer.size}px;font-weight:${stylePresets.action.outer.weight};line-height:1.4;`;
+    const innerStyleAct = `color:${stylePresets.action.inner.color};font-size:${stylePresets.action.inner.size}px;font-weight:${stylePresets.action.inner.weight};line-height:1.4;`;
+    result = result.replace(/\[action:(.*?)\]/g,
+      `<span style="${outerStyleAct}">${stylePresets.action.prefix}</span><span style="${innerStyleAct}">$1</span><span style="${outerStyleAct}">${stylePresets.action.suffix}</span>`
+    );
+
+    // 3. [emph:重点]
+    const emphStyle = `color:${stylePresets.emph.color};font-size:${stylePresets.emph.size}px;font-weight:${stylePresets.emph.weight};line-height:1.4;`;
+    result = result.replace(/\[emph:(.*?)\]/g, `<span style="${emphStyle}">$1</span>`);
+
+    // 4. 其他兼容标记
     result = result.replace(/\[br\]/g, '<br>');
-
-    // 3. 加粗
     result = result.replace(/\[b:(.*?)\]/g, '<strong>$1</strong>');
-
-    // 4. 红色（兼容旧标记）
+    result = result.replace(/\[gray:(.*?)\]/g, '<span style="color:#888888;font-weight:300;">$1</span>');
     result = result.replace(/\[red:(.*?)\]/g, '<span style="color:#ff4444;">$1</span>');
-
-    // 5. 自定义颜色
     result = result.replace(/\[color:([#a-zA-Z0-9]+):(.*?)\]/g, '<span style="color:$1;">$2</span>');
-
-    // 6. 自定义字号
     result = result.replace(/\[size:(\d+):(.*?)\]/g, '<span style="font-size:$1px;line-height:1.4;">$2</span>');
 
     return result;
   }
 
-  // ==================== AI调用（强制【】格式规则）====================
   async function getAIResponse(userMessage) {
     const script = agentPrompt.value.trim();
     if (!script) return "请先在左侧设置中填写剧本内容。";
 
-    const systemPrompt = `
-你是一个严格按照剧本回答问题的助手。
-⚠️ 【最高优先级规则】
+    // 系统指令：强制使用【】或用户自定义符号包裹动作/表情
+    const prefix = stylePresets.action.prefix || '【';
+    const suffix = stylePresets.action.suffix || '】';
+    const systemPrompt = `你是一个严格按照剧本回答问题的助手。
+⚠️ 【最高优先级规则：必须使用符号包裹动作和表情】
 
 1. 所有回答只能来自下面的剧本内容，绝对不能编造任何剧本里没有的信息。
 2. 如果用户的问题剧本里没有答案，只说"这个我暂时不知道哦"。
-3. 所有表示动作、神态、语气、场景的备注内容（比如微笑、皱眉、轻声说、转身、低头、叹气），必须用【】完整包裹，例如【微笑着点头】【轻声说道】，绝对不能直接写在正文里。
-4. 剧本里原有的【】、[b:]、[red:]、[color:]、[size:]、[br]等标记，输出时必须原封不动完整保留。
-5. 不要加任何剧本以外的解释或客套话。
+3. 回答中所有表示动作、神态、语气、场景的备注（如微笑、皱眉、轻声说、转身、低头、叹气），必须用“${prefix}内容${suffix}”的格式包裹，例如：你好${prefix}微笑${suffix}。
+4. 需要重点强调的关键词，用 [emph:关键词] 包裹。
+5. 需要换行的地方用 [br] 标记。
+6. 其他格式如加粗、颜色等可使用 [b:文字]、[red:文字] 等标记（但尽量少用）。
+7. 不要添加任何剧本以外的解释或客套话，严格基于剧本内容。
+
 --- 剧本开始 ---
 ${script}
---- 剧本结束 ---
-`;
+--- 剧本结束 ---`;
 
     try {
       const response = await fetch(AI_PROXY_URL, {
@@ -751,12 +650,10 @@ ${script}
           ],
         }),
       });
-
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error?.message || '请求失败');
       }
-
       const data = await response.json();
       return parseScriptFormat(data.choices[0].message.content.trim());
     } catch (error) {
@@ -767,7 +664,6 @@ ${script}
   async function sendMessage() {
     const value = msgInput.value.trim();
     if (!value) return;
-
     await addMessage('user', value);
     msgInput.value = '';
 
@@ -785,23 +681,14 @@ ${script}
 
     const reply = await getAIResponse(value);
     if (chatBox.contains(loadingDiv)) chatBox.removeChild(loadingDiv);
-
     await addMessage('assistant', reply, true);
   }
 
-  // ==================== 清空和重置 ====================
   async function clearChat() {
     messages = [];
     saveMessagesToLocal();
-
     const { error } = await supabase.from('chat_messages').delete().eq('user_id', USER_ID);
-    if (error) {
-      console.error('❌ 云端清空失败', error);
-      alert('云端清空失败，请检查网络');
-    } else {
-      console.log('✅ 云端聊天记录已清空');
-    }
-
+    if (error) console.error('云端清空失败', error);
     chatBox.innerHTML = '';
     addMessageToDOM('assistant', '聊天记录已清空。', false);
     closeDrawer();
@@ -813,21 +700,15 @@ ${script}
     closeDrawer();
   }
 
-  // ==================== 设置同步 ====================
   async function loadSettingsFromCloud() {
-    console.log('📥 从云端加载设置...');
     try {
       const { data, error } = await supabase
           .from('user_settings')
           .select('*')
           .eq('id', USER_ID)
           .single();
-
       if (error && error.code !== 'PGRST116') throw error;
-
       if (data) {
-        console.log('✅ 云端设置加载成功');
-        // 基础设置
         if (data.agent_prompt) agentPrompt.value = data.agent_prompt;
         if (data.agent_name) { currentAgentName = data.agent_name; agentNameSet.value = data.agent_name; }
         if (data.user_name) { currentUserName = data.user_name; userNameInput.value = data.user_name; }
@@ -841,12 +722,25 @@ ${script}
         if (data.bubble_py) bubblePyInput.value = data.bubble_py;
         if (data.chat_h_padding) chatHPaddingInput.value = data.chat_h_padding;
 
+        if (data.action_outer_color) actionOuterColorInput.value = data.action_outer_color;
+        if (data.action_outer_size) actionOuterSizeInput.value = data.action_outer_size;
+        if (data.action_outer_weight) actionOuterWeightInput.value = data.action_outer_weight;
+        if (data.action_prefix !== undefined) actionPrefixInput.value = data.action_prefix;
+        if (data.action_suffix !== undefined) actionSuffixInput.value = data.action_suffix;
+        if (data.action_inner_color) actionInnerColorInput.value = data.action_inner_color;
+        if (data.action_inner_size) actionInnerSizeInput.value = data.action_inner_size;
+        if (data.action_inner_weight) actionInnerWeightInput.value = data.action_inner_weight;
+        if (data.emph_color) emphColorInput.value = data.emph_color;
+        if (data.emph_size) emphSizeInput.value = data.emph_size;
+        if (data.emph_weight) emphWeightInput.value = data.emph_weight;
+
+        syncPresetsFromInput();
         updateNameDisplays();
         updateCSSVariables();
       }
       return true;
     } catch (err) {
-      console.warn('⚠️ 云端设置加载失败，使用本地数据', err);
+      console.warn('云端设置加载失败，使用本地数据', err);
       loadSettingsFromLocal();
       return false;
     }
@@ -854,7 +748,6 @@ ${script}
 
   function loadSettingsFromLocal() {
     const saved = JSON.parse(localStorage.getItem('chat-settings') || '{}');
-    // 基础设置
     if (saved.agentPrompt) agentPrompt.value = saved.agentPrompt;
     if (saved.agentName) { currentAgentName = saved.agentName; agentNameSet.value = saved.agentName; }
     if (saved.userName) { currentUserName = saved.userName; userNameInput.value = saved.userName; }
@@ -867,7 +760,20 @@ ${script}
     if (saved.bubblePx) bubblePxInput.value = saved.bubblePx;
     if (saved.bubblePy) bubblePyInput.value = saved.bubblePy;
     if (saved.chatHPadding) chatHPaddingInput.value = saved.chatHPadding;
-
+    if (saved.stylePresets) {
+      stylePresets = saved.stylePresets;
+      actionOuterColorInput.value = stylePresets.action.outer.color;
+      actionOuterSizeInput.value = stylePresets.action.outer.size;
+      actionOuterWeightInput.value = stylePresets.action.outer.weight;
+      actionPrefixInput.value = stylePresets.action.prefix;
+      actionSuffixInput.value = stylePresets.action.suffix;
+      actionInnerColorInput.value = stylePresets.action.inner.color;
+      actionInnerSizeInput.value = stylePresets.action.inner.size;
+      actionInnerWeightInput.value = stylePresets.action.inner.weight;
+      emphColorInput.value = stylePresets.emph.color;
+      emphSizeInput.value = stylePresets.emph.size;
+      emphWeightInput.value = stylePresets.emph.weight;
+    }
     updateNameDisplays();
     updateCSSVariables();
   }
@@ -875,6 +781,7 @@ ${script}
   async function saveSettingsToCloud() {
     currentAgentName = agentNameSet.value || currentAgentName;
     currentUserName = userNameInput.value || currentUserName;
+    syncPresetsFromInput();
     updateNameDisplays();
     updateCSSVariables();
 
@@ -892,26 +799,38 @@ ${script}
       bubble_px: parseInt(bubblePxInput.value) || 16,
       bubble_py: parseInt(bubblePyInput.value) || 8,
       chat_h_padding: parseInt(chatHPaddingInput.value) || 16,
+      action_outer_color: stylePresets.action.outer.color,
+      action_outer_size: stylePresets.action.outer.size,
+      action_outer_weight: stylePresets.action.outer.weight,
+      action_prefix: stylePresets.action.prefix,
+      action_suffix: stylePresets.action.suffix,
+      action_inner_color: stylePresets.action.inner.color,
+      action_inner_size: stylePresets.action.inner.size,
+      action_inner_weight: stylePresets.action.inner.weight,
+      emph_color: stylePresets.emph.color,
+      emph_size: stylePresets.emph.size,
+      emph_weight: stylePresets.emph.weight,
       updated_at: new Date().toISOString()
     };
 
-    localStorage.setItem('chat-settings', JSON.stringify(settings));
+    localStorage.setItem('chat-settings', JSON.stringify({
+      ...settings,
+      stylePresets: JSON.parse(JSON.stringify(stylePresets))
+    }));
 
     try {
       updateSyncStatus('syncing', '正在保存设置...');
       const { error } = await supabase.from('user_settings').upsert(settings, { onConflict: 'id' });
       if (error) throw error;
-      console.log('✅ 设置已同步到云端');
       updateSyncStatus('online', '设置已保存并同步');
       return true;
     } catch (err) {
-      console.error('❌ 设置同步失败', err);
+      console.error('设置同步失败', err);
       updateSyncStatus('error', '设置仅本地有效');
       return false;
     }
   }
 
-  // ==================== 事件监听 ====================
   saveSetBtn.addEventListener('click', async () => {
     const ok = await saveSettingsToCloud();
     alert(ok ? '✅ 已保存并同步到云端' : '⚠️ 已保存到本地（云端同步失败）');
@@ -974,9 +893,9 @@ ${script}
     chatBox.scrollTop = chatBox.scrollHeight;
   });
 
-  // ==================== 初始化 ====================
   async function init() {
     updateCSSVariables();
+    syncPresetsFromInput();
     updateSyncStatus('syncing', '正在连接云端...');
     await loadSettingsFromCloud();
     await loadMessagesFromCloud();
