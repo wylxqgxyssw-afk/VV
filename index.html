@@ -41,7 +41,6 @@
             --safe-bottom: env(safe-area-inset-bottom, 0px);
             --panel-width: 380px;
             --panel-height: 50vh;
-            --resize-handle-width: 6px;
         }
 
         * {
@@ -119,17 +118,16 @@
             align-items: center;
         }
 
-        /* 大屏布局：左右分栏 */
+        /* 左右布局相关 */
         body.is-large-screen .layout-container {
             flex-direction: row;
         }
         body.is-large-screen .left-set-panel {
-            width: var(--panel-width);
+            width: 0;
             height: 100%;
             border-right: 1px solid #333;
             border-bottom: none;
-            transition: none; /* 拖动时关闭过渡，避免卡顿 */
-            position: relative;
+            transition: width 0.3s ease, padding 0.3s ease;
         }
         body.is-large-screen .left-set-panel.show {
             width: var(--panel-width);
@@ -144,25 +142,21 @@
             display: none;
         }
 
-        /* 拖拽调整宽度的手柄 */
-        .resize-handle {
+        /* 新增：拖拽调整宽度的分隔条 */
+        .panel-resizer {
             display: none;
-            position: absolute;
-            top: 0;
-            right: 0;
-            width: var(--resize-handle-width);
-            height: 100%;
+        }
+        body.is-large-screen .panel-resizer {
+            display: block;
+            width: 4px;
+            background: #333;
             cursor: col-resize;
-            background: transparent;
-            z-index: 10;
+            flex-shrink: 0;
             transition: background 0.2s;
         }
-        .resize-handle:hover,
-        .resize-handle.active {
-            background: rgba(255, 255, 255, 0.15);
-        }
-        body.is-large-screen .left-set-panel.show .resize-handle {
-            display: block;
+        body.is-large-screen .panel-resizer:hover,
+        body.is-large-screen .panel-resizer.active {
+            background: #165DFF;
         }
 
         .scrollbar-hide::-webkit-scrollbar {
@@ -508,9 +502,10 @@
             </div>
             <button class="w-full bg-accent rounded p-3" id="save-set">保存所有设置（同步云端）</button>
             <p class="text-xs text-gray-500 mt-2 text-center" id="sync-status-text">数据自动云端同步，多端一致</p>
-            <!-- 拖拽调整宽度的手柄（仅大屏模式可见） -->
-            <div class="resize-handle" id="resize-handle"></div>
         </div>
+
+        <!-- 新增：拖拽分隔条 -->
+        <div id="panel-resizer" class="panel-resizer"></div>
 
         <!-- 聊天主面板 -->
         <div class="chat-main-panel bg-dark">
@@ -572,8 +567,16 @@
             function updateLayoutMode() {
                 const isLarge = checkIsLargeScreen();
                 document.body.classList.toggle('is-large-screen', isLarge);
-                // 当切换为小屏时，如果面板是打开状态，高度由 CSS 变量控制，无需额外操作
+                // 如果刚切换到大屏且面板是显示的，应用当前宽度
+                if (isLarge && leftPanel.classList.contains('show')) {
+                    applyPanelWidth();
+                }
                 setTimeout(() => { chatBox.scrollTop = chatBox.scrollHeight; }, 300);
+            }
+
+            // 新增：应用面板宽度（来自保存的变量）
+            function applyPanelWidth() {
+                document.documentElement.style.setProperty('--panel-width', currentPanelWidth + 'px');
             }
 
             const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -623,7 +626,8 @@
             const fileUploadBtn = document.getElementById('file-upload-btn');
             const fileInput = document.getElementById('file-input');
 
-            const resizeHandle = document.getElementById('resize-handle');
+            // 新增：分隔条元素
+            const panelResizer = document.getElementById('panel-resizer');
 
             const actionOuterColorInput = document.getElementById('action-outer-color');
             const actionOuterSizeInput = document.getElementById('action-outer-size');
@@ -657,100 +661,95 @@
                 emph: { color: '#ffcc00', size: 16, weight: '700' }
             };
 
-            // ----- 面板宽度拖拽功能 -----
-            function loadPanelWidthFromStorage() {
+            // 新增：当前面板宽度（默认380）
+            let currentPanelWidth = 380;
+
+            // 新增：从 localStorage 加载宽度
+            function loadPanelWidth() {
                 const saved = localStorage.getItem('panel-width');
-                if (saved) {
-                    const val = parseInt(saved, 10);
-                    if (!isNaN(val) && val >= 200 && val <= 800) {
-                        return val;
-                    }
+                if (saved && !isNaN(parseInt(saved))) {
+                    currentPanelWidth = parseInt(saved);
                 }
-                return 380; // 默认宽度
+                applyPanelWidth();
             }
 
-            function savePanelWidthToStorage(width) {
-                localStorage.setItem('panel-width', width);
+            // 新增：保存宽度
+            function savePanelWidth() {
+                localStorage.setItem('panel-width', currentPanelWidth);
             }
 
-            function setPanelWidth(width) {
-                document.documentElement.style.setProperty('--panel-width', width + 'px');
-                savePanelWidthToStorage(width);
-            }
+            // 新增：拖拽调整宽度逻辑
+            let isResizing = false;
+            let startX = 0;
+            let startWidth = 0;
 
-            function initResizeHandle() {
-                let startX = 0;
-                let startWidth = 0;
-                let dragging = false;
+            panelResizer.addEventListener('mousedown', (e) => {
+                if (!document.body.classList.contains('is-large-screen')) return;
+                isResizing = true;
+                startX = e.clientX;
+                startWidth = leftPanel.getBoundingClientRect().width;
+                panelResizer.classList.add('active');
+                document.body.style.userSelect = 'none';
+                e.preventDefault();
+            });
 
-                function onMouseDown(e) {
-                    // 只有在大屏且面板打开时才允许拖动
-                    if (!document.body.classList.contains('is-large-screen') || !leftPanel.classList.contains('show')) return;
-                    e.preventDefault();
-                    startX = e.clientX;
-                    startWidth = leftPanel.offsetWidth;
-                    dragging = true;
-                    resizeHandle.classList.add('active');
+            panelResizer.addEventListener('touchstart', (e) => {
+                if (!document.body.classList.contains('is-large-screen')) return;
+                if (e.touches.length === 1) {
+                    isResizing = true;
+                    startX = e.touches[0].clientX;
+                    startWidth = leftPanel.getBoundingClientRect().width;
+                    panelResizer.classList.add('active');
                     document.body.style.userSelect = 'none';
-                    document.body.style.cursor = 'col-resize';
                 }
+            });
 
-                function onTouchStart(e) {
-                    if (!document.body.classList.contains('is-large-screen') || !leftPanel.classList.contains('show')) return;
-                    e.preventDefault();
-                    const touch = e.touches[0];
-                    startX = touch.clientX;
-                    startWidth = leftPanel.offsetWidth;
-                    dragging = true;
-                    resizeHandle.classList.add('active');
-                }
+            window.addEventListener('mousemove', (e) => {
+                if (!isResizing) return;
+                const delta = e.clientX - startX;
+                let newWidth = startWidth + delta;
+                // 限制最小200px，最大60%窗口宽度或600px，取较小值
+                const maxWidth = Math.min(window.innerWidth * 0.6, 600);
+                newWidth = Math.max(200, Math.min(newWidth, maxWidth));
+                currentPanelWidth = newWidth;
+                applyPanelWidth();
+            });
 
-                function onMouseMove(e) {
-                    if (!dragging) return;
-                    const delta = e.clientX - startX;
+            window.addEventListener('touchmove', (e) => {
+                if (!isResizing) return;
+                if (e.touches.length === 1) {
+                    const delta = e.touches[0].clientX - startX;
                     let newWidth = startWidth + delta;
-                    // 限制最小200px，最大不超过屏幕宽度的60%
-                    const maxWidth = window.innerWidth * 0.6;
-                    newWidth = Math.max(200, Math.min(maxWidth, newWidth));
-                    setPanelWidth(newWidth);
+                    const maxWidth = Math.min(window.innerWidth * 0.6, 600);
+                    newWidth = Math.max(200, Math.min(newWidth, maxWidth));
+                    currentPanelWidth = newWidth;
+                    applyPanelWidth();
                 }
+            });
 
-                function onTouchMove(e) {
-                    if (!dragging) return;
-                    const touch = e.touches[0];
-                    const delta = touch.clientX - startX;
-                    let newWidth = startWidth + delta;
-                    const maxWidth = window.innerWidth * 0.6;
-                    newWidth = Math.max(200, Math.min(maxWidth, newWidth));
-                    setPanelWidth(newWidth);
-                }
-
-                function stopDrag() {
-                    if (!dragging) return;
-                    dragging = false;
-                    resizeHandle.classList.remove('active');
+            window.addEventListener('mouseup', () => {
+                if (isResizing) {
+                    isResizing = false;
+                    panelResizer.classList.remove('active');
                     document.body.style.userSelect = '';
-                    document.body.style.cursor = '';
+                    savePanelWidth();
                 }
+            });
 
-                resizeHandle.addEventListener('mousedown', onMouseDown);
-                resizeHandle.addEventListener('touchstart', onTouchStart, { passive: false });
-                window.addEventListener('mousemove', onMouseMove);
-                window.addEventListener('mouseup', stopDrag);
-                window.addEventListener('touchmove', onTouchMove, { passive: false });
-                window.addEventListener('touchend', stopDrag);
-                window.addEventListener('touchcancel', stopDrag);
-            }
-
-            // 初始化面板宽度（从本地存储加载）
-            const initialPanelWidth = loadPanelWidthFromStorage();
-            setPanelWidth(initialPanelWidth);
+            window.addEventListener('touchend', () => {
+                if (isResizing) {
+                    isResizing = false;
+                    panelResizer.classList.remove('active');
+                    document.body.style.userSelect = '';
+                    savePanelWidth();
+                }
+            });
 
             function toggleSettingsPanel() {
                 leftPanel.classList.toggle('show');
-                // 如果打开面板，确保宽度是存储的值
+                // 大屏显示时确保使用当前宽度
                 if (leftPanel.classList.contains('show') && document.body.classList.contains('is-large-screen')) {
-                    setPanelWidth(loadPanelWidthFromStorage());
+                    applyPanelWidth();
                 }
                 setTimeout(() => { chatBox.scrollTop = chatBox.scrollHeight; }, 300);
             }
@@ -1190,9 +1189,12 @@ ${script}
                     if (error && error.code !== 'PGRST116') throw error;
                     if (data) {
                         if (data.agent_prompt) agentPrompt.value = data.agent_prompt;
-                        if (data.agent_name) { currentAgentName = data.agent_name; agentNameSet.value = data.agent_name; }
-                        if (data.user_name) { currentUserName = data.user_name; userNameInput.value = data.user_name; }
-                        if (data.agent_avatar_url) { agentAvatarUrl = data.agent_avatar_url; updateAgentAvatarDisplay(); }
+                        if (data.agent_name) { currentAgentName = data.agent_name;
+                            agentNameSet.value = data.agent_name; }
+                        if (data.user_name) { currentUserName = data.user_name;
+                            userNameInput.value = data.user_name; }
+                        if (data.agent_avatar_url) { agentAvatarUrl = data.agent_avatar_url;
+                            updateAgentAvatarDisplay(); }
                         if (data.user_avatar_url) userAvatarUrl = data.user_avatar_url;
                         if (data.font_size) fontSizeInput.value = data.font_size;
                         if (data.line_height) lineHeightInput.value = data.line_height;
@@ -1226,9 +1228,12 @@ ${script}
             function loadSettingsFromLocal() {
                 const saved = JSON.parse(localStorage.getItem('chat-settings') || '{}');
                 if (saved.agentPrompt) agentPrompt.value = saved.agentPrompt;
-                if (saved.agentName) { currentAgentName = saved.agentName; agentNameSet.value = saved.agentName; }
-                if (saved.userName) { currentUserName = saved.userName; userNameInput.value = saved.userName; }
-                if (saved.agentAvatarUrl) { agentAvatarUrl = saved.agentAvatarUrl; updateAgentAvatarDisplay(); }
+                if (saved.agentName) { currentAgentName = saved.agentName;
+                    agentNameSet.value = saved.agentName; }
+                if (saved.userName) { currentUserName = saved.userName;
+                    userNameInput.value = saved.userName; }
+                if (saved.agentAvatarUrl) { agentAvatarUrl = saved.agentAvatarUrl;
+                    updateAgentAvatarDisplay(); }
                 if (saved.userAvatarUrl) userAvatarUrl = saved.userAvatarUrl;
                 if (saved.fontSize) fontSizeInput.value = saved.fontSize;
                 if (saved.lineHeight) lineHeightInput.value = saved.lineHeight;
@@ -1356,8 +1361,6 @@ ${script}
                 } else if (file.type.startsWith('image/')) {
                     const reader = new FileReader();
                     reader.onload = (ev) => {
-                        // 直接显示图片在输入框内？更合理的是发送图片消息，但当前只做输入填充标识
-                        // 这里改为将图片以base64存储在对话中，需要修改发送逻辑。暂时维持原样。
                         msgInput.value = `!${file.name}`;
                         msgInput.focus();
                     };
@@ -1438,10 +1441,8 @@ ${script}
             });
             window.addEventListener('resize', debounce(updateLayoutMode));
 
-            // 初始化拖拽手柄
-            initResizeHandle();
-
             async function init() {
+                loadPanelWidth(); // 新增：加载保存的面板宽度
                 updateCSSVariables();
                 syncPresetsFromInput();
                 updateLayoutMode();
