@@ -689,10 +689,6 @@
 
             let currentPanelWidth = 380;
 
-            // ========== 新增：版本管理相关 ==========
-            // 每个 AI 消息扩展字段：versions 数组，currentVersion 索引，localId
-            // 初始化时确保消息对象包含这些字段
-
             function loadPanelWidth() {
                 const saved = localStorage.getItem('panel-width');
                 if (saved && !isNaN(parseInt(saved))) {
@@ -879,7 +875,6 @@
                     const saved = localStorage.getItem('chat-messages');
                     if (saved) {
                         messages = JSON.parse(saved) || [];
-                        // 确保所有 AI 消息都有 versions 字段
                         messages.forEach(msg => {
                             if (msg.role === 'assistant') {
                                 if (!msg.versions) msg.versions = [msg.content];
@@ -993,86 +988,12 @@
                     });
             }
 
-            function renderStoredMessages() {
-                chatBox.innerHTML = '';
-                messages.forEach((msg, idx) => {
-                    // 对于有版本的 AI 消息，使用当前版本内容
-                    if (msg.role === 'assistant' && msg.versions && msg.versions.length > 0) {
-                        const currentContent = msg.versions[msg.currentVersion] || msg.content;
-                        addMessageToDOM(msg.role, currentContent, false, idx);
-                    } else {
-                        addMessageToDOM(msg.role, msg.content, false, idx);
-                    }
-                });
-                if (messages.length === 0) {
-                    addMessageToDOM('assistant', '欢迎使用剧本智能助手！点击左上角按钮设置剧本。', false, 0);
-                }
-                chatBox.scrollTop = chatBox.scrollHeight;
-            }
-
-            function typewriterEffect(fullText, msgElement, msgIndex) {
-                const bubble = msgElement.querySelector('.chat-bubble-content');
-                let index = 0;
-                let output = '';
-                bubble.innerHTML = '';
-                isTyping = true;
-                const interval = setInterval(() => {
-                    if (index < fullText.length) {
-                        if (fullText.charAt(index) === '<') {
-                            const endIndex = fullText.indexOf('>', index);
-                            if (endIndex !== -1) {
-                                output += fullText.substring(index, endIndex + 1);
-                                index = endIndex + 1;
-                            } else {
-                                output += fullText.charAt(index);
-                                index++;
-                            }
-                        } else {
-                            output += fullText.charAt(index);
-                            index++;
-                        }
-                        bubble.innerHTML = output;
-                        chatBox.scrollTop = chatBox.scrollHeight;
-                        renderLatex(msgElement);
-                    } else {
-                        clearInterval(interval);
-                        isTyping = false;
-                        // 打字完成后添加重新生成按钮和版本切换器
-                        const lastMsg = messages[msgIndex];
-                        if (lastMsg && lastMsg.role === 'assistant') {
-                            lastMsg.content = fullText;
-                            // 确保 versions 存在
-                            if (!lastMsg.versions) lastMsg.versions = [fullText];
-                            if (lastMsg.currentVersion === undefined) lastMsg.currentVersion = lastMsg.versions.indexOf(fullText);
-                            if (lastMsg.currentVersion === -1) lastMsg.currentVersion = 0;
-                            saveMessagesToLocal();
-                            (async () => {
-                                const { error } = await supabase.from('chat_messages').insert([{
-                                    user_id: USER_ID,
-                                    role: 'assistant',
-                                    content: fullText,
-                                    local_id: lastMsg.local_id,
-                                    versions: lastMsg.versions,
-                                    current_version: lastMsg.currentVersion
-                                }]);
-                                if (error) console.error('AI回复同步失败', error);
-                            })();
-                        }
-                        // 添加重新生成按钮
-                        addRegenButtonToLatestAssistant();
-                        // 如果有多个版本，添加版本切换器
-                        updateVersionSwitcher(msgElement, msgIndex);
-                        chatBox.scrollTop = chatBox.scrollHeight;
-                    }
-                }, 30);
-            }
-
-            function addRegenButtonToLatestAssistant() {
-                document.querySelectorAll('.regenerate-btn-container').forEach(el => el.remove());
-                const lastAssistantDiv = chatBox.querySelector('.message-row[data-role="assistant"]:last-of-type');
-                if (!lastAssistantDiv) return;
-                const bubbleContainer = lastAssistantDiv.querySelector('.max-w-\\[75\\%\\]');
+            function addRegenButtonToMessage(msgElement) {
+                const bubbleContainer = msgElement.querySelector('.max-w-\\[75\\%\\]');
                 if (!bubbleContainer) return;
+                // 移除可能已存在的按钮
+                const existing = bubbleContainer.querySelector('.regenerate-btn-container');
+                if (existing) existing.remove();
                 const actionDiv = document.createElement('div');
                 actionDiv.className = 'regenerate-btn-container text-right mt-1';
                 actionDiv.innerHTML = '<button class="regenerate-btn bg-transparent border-none text-gray-500 hover:text-white p-1" title="重新生成"><i class="fa fa-refresh"></i></button>';
@@ -1082,14 +1003,12 @@
             function updateVersionSwitcher(msgElement, msgIndex) {
                 const msg = messages[msgIndex];
                 if (!msg || msg.role !== 'assistant' || !msg.versions || msg.versions.length <= 1) {
-                    // 移除可能存在的旧切换器
                     const existing = msgElement.querySelector('.version-switcher');
                     if (existing) existing.remove();
                     return;
                 }
                 const bubbleContainer = msgElement.querySelector('.max-w-\\[75\\%\\]');
                 if (!bubbleContainer) return;
-                // 移除旧切换器
                 let switcher = msgElement.querySelector('.version-switcher');
                 if (!switcher) {
                     switcher = document.createElement('div');
@@ -1097,13 +1016,12 @@
                     bubbleContainer.appendChild(switcher);
                 }
                 const total = msg.versions.length;
-                const current = msg.currentVersion + 1; // 显示 1-based
+                const current = msg.currentVersion + 1;
                 switcher.innerHTML = `
                     <button class="version-prev" ${current === 1 ? 'disabled' : ''}><</button>
                     <span>${current}/${total}</span>
                     <button class="version-next" ${current === total ? 'disabled' : ''}>></button>
                 `;
-                // 绑定事件
                 switcher.querySelector('.version-prev').addEventListener('click', (e) => {
                     e.stopPropagation();
                     if (msg.currentVersion > 0) {
@@ -1124,7 +1042,6 @@
                 const msg = messages[msgIndex];
                 if (!msg || msg.role !== 'assistant') return;
                 msg.content = msg.versions[msg.currentVersion];
-                // 更新气泡内容
                 const msgDiv = chatBox.querySelector(`.message-row[data-msg-index="${msgIndex}"]`);
                 if (msgDiv) {
                     const bubble = msgDiv.querySelector('.chat-bubble-content');
@@ -1132,11 +1049,9 @@
                         bubble.innerHTML = msg.content;
                         renderLatex(msgDiv);
                     }
-                    // 更新版本切换器
                     updateVersionSwitcher(msgDiv, msgIndex);
                 }
                 saveMessagesToLocal();
-                // 同步到云端（更新该消息的内容和当前版本）
                 if (isOnline) {
                     (async () => {
                         const { error } = await supabase
@@ -1189,7 +1104,7 @@
                     renderLatex(div);
                     chatBox.scrollTop = chatBox.scrollHeight;
                     if (role === 'assistant') {
-                        addRegenButtonToLatestAssistant();
+                        addRegenButtonToMessage(div);
                         const msg = messages[idx];
                         if (msg && msg.versions && msg.versions.length > 1) {
                             updateVersionSwitcher(div, idx);
@@ -1197,6 +1112,78 @@
                     }
                 }
                 return div;
+            }
+
+            function typewriterEffect(fullText, msgElement, msgIndex) {
+                const bubble = msgElement.querySelector('.chat-bubble-content');
+                let index = 0;
+                let output = '';
+                bubble.innerHTML = '';
+                isTyping = true;
+                const interval = setInterval(() => {
+                    if (index < fullText.length) {
+                        if (fullText.charAt(index) === '<') {
+                            const endIndex = fullText.indexOf('>', index);
+                            if (endIndex !== -1) {
+                                output += fullText.substring(index, endIndex + 1);
+                                index = endIndex + 1;
+                            } else {
+                                output += fullText.charAt(index);
+                                index++;
+                            }
+                        } else {
+                            output += fullText.charAt(index);
+                            index++;
+                        }
+                        bubble.innerHTML = output;
+                        chatBox.scrollTop = chatBox.scrollHeight;
+                        renderLatex(msgElement);
+                    } else {
+                        clearInterval(interval);
+                        isTyping = false;
+                        const lastMsg = messages[msgIndex];
+                        if (lastMsg && lastMsg.role === 'assistant') {
+                            lastMsg.content = fullText;
+                            if (!lastMsg.versions) lastMsg.versions = [fullText];
+                            if (lastMsg.currentVersion === undefined) lastMsg.currentVersion = lastMsg.versions.indexOf(fullText);
+                            if (lastMsg.currentVersion === -1) lastMsg.currentVersion = 0;
+                            saveMessagesToLocal();
+                            // 使用 upsert 以便重新生成时更新而非插入
+                            (async () => {
+                                const { error } = await supabase
+                                    .from('chat_messages')
+                                    .upsert([{
+                                        user_id: USER_ID,
+                                        role: 'assistant',
+                                        content: fullText,
+                                        local_id: lastMsg.local_id,
+                                        versions: lastMsg.versions,
+                                        current_version: lastMsg.currentVersion
+                                    }], { onConflict: 'local_id' });
+                                if (error) console.error('AI回复同步失败', error);
+                            })();
+                        }
+                        addRegenButtonToMessage(msgElement);
+                        updateVersionSwitcher(msgElement, msgIndex);
+                        chatBox.scrollTop = chatBox.scrollHeight;
+                    }
+                }, 30);
+            }
+
+            function renderStoredMessages() {
+                chatBox.innerHTML = '';
+                messages.forEach((msg, idx) => {
+                    if (msg.role === 'assistant' && msg.versions && msg.versions.length > 0) {
+                        const currentContent = msg.versions[msg.currentVersion] || msg.content;
+                        addMessageToDOM(msg.role, currentContent, false, idx);
+                    } else {
+                        addMessageToDOM(msg.role, msg.content, false, idx);
+                    }
+                });
+                if (messages.length === 0) {
+                    addMessageToDOM('assistant', '欢迎使用剧本智能助手！点击左上角按钮设置剧本。', false, 0);
+                }
+                chatBox.scrollTop = chatBox.scrollHeight;
             }
 
             async function addMessage(role, content, animate = false) {
@@ -1221,12 +1208,9 @@
                     }]);
                     if (error) console.error('用户消息同步失败', error);
                 }
-                // AI 消息的云端插入在打字完成后进行，这里不插入
+                // AI 消息的云端插入在打字完成后进行
 
                 addMessageToDOM(role, content, animate, idx);
-                if (role === 'assistant' && !animate) {
-                    addRegenButtonToLatestAssistant();
-                }
             }
 
             function parseScriptFormat(text) {
@@ -1471,7 +1455,7 @@ ${script}
                 }
             }
 
-            // ========== 重新生成功能（版本管理） ==========
+            // ========== 重新生成功能（版本管理 + 打字机效果） ==========
             chatBox.addEventListener('click', async (e) => {
                 const btn = e.target.closest('.regenerate-btn');
                 if (!btn) return;
@@ -1487,13 +1471,15 @@ ${script}
 
                 // 显示重新生成中的状态
                 const bubbleContainer = msgRow.querySelector('.max-w-\\[75\\%\\]');
-                if (bubbleContainer) {
-                    const bubble = bubbleContainer.querySelector('.chat-bubble-content');
-                    if (bubble) bubble.innerHTML = '思考中...';
-                    // 暂时移除按钮
-                    const regenBtn = bubbleContainer.querySelector('.regenerate-btn-container');
-                    if (regenBtn) regenBtn.remove();
+                const bubble = bubbleContainer?.querySelector('.chat-bubble-content');
+                if (bubble) {
+                    bubble.innerHTML = '思考中...';
                 }
+                // 暂时移除按钮和切换器
+                const regenBtn = bubbleContainer?.querySelector('.regenerate-btn-container');
+                if (regenBtn) regenBtn.remove();
+                const switcher = bubbleContainer?.querySelector('.version-switcher');
+                if (switcher) switcher.remove();
 
                 // 调用 AI 获取新回复
                 const reply = await getAIResponse(userMsg.content);
@@ -1502,32 +1488,11 @@ ${script}
                 if (!msg.versions) msg.versions = [msg.content];
                 msg.versions.push(reply);
                 msg.currentVersion = msg.versions.length - 1;
-                msg.content = reply;
+                // 注意：不要立即设置 msg.content，让打字机效果去覆盖
 
-                // 更新 UI
-                if (bubbleContainer) {
-                    const bubble = bubbleContainer.querySelector('.chat-bubble-content');
-                    if (bubble) {
-                        bubble.innerHTML = reply;
-                        renderLatex(msgRow);
-                    }
-                    // 重新添加重新生成按钮和版本切换器
-                    addRegenButtonToLatestAssistant();
-                    updateVersionSwitcher(msgRow, index);
-                }
-
-                saveMessagesToLocal();
-
-                // 同步云端：更新该消息的 content, versions, current_version
-                if (isOnline) {
-                    (async () => {
-                        const { error } = await supabase
-                            .from('chat_messages')
-                            .update({ content: reply, versions: msg.versions, current_version: msg.currentVersion })
-                            .eq('user_id', USER_ID)
-                            .eq('local_id', msg.local_id);
-                        if (error) console.error('重新生成同步失败', error);
-                    })();
+                // 开始打字机动画（会添加按钮和切换器）
+                if (bubble) {
+                    typewriterEffect(reply, msgRow, index);
                 }
             });
 
@@ -1543,7 +1508,6 @@ ${script}
                 } else if (file.type.startsWith('image/')) {
                     const reader = new FileReader();
                     reader.onload = (ev) => {
-                        // 在输入框显示文件名，实际发送可以后续拓展
                         msgInput.value = `[图片: ${file.name}]`;
                         msgInput.focus();
                     };
