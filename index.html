@@ -142,7 +142,7 @@
             display: none;
         }
 
-        /* 新增：拖拽调整宽度的分隔条 */
+        /* 拖拽调整宽度的分隔条 */
         .panel-resizer {
             display: none;
         }
@@ -331,6 +331,7 @@
             margin-left: auto;
         }
 
+        /* 重新生成按钮样式 */
         .regenerate-btn-container {
             opacity: 0.7;
             transition: opacity 0.2s;
@@ -339,6 +340,7 @@
             opacity: 1;
         }
 
+        /* 文件上传按钮 */
         #file-upload-btn {
             background: transparent;
             border: none;
@@ -352,6 +354,34 @@
         }
         #file-upload-btn:hover {
             color: #fff;
+        }
+
+        /* 版本切换器样式 */
+        .version-switcher {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            color: #aaa;
+            margin-top: 4px;
+        }
+        .version-switcher button {
+            background: transparent;
+            border: 1px solid #333;
+            color: #aaa;
+            border-radius: 3px;
+            padding: 2px 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+        .version-switcher button:hover {
+            color: #fff;
+            border-color: #666;
+        }
+        .version-switcher button:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
         }
     </style>
 </head>
@@ -389,7 +419,7 @@
                 <code>[br]</code> 强制换行
             </div>
             <div class="bg-dark border border-gray-800 rounded p-3 mb-3">
-                <h3 class="text-sm font-medium mb-2">🎨 动作备注样式（实时生效）</h3>
+                <h3 class="text-sm font-medium mb-2">动作备注样式（实时生效）</h3>
                 <div class="mb-3">
                     <div class="text-xs text-gray-400 mb-1">控制【】/[action:] 的整体样式</div>
                     <div class="preset-group-title">符号外（包裹的括号）</div>
@@ -481,50 +511,49 @@
                 <div><h3 class="text-sm text-gray-400 mb-1">你的头像</h3><button class="w-full bg-accent/20 rounded p-2 text-sm mb-2" id="user-avatar-upload">上传头像</button><input type="file" id="user-avatar-file" class="hidden" accept="image/*"><div id="user-avatar-preview" class="w-14 h-14 bg-accent/20 flex items-center justify-center overflow-hidden rounded-lg mx-auto"><span>预览</span></div></div>
                 <div class="border-t border-gray-700 pt-3"><h3 class="text-sm text-gray-400 mb-1">API Key（已通过代理调用）</h3><input type="password" class="w-full bg-darker rounded p-2 text-white outline-none" id="api-key" placeholder="无需填写" disabled><p class="text-xs text-gray-500 mt-1">已通过 Supabase Edge Function 安全调用 DeepSeek API</p></div>
                 <div class="border-t border-gray-700 pt-3"><h3 class="text-sm text-gray-400 mb-2">全局默认样式</h3>
-                    <p class="text-xs text-gray-500 mb-2">这里改整体效果，局部样式用标记写在剧本里</p>
-                    <div class="grid grid-cols-2 gap-2 mb-2">
-                        <div><label class="text-xs text-gray-400">字体大小</label><input type="number" id="font-size" value="16" class="w-full bg-darker rounded p-2 text-white style-live-input"></div>
-                        <div><label class="text-xs text-gray-400">行间距</label><input type="number" id="line-height" value="1.6" step="0.1" class="w-full bg-darker rounded p-2 text-white style-live-input"></div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-2 mb-2">
-                        <div><label class="text-xs text-gray-400">我的文字颜色</label><input type="color" id="user-text-color" value="#FFFFFF" class="w-full h-8 style-live-input"></div>
-                        <div><label class="text-xs text-gray-400">AI文字颜色</label><input type="color" id="ai-text-color" value="#FFFFFF" class="w-full h-8 style-live-input"></div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-2 mb-2">
-                        <div><label class="text-xs text-gray-400">气泡水平边距(px)</label><input type="number" id="bubble-px" value="16" class="w-full bg-darker rounded p-2 text-white style-live-input"></div>
-                        <div><label class="text-xs text-gray-400">气泡垂直边距(py)</label><input type="number" id="bubble-py" value="8" class="w-full bg-darker rounded p-2 text-white style-live-input"></div>
-                    </div>
-                    <div class="mb-2">
-                        <label class="text-xs text-gray-400">屏幕边缘距离(px)</label>
-                        <input type="number" id="chat-h-padding" value="16" class="w-full bg-darker rounded p-2 text-white style-live-input">
-                    </div>
+                <p class="text-xs text-gray-500 mb-2">这里改整体效果，局部样式用标记写在剧本里</p>
+                <div class="grid grid-cols-2 gap-2 mb-2">
+                    <div><label class="text-xs text-gray-400">字体大小</label><input type="number" id="font-size" value="16" class="w-full bg-darker rounded p-2 text-white style-live-input"></div>
+                    <div><label class="text-xs text-gray-400">行间距</label><input type="number" id="line-height" value="1.6" step="0.1" class="w-full bg-darker rounded p-2 text-white style-live-input"></div>
+                </div>
+                <div class="grid grid-cols-2 gap-2 mb-2">
+                    <div><label class="text-xs text-gray-400">我的文字颜色</label><input type="color" id="user-text-color" value="#FFFFFF" class="w-full h-8 style-live-input"></div>
+                    <div><label class="text-xs text-gray-400">AI文字颜色</label><input type="color" id="ai-text-color" value="#FFFFFF" class="w-full h-8 style-live-input"></div>
+                </div>
+                <div class="grid grid-cols-2 gap-2 mb-2">
+                    <div><label class="text-xs text-gray-400">气泡水平边距(px)</label><input type="number" id="bubble-px" value="16" class="w-full bg-darker rounded p-2 text-white style-live-input"></div>
+                    <div><label class="text-xs text-gray-400">气泡垂直边距(py)</label><input type="number" id="bubble-py" value="8" class="w-full bg-darker rounded p-2 text-white style-live-input"></div>
+                </div>
+                <div class="mb-2">
+                    <label class="text-xs text-gray-400">屏幕边缘距离(px)</label>
+                    <input type="number" id="chat-h-padding" value="16" class="w-full bg-darker rounded p-2 text-white style-live-input">
                 </div>
             </div>
-            <button class="w-full bg-accent rounded p-3" id="save-set">保存所有设置（同步云端）</button>
-            <p class="text-xs text-gray-500 mt-2 text-center" id="sync-status-text">数据自动云端同步，多端一致</p>
         </div>
+        <button class="w-full bg-accent rounded p-3" id="save-set">保存所有设置（同步云端）</button>
+        <p class="text-xs text-gray-500 mt-2 text-center" id="sync-status-text">数据自动云端同步，多端一致</p>
+    </div>
 
-        <!-- 新增：拖拽分隔条 -->
-        <div id="panel-resizer" class="panel-resizer"></div>
+    <!-- 拖拽分隔条 -->
+    <div id="panel-resizer" class="panel-resizer"></div>
 
-        <!-- 聊天主面板 -->
-        <div class="chat-main-panel bg-dark">
-            <div class="chat-header p-3 border-b border-gray-800 flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <button class="text-gray-400 hover:text-white mr-1" id="phone-open-set"><i class="fa fa-bars"></i></button>
-                    <div id="agent-avatar" class="w-10 h-10 bg-accent/20 flex items-center justify-center overflow-hidden rounded-lg"><span class="avatar-placeholder">AI</span></div>
-                    <span id="agent-name-display" class="font-medium name-tag text-white">剧本助手 <i class="fa fa-pencil"></i></span>
-                </div>
+    <!-- 聊天主面板 -->
+    <div class="chat-main-panel bg-dark">
+        <div class="chat-header p-3 border-b border-gray-800 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <button class="text-gray-400 hover:text-white mr-1" id="phone-open-set"><i class="fa fa-bars"></i></button>
+                <div id="agent-avatar" class="w-10 h-10 bg-accent/20 flex items-center justify-center overflow-hidden rounded-lg"><span class="avatar-placeholder">AI</span></div>
+                <span id="agent-name-display" class="font-medium name-tag text-white">剧本助手 <i class="fa fa-pencil"></i></span>
             </div>
-            <div class="flex-1 overflow-y-auto scrollbar-hide" id="chat-box"></div>
-            <!-- 底部输入栏 -->
-            <div class="mobile-input-bar" id="mobile-input-area">
-                <button id="file-upload-btn" title="上传文件/图片"><i class="fa fa-plus fa-lg"></i></button>
-                <input type="text" placeholder="输入消息..." class="flex-1 bg-darker border border-gray-800 rounded-lg p-3 text-white outline-none" id="msg-input">
-                <button class="bg-accent px-5 rounded-lg" id="send-btn"><i class="fa fa-paper-plane"></i></button>
-            </div>
-            <input type="file" id="file-input" style="display:none" accept="*/*">
         </div>
+        <div class="flex-1 overflow-y-auto scrollbar-hide" id="chat-box"></div>
+        <!-- 底部输入栏 -->
+        <div class="mobile-input-bar" id="mobile-input-area">
+            <button id="file-upload-btn" title="上传文件/图片"><i class="fa fa-plus fa-lg"></i></button>
+            <input type="text" placeholder="输入消息..." class="flex-1 bg-darker border border-gray-800 rounded-lg p-3 text-white outline-none" id="msg-input">
+            <button class="bg-accent px-5 rounded-lg" id="send-btn"><i class="fa fa-paper-plane"></i></button>
+        </div>
+        <input type="file" id="file-input" style="display:none" accept="*/*">
     </div>
 
     <!-- 名称编辑弹窗 -->
@@ -567,14 +596,12 @@
             function updateLayoutMode() {
                 const isLarge = checkIsLargeScreen();
                 document.body.classList.toggle('is-large-screen', isLarge);
-                // 如果刚切换到大屏且面板是显示的，应用当前宽度
                 if (isLarge && leftPanel.classList.contains('show')) {
                     applyPanelWidth();
                 }
                 setTimeout(() => { chatBox.scrollTop = chatBox.scrollHeight; }, 300);
             }
 
-            // 新增：应用面板宽度（来自保存的变量）
             function applyPanelWidth() {
                 document.documentElement.style.setProperty('--panel-width', currentPanelWidth + 'px');
             }
@@ -626,7 +653,6 @@
             const fileUploadBtn = document.getElementById('file-upload-btn');
             const fileInput = document.getElementById('file-input');
 
-            // 新增：分隔条元素
             const panelResizer = document.getElementById('panel-resizer');
 
             const actionOuterColorInput = document.getElementById('action-outer-color');
@@ -661,10 +687,12 @@
                 emph: { color: '#ffcc00', size: 16, weight: '700' }
             };
 
-            // 新增：当前面板宽度（默认380）
             let currentPanelWidth = 380;
 
-            // 新增：从 localStorage 加载宽度
+            // ========== 新增：版本管理相关 ==========
+            // 每个 AI 消息扩展字段：versions 数组，currentVersion 索引，localId
+            // 初始化时确保消息对象包含这些字段
+
             function loadPanelWidth() {
                 const saved = localStorage.getItem('panel-width');
                 if (saved && !isNaN(parseInt(saved))) {
@@ -673,12 +701,10 @@
                 applyPanelWidth();
             }
 
-            // 新增：保存宽度
             function savePanelWidth() {
                 localStorage.setItem('panel-width', currentPanelWidth);
             }
 
-            // 新增：拖拽调整宽度逻辑
             let isResizing = false;
             let startX = 0;
             let startWidth = 0;
@@ -708,7 +734,6 @@
                 if (!isResizing) return;
                 const delta = e.clientX - startX;
                 let newWidth = startWidth + delta;
-                // 限制最小200px，最大60%窗口宽度或600px，取较小值
                 const maxWidth = Math.min(window.innerWidth * 0.6, 600);
                 newWidth = Math.max(200, Math.min(newWidth, maxWidth));
                 currentPanelWidth = newWidth;
@@ -747,7 +772,6 @@
 
             function toggleSettingsPanel() {
                 leftPanel.classList.toggle('show');
-                // 大屏显示时确保使用当前宽度
                 if (leftPanel.classList.contains('show') && document.body.classList.contains('is-large-screen')) {
                     applyPanelWidth();
                 }
@@ -821,10 +845,10 @@
 
             function updateSyncStatus(status, message) {
                 const statusText = {
-                    'online': '✅ 云端已连接',
-                    'offline': '⚠️ 离线模式（仅本地保存）',
-                    'syncing': '🔄 正在同步...',
-                    'error': '❌ 同步失败'
+                    'online': '云端已连接',
+                    'offline': '离线模式（仅本地保存）',
+                    'syncing': '正在同步...',
+                    'error': '同步失败'
                 };
                 headerSyncStatus.textContent = statusText[status] || message;
                 syncStatusText.textContent = message || statusText[status];
@@ -853,20 +877,46 @@
             function loadMessagesFromLocal() {
                 try {
                     const saved = localStorage.getItem('chat-messages');
-                    if (saved) messages = JSON.parse(saved) || [];
+                    if (saved) {
+                        messages = JSON.parse(saved) || [];
+                        // 确保所有 AI 消息都有 versions 字段
+                        messages.forEach(msg => {
+                            if (msg.role === 'assistant') {
+                                if (!msg.versions) msg.versions = [msg.content];
+                                if (msg.currentVersion === undefined) msg.currentVersion = 0;
+                                if (!msg.local_id) msg.local_id = generateId();
+                            } else if (msg.role === 'user') {
+                                if (!msg.local_id) msg.local_id = generateId();
+                            }
+                        });
+                    }
                 } catch (e) { messages = []; }
+            }
+
+            function generateId() {
+                return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
             }
 
             async function loadMessagesFromCloud() {
                 try {
                     const { data, error } = await supabase
                         .from('chat_messages')
-                        .select('role, content, created_at')
+                        .select('role, content, created_at, local_id, versions, current_version')
                         .eq('user_id', USER_ID)
                         .order('created_at', { ascending: true });
                     if (error) throw error;
                     if (data.length > 0) {
-                        messages = data;
+                        messages = data.map(d => {
+                            const msg = {
+                                role: d.role,
+                                content: d.content,
+                                local_id: d.local_id || generateId(),
+                                versions: d.versions || (d.role === 'assistant' ? [d.content] : undefined),
+                                currentVersion: d.current_version !== undefined ? d.current_version : 0
+                            };
+                            if (msg.role === 'assistant' && !msg.versions) msg.versions = [msg.content];
+                            return msg;
+                        });
                         saveMessagesToLocal();
                     } else {
                         loadMessagesFromLocal();
@@ -884,7 +934,10 @@
                     const messagesWithUserId = messages.map(msg => ({
                         user_id: USER_ID,
                         role: msg.role,
-                        content: msg.content
+                        content: msg.content,
+                        local_id: msg.local_id,
+                        versions: msg.versions || null,
+                        current_version: msg.currentVersion || 0
                     }));
                     const { error } = await supabase.from('chat_messages').insert(messagesWithUserId);
                     if (error) throw error;
@@ -904,7 +957,14 @@
                         table: 'chat_messages',
                         filter: `user_id=eq.${USER_ID}`
                     }, (payload) => {
-                        const newMsg = { role: payload.new.role, content: payload.new.content };
+                        const newMsg = {
+                            role: payload.new.role,
+                            content: payload.new.content,
+                            local_id: payload.new.local_id || generateId(),
+                            versions: payload.new.versions || (payload.new.role === 'assistant' ? [payload.new.content] : undefined),
+                            currentVersion: payload.new.current_version || 0
+                        };
+                        if (newMsg.role === 'assistant' && !newMsg.versions) newMsg.versions = [newMsg.content];
                         const isDuplicate = messages.some(msg =>
                             msg.role === newMsg.role &&
                             msg.content === newMsg.content &&
@@ -935,14 +995,22 @@
 
             function renderStoredMessages() {
                 chatBox.innerHTML = '';
-                messages.forEach((msg, idx) => addMessageToDOM(msg.role, msg.content, false, idx));
+                messages.forEach((msg, idx) => {
+                    // 对于有版本的 AI 消息，使用当前版本内容
+                    if (msg.role === 'assistant' && msg.versions && msg.versions.length > 0) {
+                        const currentContent = msg.versions[msg.currentVersion] || msg.content;
+                        addMessageToDOM(msg.role, currentContent, false, idx);
+                    } else {
+                        addMessageToDOM(msg.role, msg.content, false, idx);
+                    }
+                });
                 if (messages.length === 0) {
                     addMessageToDOM('assistant', '欢迎使用剧本智能助手！点击左上角按钮设置剧本。', false, 0);
                 }
                 chatBox.scrollTop = chatBox.scrollHeight;
             }
 
-            function typewriterEffect(fullText, msgElement) {
+            function typewriterEffect(fullText, msgElement, msgIndex) {
                 const bubble = msgElement.querySelector('.chat-bubble-content');
                 let index = 0;
                 let output = '';
@@ -969,19 +1037,31 @@
                     } else {
                         clearInterval(interval);
                         isTyping = false;
-                        const lastMsg = messages[messages.length - 1];
+                        // 打字完成后添加重新生成按钮和版本切换器
+                        const lastMsg = messages[msgIndex];
                         if (lastMsg && lastMsg.role === 'assistant') {
                             lastMsg.content = fullText;
+                            // 确保 versions 存在
+                            if (!lastMsg.versions) lastMsg.versions = [fullText];
+                            if (lastMsg.currentVersion === undefined) lastMsg.currentVersion = lastMsg.versions.indexOf(fullText);
+                            if (lastMsg.currentVersion === -1) lastMsg.currentVersion = 0;
                             saveMessagesToLocal();
                             (async () => {
                                 const { error } = await supabase.from('chat_messages').insert([{
                                     user_id: USER_ID,
                                     role: 'assistant',
-                                    content: fullText
+                                    content: fullText,
+                                    local_id: lastMsg.local_id,
+                                    versions: lastMsg.versions,
+                                    current_version: lastMsg.currentVersion
                                 }]);
-                                if (error) console.error('❌ AI回复同步失败', error);
+                                if (error) console.error('AI回复同步失败', error);
                             })();
                         }
+                        // 添加重新生成按钮
+                        addRegenButtonToLatestAssistant();
+                        // 如果有多个版本，添加版本切换器
+                        updateVersionSwitcher(msgElement, msgIndex);
                         chatBox.scrollTop = chatBox.scrollHeight;
                     }
                 }, 30);
@@ -997,6 +1077,76 @@
                 actionDiv.className = 'regenerate-btn-container text-right mt-1';
                 actionDiv.innerHTML = '<button class="regenerate-btn bg-transparent border-none text-gray-500 hover:text-white p-1" title="重新生成"><i class="fa fa-refresh"></i></button>';
                 bubbleContainer.appendChild(actionDiv);
+            }
+
+            function updateVersionSwitcher(msgElement, msgIndex) {
+                const msg = messages[msgIndex];
+                if (!msg || msg.role !== 'assistant' || !msg.versions || msg.versions.length <= 1) {
+                    // 移除可能存在的旧切换器
+                    const existing = msgElement.querySelector('.version-switcher');
+                    if (existing) existing.remove();
+                    return;
+                }
+                const bubbleContainer = msgElement.querySelector('.max-w-\\[75\\%\\]');
+                if (!bubbleContainer) return;
+                // 移除旧切换器
+                let switcher = msgElement.querySelector('.version-switcher');
+                if (!switcher) {
+                    switcher = document.createElement('div');
+                    switcher.className = 'version-switcher';
+                    bubbleContainer.appendChild(switcher);
+                }
+                const total = msg.versions.length;
+                const current = msg.currentVersion + 1; // 显示 1-based
+                switcher.innerHTML = `
+                    <button class="version-prev" ${current === 1 ? 'disabled' : ''}><</button>
+                    <span>${current}/${total}</span>
+                    <button class="version-next" ${current === total ? 'disabled' : ''}>></button>
+                `;
+                // 绑定事件
+                switcher.querySelector('.version-prev').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (msg.currentVersion > 0) {
+                        msg.currentVersion--;
+                        updateMessageContentAndUI(msgIndex);
+                    }
+                });
+                switcher.querySelector('.version-next').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (msg.currentVersion < msg.versions.length - 1) {
+                        msg.currentVersion++;
+                        updateMessageContentAndUI(msgIndex);
+                    }
+                });
+            }
+
+            function updateMessageContentAndUI(msgIndex) {
+                const msg = messages[msgIndex];
+                if (!msg || msg.role !== 'assistant') return;
+                msg.content = msg.versions[msg.currentVersion];
+                // 更新气泡内容
+                const msgDiv = chatBox.querySelector(`.message-row[data-msg-index="${msgIndex}"]`);
+                if (msgDiv) {
+                    const bubble = msgDiv.querySelector('.chat-bubble-content');
+                    if (bubble) {
+                        bubble.innerHTML = msg.content;
+                        renderLatex(msgDiv);
+                    }
+                    // 更新版本切换器
+                    updateVersionSwitcher(msgDiv, msgIndex);
+                }
+                saveMessagesToLocal();
+                // 同步到云端（更新该消息的内容和当前版本）
+                if (isOnline) {
+                    (async () => {
+                        const { error } = await supabase
+                            .from('chat_messages')
+                            .update({ content: msg.content, current_version: msg.currentVersion, versions: msg.versions })
+                            .eq('user_id', USER_ID)
+                            .eq('local_id', msg.local_id);
+                        if (error) console.error('版本切换同步失败', error);
+                    })();
+                }
             }
 
             function addMessageToDOM(role, content, animate = false, index = null) {
@@ -1034,20 +1184,30 @@
                 chatBox.appendChild(div);
 
                 if (role === 'assistant' && animate) {
-                    typewriterEffect(content, div);
+                    typewriterEffect(content, div, idx);
                 } else {
                     renderLatex(div);
                     chatBox.scrollTop = chatBox.scrollHeight;
-                }
-
-                if (role === 'assistant' && !animate) {
-                    addRegenButtonToLatestAssistant();
+                    if (role === 'assistant') {
+                        addRegenButtonToLatestAssistant();
+                        const msg = messages[idx];
+                        if (msg && msg.versions && msg.versions.length > 1) {
+                            updateVersionSwitcher(div, idx);
+                        }
+                    }
                 }
                 return div;
             }
 
             async function addMessage(role, content, animate = false) {
-                const msg = { role, content };
+                const local_id = generateId();
+                const msg = {
+                    role,
+                    content,
+                    local_id,
+                    versions: role === 'assistant' ? [content] : undefined,
+                    currentVersion: 0
+                };
                 messages.push(msg);
                 const idx = messages.length - 1;
                 saveMessagesToLocal();
@@ -1056,10 +1216,12 @@
                     const { error } = await supabase.from('chat_messages').insert([{
                         user_id: USER_ID,
                         role,
-                        content
+                        content,
+                        local_id
                     }]);
-                    if (error) console.error('❌ 用户消息同步失败', error);
+                    if (error) console.error('用户消息同步失败', error);
                 }
+                // AI 消息的云端插入在打字完成后进行，这里不插入
 
                 addMessageToDOM(role, content, animate, idx);
                 if (role === 'assistant' && !animate) {
@@ -1107,15 +1269,15 @@
                 if (!script) return "请先在左侧设置中填写剧本内容。";
                 const systemPrompt = `
 你是一个严格按照剧本回答问题的助手。
-⚠️ 【最高优先级规则，必须100%遵守】
+【最高优先级规则，必须100%遵守】
 1. 所有回答只能来自下面的剧本内容，绝对不能编造任何剧本里没有的信息。
 2. 如果用户的问题剧本里没有答案，只说“这个我暂时不知道哦”。
 3. 【格式铁则】
     - 所有动作、神态、语气、场景备注，必须用中文方括号【】完整包裹，放在句子对应位置，绝对不能直接写在正文里。
     - 需要重点强调的关键词，可以加粗显示。
     - 需要换行的地方直接换行。
-4. ✅ 正确示例：【挑眉轻笑】你说什么？我没听清。
-5. ❌ 错误示例：挑眉笑着说：“你说什么？我没听清。”
+4. 正确示例：【挑眉轻笑】你说什么？我没听清。
+5. 错误示例：挑眉笑着说：“你说什么？我没听清。”
 6. 不要加任何剧本以外的解释或客套话。
 --- 剧本开始 ---
 ${script}
@@ -1139,7 +1301,7 @@ ${script}
                     const data = await response.json();
                     return parseScriptFormat(data.choices[0].message.content.trim());
                 } catch (error) {
-                    return `⚠️ AI 模式出错：${error.message}<br>请检查 Supabase Edge Function 是否部署正常。`;
+                    return `AI 模式出错：${error.message}<br>请检查 Supabase Edge Function 是否部署正常。`;
                 }
             }
 
@@ -1169,14 +1331,14 @@ ${script}
                 messages = [];
                 saveMessagesToLocal();
                 const { error } = await supabase.from('chat_messages').delete().eq('user_id', USER_ID);
-                if (error) console.error('❌ 云端清空失败', error);
+                if (error) console.error('云端清空失败', error);
                 chatBox.innerHTML = '';
                 addMessageToDOM('assistant', '聊天记录已清空。', false, 0);
             }
 
             function resetScript() {
                 clearChat();
-                addMessageToDOM('assistant', '✅ 剧本已重置，可以重新开始。', false, 1);
+                addMessageToDOM('assistant', '剧本已重置，可以重新开始。', false, 1);
             }
 
             async function loadSettingsFromCloud() {
@@ -1189,12 +1351,9 @@ ${script}
                     if (error && error.code !== 'PGRST116') throw error;
                     if (data) {
                         if (data.agent_prompt) agentPrompt.value = data.agent_prompt;
-                        if (data.agent_name) { currentAgentName = data.agent_name;
-                            agentNameSet.value = data.agent_name; }
-                        if (data.user_name) { currentUserName = data.user_name;
-                            userNameInput.value = data.user_name; }
-                        if (data.agent_avatar_url) { agentAvatarUrl = data.agent_avatar_url;
-                            updateAgentAvatarDisplay(); }
+                        if (data.agent_name) { currentAgentName = data.agent_name; agentNameSet.value = data.agent_name; }
+                        if (data.user_name) { currentUserName = data.user_name; userNameInput.value = data.user_name; }
+                        if (data.agent_avatar_url) { agentAvatarUrl = data.agent_avatar_url; updateAgentAvatarDisplay(); }
                         if (data.user_avatar_url) userAvatarUrl = data.user_avatar_url;
                         if (data.font_size) fontSizeInput.value = data.font_size;
                         if (data.line_height) lineHeightInput.value = data.line_height;
@@ -1228,12 +1387,9 @@ ${script}
             function loadSettingsFromLocal() {
                 const saved = JSON.parse(localStorage.getItem('chat-settings') || '{}');
                 if (saved.agentPrompt) agentPrompt.value = saved.agentPrompt;
-                if (saved.agentName) { currentAgentName = saved.agentName;
-                    agentNameSet.value = saved.agentName; }
-                if (saved.userName) { currentUserName = saved.userName;
-                    userNameInput.value = saved.userName; }
-                if (saved.agentAvatarUrl) { agentAvatarUrl = saved.agentAvatarUrl;
-                    updateAgentAvatarDisplay(); }
+                if (saved.agentName) { currentAgentName = saved.agentName; agentNameSet.value = saved.agentName; }
+                if (saved.userName) { currentUserName = saved.userName; userNameInput.value = saved.userName; }
+                if (saved.agentAvatarUrl) { agentAvatarUrl = saved.agentAvatarUrl; updateAgentAvatarDisplay(); }
                 if (saved.userAvatarUrl) userAvatarUrl = saved.userAvatarUrl;
                 if (saved.fontSize) fontSizeInput.value = saved.fontSize;
                 if (saved.lineHeight) lineHeightInput.value = saved.lineHeight;
@@ -1315,38 +1471,64 @@ ${script}
                 }
             }
 
-            // 重新生成功能（仅最新AI回复）
+            // ========== 重新生成功能（版本管理） ==========
             chatBox.addEventListener('click', async (e) => {
                 const btn = e.target.closest('.regenerate-btn');
                 if (!btn) return;
                 const msgRow = btn.closest('.message-row');
                 const index = parseInt(msgRow?.getAttribute('data-msg-index'));
                 if (isNaN(index)) return;
-                const lastAssistantDiv = chatBox.querySelector('.message-row[data-role="assistant"]:last-of-type');
-                if (msgRow !== lastAssistantDiv) {
-                    alert('只能重新生成最新的回复哦');
-                    return;
-                }
+
+                const msg = messages[index];
+                if (!msg || msg.role !== 'assistant') return;
+                // 找到对应的用户消息（前一条）
                 const userMsg = messages[index - 1];
                 if (!userMsg || userMsg.role !== 'user') return;
-                // 删除当前AI消息
-                msgRow.remove();
-                messages.splice(index, 1);
-                saveMessagesToLocal();
-                // 重新生成
-                const loadingDiv = document.createElement('div');
-                loadingDiv.className = 'message-row flex mb-4 justify-start items-start gap-2';
-                loadingDiv.innerHTML = `
-                    <div class="msg-avatar">${agentAvatarUrl ? `<img src="${agentAvatarUrl}" class="avatar-img">` : (currentAgentName || 'AI').charAt(0)}</div>
-                    <div class="max-w-[75%]">
-                        <span class="msg-name-label">${currentAgentName}</span>
-                        <div class="inline-block rounded-lg ai-bubble chat-bubble-content">思考中...</div>
-                    </div>`;
-                chatBox.appendChild(loadingDiv);
-                chatBox.scrollTop = chatBox.scrollHeight;
+
+                // 显示重新生成中的状态
+                const bubbleContainer = msgRow.querySelector('.max-w-\\[75\\%\\]');
+                if (bubbleContainer) {
+                    const bubble = bubbleContainer.querySelector('.chat-bubble-content');
+                    if (bubble) bubble.innerHTML = '思考中...';
+                    // 暂时移除按钮
+                    const regenBtn = bubbleContainer.querySelector('.regenerate-btn-container');
+                    if (regenBtn) regenBtn.remove();
+                }
+
+                // 调用 AI 获取新回复
                 const reply = await getAIResponse(userMsg.content);
-                if (chatBox.contains(loadingDiv)) chatBox.removeChild(loadingDiv);
-                await addMessage('assistant', reply, true);
+
+                // 将新版本推入 versions
+                if (!msg.versions) msg.versions = [msg.content];
+                msg.versions.push(reply);
+                msg.currentVersion = msg.versions.length - 1;
+                msg.content = reply;
+
+                // 更新 UI
+                if (bubbleContainer) {
+                    const bubble = bubbleContainer.querySelector('.chat-bubble-content');
+                    if (bubble) {
+                        bubble.innerHTML = reply;
+                        renderLatex(msgRow);
+                    }
+                    // 重新添加重新生成按钮和版本切换器
+                    addRegenButtonToLatestAssistant();
+                    updateVersionSwitcher(msgRow, index);
+                }
+
+                saveMessagesToLocal();
+
+                // 同步云端：更新该消息的 content, versions, current_version
+                if (isOnline) {
+                    (async () => {
+                        const { error } = await supabase
+                            .from('chat_messages')
+                            .update({ content: reply, versions: msg.versions, current_version: msg.currentVersion })
+                            .eq('user_id', USER_ID)
+                            .eq('local_id', msg.local_id);
+                        if (error) console.error('重新生成同步失败', error);
+                    })();
+                }
             });
 
             // 文件上传
@@ -1361,7 +1543,8 @@ ${script}
                 } else if (file.type.startsWith('image/')) {
                     const reader = new FileReader();
                     reader.onload = (ev) => {
-                        msgInput.value = `!${file.name}`;
+                        // 在输入框显示文件名，实际发送可以后续拓展
+                        msgInput.value = `[图片: ${file.name}]`;
                         msgInput.focus();
                     };
                     reader.readAsDataURL(file);
@@ -1373,7 +1556,7 @@ ${script}
 
             saveSetBtn.addEventListener('click', async () => {
                 const ok = await saveSettingsToCloud();
-                alert(ok ? '✅ 已保存并同步到云端' : '⚠️ 已保存到本地（云端同步失败）');
+                alert(ok ? '已保存并同步到云端' : '已保存到本地（云端同步失败）');
             });
 
             agentAvatarUpload.addEventListener('click', () => agentAvatarFile.click());
@@ -1442,7 +1625,7 @@ ${script}
             window.addEventListener('resize', debounce(updateLayoutMode));
 
             async function init() {
-                loadPanelWidth(); // 新增：加载保存的面板宽度
+                loadPanelWidth();
                 updateCSSVariables();
                 syncPresetsFromInput();
                 updateLayoutMode();
@@ -1451,7 +1634,7 @@ ${script}
                 await loadMessagesFromCloud();
                 renderStoredMessages();
                 setupRealtimeSubscription();
-                console.log('🚀 应用初始化完成');
+                console.log('应用初始化完成');
             }
 
             init();
