@@ -388,7 +388,7 @@
             display: none !important;
         }
 
-        /* 【新增】速度调节器样式 */
+        /* ========== 速度调节器样式 ========== */
         #typewriter-speed {
             -webkit-appearance: none;
             appearance: none;
@@ -444,7 +444,7 @@
             </div>
             <textarea class="w-full h-40 bg-dark border border-gray-800 rounded p-3 text-white outline-none resize-none mb-2" placeholder="输入剧本内容，AI会根据剧本回答问题
 
-        支持内联样式标记（见下方说明）" id="agent-prompt"></textarea>
+支持内联样式标记（见下方说明）" id="agent-prompt"></textarea>
             <button class="w-full bg-gray-800 rounded p-2 mb-3 text-sm" id="toggle-mark-help">
                 <i class="fa fa-info-circle mr-1"></i> 查看样式标记写法
             </button>
@@ -572,20 +572,22 @@
                         <label class="text-xs text-gray-400">屏幕边缘距离(px)</label>
                         <input type="number" id="chat-h-padding" value="16" class="w-full bg-darker rounded p-2 text-white style-live-input">
                     </div>
-                    <!-- 【新增】AI回复打字速度调节器 -->
+
+                    <!-- ========== AI回复打字速度调节器 ========== -->
                     <div class="border-t border-gray-700 pt-3 mt-3">
                         <div class="flex items-center justify-between mb-1">
-                            <label class="text-xs text-gray-400">AI回复打字速度</label>
-                            <span id="speed-display" class="text-xs text-accent font-mono">30ms</span>
+                            <label class="text-xs text-gray-400 font-medium">⚡ AI回复打字速度</label>
+                            <span id="speed-display" class="text-xs text-accent font-mono font-bold">30ms</span>
                         </div>
                         <input type="range" id="typewriter-speed" value="30" min="5" max="100" step="5" class="w-full">
                         <div class="flex justify-between text-[10px] text-gray-600 mt-1">
-                            <span>⚡极快</span>
-                            <span>标准</span>
-                            <span>🐢极慢</span>
+                            <span>⚡极快(5ms)</span>
+                            <span>标准(30ms)</span>
+                            <span>🐢极慢(100ms)</span>
                         </div>
-                        <p class="text-[10px] text-gray-500 mt-1">数值越小越快，5=极快(约200字/秒)，30=标准，100=极慢(约10字/秒)。仅对新消息生效。</p>
+                        <p class="text-[10px] text-gray-500 mt-1">数值越小越快，5=极快(约200字/秒)，30=标准，100=极慢(约10字/秒)。<strong>仅对新消息生效</strong>，当前正在输出的消息速度不变。</p>
                     </div>
+
                     <!-- 隐藏版本与重新生成功能的开关 -->
                     <div class="border-t border-gray-700 pt-3 mt-3">
                         <div class="flex items-center justify-between">
@@ -740,7 +742,7 @@
 
                 const showVersionRegenerateCheckbox = document.getElementById('show-version-regenerate');
 
-                // 【新增】速度调节器相关元素
+                // ========== 速度调节器相关元素 ==========
                 const typewriterSpeedInput = document.getElementById('typewriter-speed');
                 const speedDisplay = document.getElementById('speed-display');
 
@@ -754,7 +756,7 @@
                 let isOnline = false;
                 let isTyping = false;
 
-                // 【新增】打字机速度变量（毫秒/字符），默认30ms
+                // ========== 打字机速度变量（毫秒/字符），默认30ms ==========
                 let typewriterSpeed = 30;
 
                 let stylePresets = {
@@ -874,10 +876,16 @@
                 }
                 showVersionRegenerateCheckbox.addEventListener('change', updateVersionRegenerateVisibility);
 
-                // 【新增】速度滑块事件监听
+                // ========== 速度滑块事件监听（实时更新变量） ==========
                 typewriterSpeedInput.addEventListener('input', () => {
                     typewriterSpeed = parseInt(typewriterSpeedInput.value);
                     speedDisplay.textContent = typewriterSpeed + 'ms';
+                    // 实时保存到本地，防止刷新丢失
+                    try {
+                        const saved = JSON.parse(localStorage.getItem('chat-settings') || '{}');
+                        saved.typewriterSpeed = typewriterSpeed;
+                        localStorage.setItem('chat-settings', JSON.stringify(saved));
+                    } catch (e) {}
                 });
 
                 function updateCSSVariables() {
@@ -1125,10 +1133,10 @@
                     const total = msg.versions.length;
                     const current = msg.currentVersion + 1;
                     switcher.innerHTML = `
-                <button class="version-prev" ${current === 1 ? 'disabled' : ''}><</button>
-                <span>${current}/${total}</span>
-                <button class="version-next" ${current === total ? 'disabled' : ''}>></button>
-            `;
+                        <button class="version-prev" ${current === 1 ? 'disabled' : ''}><</button>
+                        <span>${current}/${total}</span>
+                        <button class="version-next" ${current === total ? 'disabled' : ''}>></button>
+                    `;
                     switcher.querySelector('.version-prev').addEventListener('click', (e) => {
                         e.stopPropagation();
                         if (msg.currentVersion > 0) {
@@ -1192,23 +1200,24 @@
 
                     if (isUser) {
                         div.innerHTML = `
-                    <div class="max-w-[75%]">
-                        <span class="msg-name-label text-right">${senderName}</span>
-                        <div class="inline-block rounded-lg chat-bubble-content user-bubble">${content}</div>
-                    </div>
-                    <div class="msg-avatar">${avatarHTML}</div>`;
+                            <div class="max-w-[75%]">
+                                <span class="msg-name-label text-right">${senderName}</span>
+                                <div class="inline-block rounded-lg chat-bubble-content user-bubble">${content}</div>
+                            </div>
+                            <div class="msg-avatar">${avatarHTML}</div>`;
                     } else {
                         div.innerHTML = `
-                    <div class="msg-avatar">${avatarHTML}</div>
-                    <div class="max-w-[75%]">
-                        <span class="msg-name-label">${senderName}</span>
-                        <div class="inline-block rounded-lg chat-bubble-content ai-bubble">${content}</div>
-                    </div>`;
+                            <div class="msg-avatar">${avatarHTML}</div>
+                            <div class="max-w-[75%]">
+                                <span class="msg-name-label">${senderName}</span>
+                                <div class="inline-block rounded-lg chat-bubble-content ai-bubble">${content}</div>
+                            </div>`;
                     }
 
                     chatBox.appendChild(div);
 
                     if (role === 'assistant' && animate) {
+                        // 使用当前全局 typewriterSpeed 变量启动打字机效果
                         typewriterEffect(content, div, idx);
                     } else {
                         renderLatex(div);
@@ -1224,13 +1233,18 @@
                     return div;
                 }
 
-                // 【修改】打字机效果：使用可配置的 typewriterSpeed 替代硬编码的30ms
+                // ========== 打字机效果：读取全局 typewriterSpeed 变量 ==========
                 function typewriterEffect(fullText, msgElement, msgIndex) {
                     const bubble = msgElement.querySelector('.chat-bubble-content');
                     let index = 0;
                     let output = '';
                     bubble.innerHTML = '';
                     isTyping = true;
+
+                    // 每次启动打字机时，读取当前全局速度值
+                    const currentSpeed = typewriterSpeed;
+                    console.log('🚀 打字机启动，速度：' + currentSpeed + 'ms/字符');
+
                     const interval = setInterval(() => {
                         if (index < fullText.length) {
                             if (fullText.charAt(index) === '<') {
@@ -1278,7 +1292,7 @@
                             updateVersionSwitcher(msgElement, msgIndex);
                             chatBox.scrollTop = chatBox.scrollHeight;
                         }
-                    }, typewriterSpeed); // 【关键修改】使用可配置速度替代硬编码的30
+                    }, currentSpeed); // 使用刚读取的速度值
                 }
 
                 function renderStoredMessages() {
@@ -1365,22 +1379,22 @@
                     const script = agentPrompt.value.trim();
                     if (!script) return "请先在左侧设置中填写剧本内容。";
                     const systemPrompt = `
-        你是一个严格按照剧本回答问题的助手。
-        【最高优先级规则，必须100%遵守】
+                你是一个严格按照剧本回答问题的助手。
+                【最高优先级规则，必须100%遵守】
 
-        1. 所有回答只能来自下面的剧本内容，绝对不能编造任何剧本里没有的信息。
-        2. 如果用户的问题剧本里没有答案，只说"这个我暂时不知道哦"。
-        3. 【格式铁则】
-            - 所有动作、神态、语气、场景备注，必须用中文方括号【】完整包裹，放在句子对应位置，绝对不能直接写在正文里。
-            - 需要重点强调的关键词，可以加粗显示。
-            - 需要换行的地方直接换行。
-        4. 正确示例：【挑眉轻笑】你说什么？我没听清。
-        5. 错误示例：挑眉笑着说："你说什么？我没听清。"
-        6. 不要加任何剧本以外的解释或客套话。
-        --- 剧本开始 ---
-        ${script}
-        --- 剧本结束 ---
-        `;
+                1. 所有回答只能来自下面的剧本内容，绝对不能编造任何剧本里没有的信息。
+                2. 如果用户的问题剧本里没有答案，只说"这个我暂时不知道哦"。
+                3. 【格式铁则】
+                    - 所有动作、神态、语气、场景备注，必须用中文方括号【】完整包裹，放在句子对应位置，绝对不能直接写在正文里。
+                    - 需要重点强调的关键词，可以加粗显示。
+                    - 需要换行的地方直接换行。
+                4. 正确示例：【挑眉轻笑】你说什么？我没听清。
+                5. 错误示例：挑眉笑着说："你说什么？我没听清。"
+                6. 不要加任何剧本以外的解释或客套话。
+                --- 剧本开始 ---
+                ${script}
+                --- 剧本结束 ---
+                `;
                     try {
                         const response = await fetch(AI_PROXY_URL, {
                             method: 'POST',
@@ -1412,11 +1426,11 @@
                     const loadingDiv = document.createElement('div');
                     loadingDiv.className = 'message-row flex mb-4 justify-start items-start gap-2';
                     loadingDiv.innerHTML = `
-                 <div class="msg-avatar">${agentAvatarUrl ? `<img src="${agentAvatarUrl}" class="avatar-img">` : (currentAgentName || 'AI').charAt(0)}</div>
-                 <div class="max-w-[75%]">
-                     <span class="msg-name-label">${currentAgentName}</span>
-                     <div class="inline-block rounded-lg ai-bubble chat-bubble-content">思考中...</div>
-                 </div>`;
+                         <div class="msg-avatar">${agentAvatarUrl ? `<img src="${agentAvatarUrl}" class="avatar-img">` : (currentAgentName || 'AI').charAt(0)}</div>
+                         <div class="max-w-[75%]">
+                             <span class="msg-name-label">${currentAgentName}</span>
+                             <div class="inline-block rounded-lg ai-bubble chat-bubble-content">思考中...</div>
+                         </div>`;
                     chatBox.appendChild(loadingDiv);
                     chatBox.scrollTop = chatBox.scrollHeight;
 
@@ -1479,7 +1493,7 @@
                             } else {
                                 showVersionRegenerateCheckbox.checked = true;
                             }
-                            // 【新增】加载云端保存的打字速度
+                            // ========== 加载云端保存的打字速度 ==========
                             if (data.typewriter_speed !== undefined && data.typewriter_speed !== null) {
                                 typewriterSpeed = data.typewriter_speed;
                                 typewriterSpeedInput.value = typewriterSpeed;
@@ -1541,7 +1555,7 @@
                     } else {
                         showVersionRegenerateCheckbox.checked = true;
                     }
-                    // 【新增】加载本地保存的打字速度
+                    // ========== 加载本地保存的打字速度 ==========
                     if (saved.typewriterSpeed !== undefined) {
                         typewriterSpeed = saved.typewriterSpeed;
                         typewriterSpeedInput.value = typewriterSpeed;
@@ -1584,14 +1598,14 @@
                         emph_size: stylePresets.emph.size,
                         emph_weight: stylePresets.emph.weight,
                         show_version_regenerate: showVersionRegenerateCheckbox.checked,
-                        typewriter_speed: typewriterSpeed, // 【新增】保存打字速度到云端
+                        typewriter_speed: typewriterSpeed, // ========== 保存打字速度到云端 ==========
                         updated_at: new Date().toISOString()
                     };
                     localStorage.setItem('chat-settings', JSON.stringify({
                         ...settings,
                         stylePresets: JSON.parse(JSON.stringify(stylePresets)),
                         showVersionRegenerate: showVersionRegenerateCheckbox.checked,
-                        typewriterSpeed: typewriterSpeed // 【新增】保存打字速度到本地
+                        typewriterSpeed: typewriterSpeed // ========== 保存打字速度到本地 ==========
                     }));
                     try {
                         updateSyncStatus('syncing', '正在保存设置...');
@@ -1740,14 +1754,25 @@
                     syncPresetsFromInput();
                     updateLayoutMode();
                     updateSyncStatus('syncing', '正在连接云端...');
+
+                    // 先从本地快速恢复速度设置（避免加载云端时的闪烁）
+                    const localSaved = JSON.parse(localStorage.getItem('chat-settings') || '{}');
+                    if (localSaved.typewriterSpeed !== undefined) {
+                        typewriterSpeed = localSaved.typewriterSpeed;
+                    }
+                    typewriterSpeedInput.value = typewriterSpeed;
+                    speedDisplay.textContent = typewriterSpeed + 'ms';
+
+                    // 然后从云端加载（会覆盖本地值，如果有更新的云端数据）
                     await loadSettingsFromCloud();
                     await loadMessagesFromCloud();
                     renderStoredMessages();
                     setupRealtimeSubscription();
-                    // 【新增】初始化速度显示
+
+                    // 确保速度显示与最终值一致
                     typewriterSpeedInput.value = typewriterSpeed;
                     speedDisplay.textContent = typewriterSpeed + 'ms';
-                    console.log('应用初始化完成，打字速度：' + typewriterSpeed + 'ms/字符');
+                    console.log('✅ 应用初始化完成，打字速度：' + typewriterSpeed + 'ms/字符');
                 }
 
                 init();
