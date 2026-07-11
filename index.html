@@ -111,6 +111,58 @@
             padding-bottom: 12px;
         }
 
+        /* ========== Pending提示条样式 ========== */
+        .pending-indicator {
+            flex-shrink: 0;
+            background: #0a0a0a;
+            border-top: 1px solid #3a3a00;
+            border-bottom: 1px solid #3a3a00;
+            padding: 6px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            animation: pendingPulse 2s ease-in-out infinite;
+            cursor: default;
+        }
+        @keyframes pendingPulse {
+            0%,
+            100% {
+                border-top-color: #3a3a00;
+            }
+            50% {
+                border-top-color: #8a8a00;
+            }
+        }
+        .pending-indicator .pending-text {
+            font-size: 11px;
+            color: #ccaa00;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .pending-indicator .trigger-ai-btn {
+            flex-shrink: 0;
+            background: #b8860b;
+            color: #000;
+            border: none;
+            border-radius: 14px;
+            padding: 5px 12px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+            letter-spacing: 0.3px;
+        }
+        .pending-indicator .trigger-ai-btn:hover {
+            background: #d4a017;
+            transform: scale(1.03);
+        }
+        .pending-indicator .trigger-ai-btn:active {
+            transform: scale(0.96);
+        }
+
         .mobile-input-bar {
             display: flex;
             flex-shrink: 0;
@@ -427,6 +479,19 @@
             min-width: 42px;
             text-align: right;
         }
+
+        /* ========== 回复模式开关样式 ========== */
+        .mode-toggle-label {
+            font-size: 12px;
+            color: #ccc;
+            margin-bottom: 4px;
+            display: block;
+        }
+        .mode-toggle-desc {
+            font-size: 10px;
+            color: #666;
+            margin-top: 2px;
+        }
     </style>
 </head>
 <body>
@@ -545,6 +610,26 @@
                     </div>
                 </div>
             </div>
+
+            <!-- ========== 【新增】回复模式切换开关 ========== -->
+            <div class="bg-dark border border-gray-800 rounded p-3 mb-3">
+                <h3 class="text-sm font-medium mb-2">🤖 AI回复模式</h3>
+                <div class="flex items-center justify-between mb-1">
+                    <label class="text-xs text-gray-300 font-medium">手动触发回复模式</label>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="reply-mode-toggle" class="sr-only peer">
+                        <div class="w-9 h-5 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-yellow-600"></div>
+                    </label>
+                </div>
+                <p class="mode-toggle-desc">
+                    <strong>关闭</strong>（默认）：发送消息后AI<strong>自动</strong>回复<br>
+                    <strong>开启</strong>：发送消息后AI<strong>不回复</strong>，可连续发送多条消息，点击输入框上方的<strong>「⚡召唤AI回复」</strong>按钮后AI才回复
+                </p>
+                <p class="mode-toggle-desc mt-1 text-yellow-500/70">
+                    💡 手动模式示例：你可以先发"你好"，再发"介绍一下你自己"，然后点击召唤按钮，AI会一次性看到这两条消息并回复。
+                </p>
+            </div>
+
             <button class="w-full bg-gray-800 rounded p-2 mb-3 text-sm" id="toggle-settings">
                 <i class="fa fa-cog mr-1"></i> 展开头像/全局样式设置
             </button>
@@ -618,6 +703,13 @@
                 </div>
             </div>
             <div class="flex-1 overflow-y-auto scrollbar-hide" id="chat-box"></div>
+
+            <!-- ========== 【新增】Pending提示条（手动模式下的召唤AI按钮） ========== -->
+            <div id="pending-indicator" class="pending-indicator" style="display:none;">
+                <span class="pending-text" id="pending-count-text">📩 已发送 1 条消息，AI等待召唤中</span>
+                <button class="trigger-ai-btn" id="trigger-ai-btn">⚡ 召唤AI回复</button>
+            </div>
+
             <!-- 底部输入栏 -->
             <div class="mobile-input-bar" id="mobile-input-area">
                 <button id="file-upload-btn" title="上传文件/图片">
@@ -746,6 +838,12 @@
                 const typewriterSpeedInput = document.getElementById('typewriter-speed');
                 const speedDisplay = document.getElementById('speed-display');
 
+                // ========== 【新增】回复模式相关元素 ==========
+                const replyModeToggle = document.getElementById('reply-mode-toggle');
+                const pendingIndicator = document.getElementById('pending-indicator');
+                const pendingCountText = document.getElementById('pending-count-text');
+                const triggerAiBtn = document.getElementById('trigger-ai-btn');
+
                 let currentAgentName = '剧本助手';
                 let currentUserName = '我';
                 let agentAvatarUrl = '';
@@ -758,6 +856,11 @@
 
                 // ========== 打字机速度变量（毫秒/字符），默认30ms ==========
                 let typewriterSpeed = 30;
+
+                // ========== 【新增】回复模式：'auto'=自动回复，'manual'=手动触发回复 ==========
+                let replyMode = 'auto';
+                // 记录最后一次AI回复在messages数组中的索引，用于计算pending消息
+                let lastAIResponseIndex = -1;
 
                 let stylePresets = {
                     action: {
@@ -876,11 +979,40 @@
                 }
                 showVersionRegenerateCheckbox.addEventListener('change', updateVersionRegenerateVisibility);
 
-                // ========== 速度滑块事件监听（实时更新变量） ==========
+                // ========== 【新增】回复模式切换事件 ==========
+                replyModeToggle.addEventListener('change', () => {
+                    replyMode = replyModeToggle.checked ? 'manual' : 'auto';
+                    updatePendingIndicator();
+                    // 如果从手动切换到自动，且有pending消息，自动触发AI回复
+                    if (replyMode === 'auto' && getPendingCount() > 0 && !isTyping) {
+                        triggerAIReply();
+                    }
+                    // 实时保存到本地
+                    try {
+                        const saved = JSON.parse(localStorage.getItem('chat-settings') || '{}');
+                        saved.replyMode = replyMode;
+                        localStorage.setItem('chat-settings', JSON.stringify(saved));
+                    } catch (e) {}
+                    console.log('🔄 回复模式切换为：' + (replyMode === 'auto' ? '自动回复' : '手动触发回复'));
+                });
+
+                // ========== 【新增】召唤AI回复按钮事件 ==========
+                triggerAiBtn.addEventListener('click', () => {
+                    if (isTyping) {
+                        console.log('⏳ AI正在回复中，请等待...');
+                        return;
+                    }
+                    if (getPendingCount() === 0) {
+                        console.log('📭 没有待回复的消息');
+                        return;
+                    }
+                    triggerAIReply();
+                });
+
+                // ========== 速度滑块事件监听 ==========
                 typewriterSpeedInput.addEventListener('input', () => {
                     typewriterSpeed = parseInt(typewriterSpeedInput.value);
                     speedDisplay.textContent = typewriterSpeed + 'ms';
-                    // 实时保存到本地，防止刷新丢失
                     try {
                         const saved = JSON.parse(localStorage.getItem('chat-settings') || '{}');
                         saved.typewriterSpeed = typewriterSpeed;
@@ -1012,7 +1144,8 @@
                                     versions: d.versions || (d.role === 'assistant' ? [d.content] :
                                         undefined),
                                     currentVersion: d.current_version !== undefined ? d.current_version :
-                                        0
+                                        0,
+                                    mergedUserMessage: d.merged_user_message || undefined
                                 };
                                 if (msg.role === 'assistant' && !msg.versions) msg.versions = [msg.content];
                                 return msg;
@@ -1022,9 +1155,12 @@
                             loadMessagesFromLocal();
                             if (messages.length > 0) await syncLocalMessagesToCloud();
                         }
+                        // 【新增】更新lastAIResponseIndex
+                        updateLastAIResponseIndex();
                         return true;
                     } catch (err) {
                         loadMessagesFromLocal();
+                        updateLastAIResponseIndex();
                         return false;
                     }
                 }
@@ -1037,7 +1173,8 @@
                             content: msg.content,
                             local_id: msg.local_id,
                             versions: msg.versions || null,
-                            current_version: msg.currentVersion || 0
+                            current_version: msg.currentVersion || 0,
+                            merged_user_message: msg.mergedUserMessage || null
                         }));
                         const { error } = await supabase.from('chat_messages').insert(messagesWithUserId);
                         if (error) throw error;
@@ -1064,7 +1201,8 @@
                                 versions: payload.new.versions || (payload.new.role === 'assistant' ? [
                                     payload.new.content
                                 ] : undefined),
-                                currentVersion: payload.new.current_version || 0
+                                currentVersion: payload.new.current_version || 0,
+                                mergedUserMessage: payload.new.merged_user_message || undefined
                             };
                             if (newMsg.role === 'assistant' && !newMsg.versions) newMsg.versions = [newMsg
                                 .content
@@ -1078,6 +1216,7 @@
                                 messages.push(newMsg);
                                 saveMessagesToLocal();
                                 addMessageToDOM(newMsg.role, newMsg.content, false, messages.length - 1);
+                                updateLastAIResponseIndex();
                             }
                         })
                         .on('postgres_changes', {
@@ -1090,6 +1229,8 @@
                             saveMessagesToLocal();
                             chatBox.innerHTML = '';
                             addMessageToDOM('assistant', '聊天记录已清空。', false, 0);
+                            lastAIResponseIndex = 0;
+                            updatePendingIndicator();
                         })
                         .subscribe((status) => {
                             if (status === 'SUBSCRIBED') updateSyncStatus('online', '实时同步已开启');
@@ -1217,7 +1358,6 @@
                     chatBox.appendChild(div);
 
                     if (role === 'assistant' && animate) {
-                        // 使用当前全局 typewriterSpeed 变量启动打字机效果
                         typewriterEffect(content, div, idx);
                     } else {
                         renderLatex(div);
@@ -1233,7 +1373,7 @@
                     return div;
                 }
 
-                // ========== 打字机效果：读取全局 typewriterSpeed 变量 ==========
+                // ========== 打字机效果 ==========
                 function typewriterEffect(fullText, msgElement, msgIndex) {
                     const bubble = msgElement.querySelector('.chat-bubble-content');
                     let index = 0;
@@ -1241,7 +1381,6 @@
                     bubble.innerHTML = '';
                     isTyping = true;
 
-                    // 每次启动打字机时，读取当前全局速度值
                     const currentSpeed = typewriterSpeed;
                     console.log('🚀 打字机启动，速度：' + currentSpeed + 'ms/字符');
 
@@ -1283,16 +1422,19 @@
                                             content: fullText,
                                             local_id: lastMsg.local_id,
                                             versions: lastMsg.versions,
-                                            current_version: lastMsg.currentVersion
+                                            current_version: lastMsg.currentVersion,
+                                            merged_user_message: lastMsg.mergedUserMessage || null
                                         }], { onConflict: 'local_id' });
                                     if (error) console.error('AI回复同步失败', error);
                                 })();
                             }
                             addRegenButtonToMessage(msgElement);
                             updateVersionSwitcher(msgElement, msgIndex);
+                            // 【新增】AI回复完成后更新lastAIResponseIndex
+                            updateLastAIResponseIndex();
                             chatBox.scrollTop = chatBox.scrollHeight;
                         }
-                    }, currentSpeed); // 使用刚读取的速度值
+                    }, currentSpeed);
                 }
 
                 function renderStoredMessages() {
@@ -1307,18 +1449,21 @@
                     });
                     if (messages.length === 0) {
                         addMessageToDOM('assistant', '欢迎使用剧本智能助手！点击左上角按钮设置剧本。', false, 0);
+                        lastAIResponseIndex = 0;
                     }
+                    updateLastAIResponseIndex();
                     chatBox.scrollTop = chatBox.scrollHeight;
                 }
 
-                async function addMessage(role, content, animate = false) {
+                async function addMessage(role, content, animate = false, extraData = {}) {
                     const local_id = generateId();
                     const msg = {
                         role,
                         content,
                         local_id,
                         versions: role === 'assistant' ? [content] : undefined,
-                        currentVersion: 0
+                        currentVersion: 0,
+                        ...extraData
                     };
                     messages.push(msg);
                     const idx = messages.length - 1;
@@ -1335,6 +1480,13 @@
                     }
 
                     addMessageToDOM(role, content, animate, idx);
+
+                    // 【新增】如果添加的是AI回复，更新lastAIResponseIndex
+                    if (role === 'assistant' && !animate) {
+                        updateLastAIResponseIndex();
+                    }
+
+                    return idx;
                 }
 
                 function parseScriptFormat(text) {
@@ -1417,14 +1569,70 @@
                     }
                 }
 
-                async function sendMessage() {
-                    const value = msgInput.value.trim();
-                    if (!value) return;
-                    await addMessage('user', value);
-                    msgInput.value = '';
+                // ========== 【新增】获取pending用户消息数量 ==========
+                function getPendingCount() {
+                    let count = 0;
+                    for (let i = lastAIResponseIndex + 1; i < messages.length; i++) {
+                        if (messages[i].role === 'user') {
+                            count++;
+                        }
+                    }
+                    return count;
+                }
 
+                // ========== 【新增】获取pending用户消息内容（合并） ==========
+                function getPendingUserMessagesContent() {
+                    const pending = [];
+                    for (let i = lastAIResponseIndex + 1; i < messages.length; i++) {
+                        if (messages[i].role === 'user') {
+                            pending.push(messages[i].content);
+                        }
+                    }
+                    return pending.join('\n\n');
+                }
+
+                // ========== 【新增】更新pending提示条显示 ==========
+                function updatePendingIndicator() {
+                    const count = getPendingCount();
+                    if (replyMode === 'manual' && count > 0 && !isTyping) {
+                        pendingIndicator.style.display = 'flex';
+                        pendingCountText.textContent = '📩 已发送 ' + count + ' 条消息，AI等待召唤中';
+                    } else {
+                        pendingIndicator.style.display = 'none';
+                    }
+                }
+
+                // ========== 【新增】更新lastAIResponseIndex ==========
+                function updateLastAIResponseIndex() {
+                    let lastIdx = -1;
+                    for (let i = messages.length - 1; i >= 0; i--) {
+                        if (messages[i].role === 'assistant') {
+                            lastIdx = i;
+                            break;
+                        }
+                    }
+                    lastAIResponseIndex = lastIdx;
+                    updatePendingIndicator();
+                }
+
+                // ========== 【新增】手动触发AI回复 ==========
+                async function triggerAIReply() {
+                    if (isTyping) return;
+                    const pendingContent = getPendingUserMessagesContent();
+                    if (!pendingContent) {
+                        console.log('📭 没有待回复的消息');
+                        return;
+                    }
+                    const count = getPendingCount();
+                    console.log('⚡ 召唤AI回复，共' + count + '条pending消息');
+
+                    // 隐藏pending提示条
+                    pendingIndicator.style.display = 'none';
+
+                    // 显示loading
                     const loadingDiv = document.createElement('div');
                     loadingDiv.className = 'message-row flex mb-4 justify-start items-start gap-2';
+                    loadingDiv.setAttribute('data-loading', 'true');
                     loadingDiv.innerHTML = `
                          <div class="msg-avatar">${agentAvatarUrl ? `<img src="${agentAvatarUrl}" class="avatar-img">` : (currentAgentName || 'AI').charAt(0)}</div>
                          <div class="max-w-[75%]">
@@ -1434,9 +1642,56 @@
                     chatBox.appendChild(loadingDiv);
                     chatBox.scrollTop = chatBox.scrollHeight;
 
-                    const reply = await getAIResponse(value);
+                    // 调用AI
+                    const reply = await getAIResponse(pendingContent);
                     if (chatBox.contains(loadingDiv)) chatBox.removeChild(loadingDiv);
-                    await addMessage('assistant', reply, true);
+
+                    // 添加AI回复（带打字机效果），并存储合并的用户消息用于重新生成
+                    const local_id = generateId();
+                    const msg = {
+                        role: 'assistant',
+                        content: reply,
+                        local_id,
+                        versions: [reply],
+                        currentVersion: 0,
+                        mergedUserMessage: pendingContent // 【重要】存储合并后的用户消息，用于重新生成
+                    };
+                    messages.push(msg);
+                    const idx = messages.length - 1;
+                    saveMessagesToLocal();
+                    addMessageToDOM('assistant', reply, true, idx);
+                }
+
+                // ========== 修改sendMessage函数以支持手动模式 ==========
+                async function sendMessage() {
+                    const value = msgInput.value.trim();
+                    if (!value) return;
+                    // 添加用户消息到界面
+                    await addMessage('user', value);
+                    msgInput.value = '';
+
+                    if (replyMode === 'auto') {
+                        // 【正常模式】自动触发AI回复
+                        const loadingDiv = document.createElement('div');
+                        loadingDiv.className = 'message-row flex mb-4 justify-start items-start gap-2';
+                        loadingDiv.setAttribute('data-loading', 'true');
+                        loadingDiv.innerHTML = `
+                             <div class="msg-avatar">${agentAvatarUrl ? `<img src="${agentAvatarUrl}" class="avatar-img">` : (currentAgentName || 'AI').charAt(0)}</div>
+                             <div class="max-w-[75%]">
+                                 <span class="msg-name-label">${currentAgentName}</span>
+                                 <div class="inline-block rounded-lg ai-bubble chat-bubble-content">思考中...</div>
+                             </div>`;
+                        chatBox.appendChild(loadingDiv);
+                        chatBox.scrollTop = chatBox.scrollHeight;
+
+                        const reply = await getAIResponse(value);
+                        if (chatBox.contains(loadingDiv)) chatBox.removeChild(loadingDiv);
+                        await addMessage('assistant', reply, true);
+                    } else {
+                        // 【手动模式】不自动触发AI回复，更新pending提示条
+                        updatePendingIndicator();
+                        console.log('📩 手动模式：消息已发送，AI等待召唤中。已发送' + getPendingCount() + '条消息。');
+                    }
                 }
 
                 async function clearChat() {
@@ -1445,12 +1700,18 @@
                     const { error } = await supabase.from('chat_messages').delete().eq('user_id', USER_ID);
                     if (error) console.error('云端清空失败', error);
                     chatBox.innerHTML = '';
+                    // 移除所有loading元素
+                    chatBox.querySelectorAll('[data-loading="true"]').forEach(el => el.remove());
                     addMessageToDOM('assistant', '聊天记录已清空。', false, 0);
+                    lastAIResponseIndex = 0;
+                    updatePendingIndicator();
                 }
 
                 function resetScript() {
                     clearChat();
                     addMessageToDOM('assistant', '剧本已重置，可以重新开始。', false, 1);
+                    lastAIResponseIndex = 1;
+                    updatePendingIndicator();
                 }
 
                 async function loadSettingsFromCloud() {
@@ -1493,11 +1754,18 @@
                             } else {
                                 showVersionRegenerateCheckbox.checked = true;
                             }
-                            // ========== 加载云端保存的打字速度 ==========
                             if (data.typewriter_speed !== undefined && data.typewriter_speed !== null) {
                                 typewriterSpeed = data.typewriter_speed;
                                 typewriterSpeedInput.value = typewriterSpeed;
                                 speedDisplay.textContent = typewriterSpeed + 'ms';
+                            }
+                            // ========== 【新增】加载回复模式设置 ==========
+                            if (data.reply_mode !== undefined && data.reply_mode !== null) {
+                                replyMode = data.reply_mode;
+                                replyModeToggle.checked = (replyMode === 'manual');
+                            } else {
+                                replyMode = 'auto';
+                                replyModeToggle.checked = false;
                             }
                             updateVersionRegenerateVisibility();
                             syncPresetsFromInput();
@@ -1555,11 +1823,18 @@
                     } else {
                         showVersionRegenerateCheckbox.checked = true;
                     }
-                    // ========== 加载本地保存的打字速度 ==========
                     if (saved.typewriterSpeed !== undefined) {
                         typewriterSpeed = saved.typewriterSpeed;
                         typewriterSpeedInput.value = typewriterSpeed;
                         speedDisplay.textContent = typewriterSpeed + 'ms';
+                    }
+                    // ========== 【新增】加载回复模式设置 ==========
+                    if (saved.replyMode !== undefined) {
+                        replyMode = saved.replyMode;
+                        replyModeToggle.checked = (replyMode === 'manual');
+                    } else {
+                        replyMode = 'auto';
+                        replyModeToggle.checked = false;
                     }
                     updateVersionRegenerateVisibility();
                     updateNameDisplays();
@@ -1598,14 +1873,16 @@
                         emph_size: stylePresets.emph.size,
                         emph_weight: stylePresets.emph.weight,
                         show_version_regenerate: showVersionRegenerateCheckbox.checked,
-                        typewriter_speed: typewriterSpeed, // ========== 保存打字速度到云端 ==========
+                        typewriter_speed: typewriterSpeed,
+                        reply_mode: replyMode, // ========== 【新增】保存回复模式 ==========
                         updated_at: new Date().toISOString()
                     };
                     localStorage.setItem('chat-settings', JSON.stringify({
                         ...settings,
                         stylePresets: JSON.parse(JSON.stringify(stylePresets)),
                         showVersionRegenerate: showVersionRegenerateCheckbox.checked,
-                        typewriterSpeed: typewriterSpeed // ========== 保存打字速度到本地 ==========
+                        typewriterSpeed: typewriterSpeed,
+                        replyMode: replyMode
                     }));
                     try {
                         updateSyncStatus('syncing', '正在保存设置...');
@@ -1629,8 +1906,16 @@
 
                     const msg = messages[index];
                     if (!msg || msg.role !== 'assistant') return;
-                    const userMsg = messages[index - 1];
-                    if (!userMsg || userMsg.role !== 'user') return;
+
+                    // 【修改】优先使用mergedUserMessage（手动模式下的合并消息）
+                    let userMsgContent = '';
+                    if (msg.mergedUserMessage) {
+                        userMsgContent = msg.mergedUserMessage;
+                    } else {
+                        const userMsg = messages[index - 1];
+                        if (!userMsg || userMsg.role !== 'user') return;
+                        userMsgContent = userMsg.content;
+                    }
 
                     const bubbleContainer = msgRow.querySelector('.max-w-\\[75\\%\\]');
                     const bubble = bubbleContainer?.querySelector('.chat-bubble-content');
@@ -1642,7 +1927,7 @@
                     const switcher = bubbleContainer?.querySelector('.version-switcher');
                     if (switcher) switcher.remove();
 
-                    const reply = await getAIResponse(userMsg.content);
+                    const reply = await getAIResponse(userMsgContent);
 
                     if (!msg.versions) msg.versions = [msg.content];
                     msg.versions.push(reply);
@@ -1755,7 +2040,6 @@
                     updateLayoutMode();
                     updateSyncStatus('syncing', '正在连接云端...');
 
-                    // 先从本地快速恢复速度设置（避免加载云端时的闪烁）
                     const localSaved = JSON.parse(localStorage.getItem('chat-settings') || '{}');
                     if (localSaved.typewriterSpeed !== undefined) {
                         typewriterSpeed = localSaved.typewriterSpeed;
@@ -1763,16 +2047,21 @@
                     typewriterSpeedInput.value = typewriterSpeed;
                     speedDisplay.textContent = typewriterSpeed + 'ms';
 
-                    // 然后从云端加载（会覆盖本地值，如果有更新的云端数据）
+                    // 【新增】从本地加载回复模式
+                    if (localSaved.replyMode !== undefined) {
+                        replyMode = localSaved.replyMode;
+                        replyModeToggle.checked = (replyMode === 'manual');
+                    }
+
                     await loadSettingsFromCloud();
                     await loadMessagesFromCloud();
                     renderStoredMessages();
                     setupRealtimeSubscription();
 
-                    // 确保速度显示与最终值一致
                     typewriterSpeedInput.value = typewriterSpeed;
                     speedDisplay.textContent = typewriterSpeed + 'ms';
-                    console.log('✅ 应用初始化完成，打字速度：' + typewriterSpeed + 'ms/字符');
+                    updatePendingIndicator();
+                    console.log('✅ 应用初始化完成，打字速度：' + typewriterSpeed + 'ms/字符，回复模式：' + replyMode);
                 }
 
                 init();
