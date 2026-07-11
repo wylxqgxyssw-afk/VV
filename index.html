@@ -111,56 +111,83 @@
             padding-bottom: 12px;
         }
 
-        /* ========== Pending提示条样式 ========== */
-        .pending-indicator {
-            flex-shrink: 0;
-            background: #0a0a0a;
-            border-top: 1px solid #3a3a00;
-            border-bottom: 1px solid #3a3a00;
-            padding: 6px 12px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 8px;
-            animation: pendingPulse 2s ease-in-out infinite;
-            cursor: default;
+        /* ========== 召唤按钮在设置面板中的样式 ========== */
+        #summon-area {
+            transition: all 0.3s ease;
         }
-        @keyframes pendingPulse {
-            0%,
-            100% {
-                border-top-color: #3a3a00;
-            }
-            50% {
-                border-top-color: #8a8a00;
-            }
-        }
-        .pending-indicator .pending-text {
-            font-size: 11px;
-            color: #ccaa00;
+        #summon-btn {
+            transition: all 0.2s ease;
             white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .pending-indicator .trigger-ai-btn {
+            letter-spacing: 0.3px;
             flex-shrink: 0;
+        }
+        #summon-btn.active-btn {
             background: #b8860b;
             color: #000;
             border: none;
-            border-radius: 14px;
-            padding: 5px 12px;
-            font-size: 11px;
-            font-weight: 600;
             cursor: pointer;
-            white-space: nowrap;
-            transition: all 0.2s;
-            letter-spacing: 0.3px;
+            animation: summonPulse 2s ease-in-out infinite;
+            font-weight: 600;
         }
-        .pending-indicator .trigger-ai-btn:hover {
+        #summon-btn.active-btn:hover {
             background: #d4a017;
             transform: scale(1.03);
         }
-        .pending-indicator .trigger-ai-btn:active {
+        #summon-btn.active-btn:active {
             transform: scale(0.96);
+        }
+        #summon-btn.typing-btn {
+            background: #333;
+            color: #aaa;
+            cursor: not-allowed;
+            border: 1px solid #555;
+        }
+        #summon-btn.idle-btn {
+            background: #2a2a2a;
+            color: #666;
+            cursor: not-allowed;
+            border: 1px solid #333;
+        }
+        @keyframes summonPulse {
+            0%,
+            100% {
+                box-shadow: 0 0 0 0 rgba(184, 134, 11, 0.4);
+            }
+            50% {
+                box-shadow: 0 0 0 8px rgba(184, 134, 11, 0);
+            }
+        }
+        #summon-status-text {
+            font-size: 12px;
+            line-height: 1.4;
+            min-width: 0;
+        }
+        #summon-status-text.has-pending {
+            color: #ccaa00;
+            font-weight: 500;
+        }
+
+        /* 菜单按钮红点提示 */
+        #pending-dot {
+            position: absolute;
+            top: -2px;
+            right: -3px;
+            width: 9px;
+            height: 9px;
+            background: #ff4444;
+            border-radius: 50%;
+            border: 1.5px solid #000;
+            pointer-events: none;
+            animation: dotPulse 1.5s ease-in-out infinite;
+        }
+        @keyframes dotPulse {
+            0%,
+            100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.5);
+            }
         }
 
         .mobile-input-bar {
@@ -403,9 +430,62 @@
             align-items: center;
             justify-content: center;
             transition: color 0.2s;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 1.5px solid #444;
+            flex-shrink: 0;
         }
         #file-upload-btn:hover {
             color: #fff;
+            border-color: #888;
+        }
+        #file-upload-btn i {
+            font-size: 16px;
+        }
+
+        #send-btn {
+            background: #165DFF;
+            border: none;
+            color: #fff;
+            cursor: pointer;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.2s;
+            font-size: 16px;
+        }
+        #send-btn:hover {
+            background: #3b7bff;
+            transform: scale(1.05);
+        }
+        #send-btn:active {
+            transform: scale(0.95);
+        }
+        #send-btn i {
+            font-size: 16px;
+            line-height: 1;
+        }
+
+        #msg-input {
+            background: #121212;
+            border: 1.5px solid #2a2a2a;
+            border-radius: 20px;
+            padding: 10px 16px;
+            color: #fff;
+            outline: none;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        #msg-input:focus {
+            border-color: #444;
+        }
+        #msg-input::placeholder {
+            color: #555;
         }
 
         .version-switcher {
@@ -492,6 +572,12 @@
             color: #666;
             margin-top: 2px;
         }
+
+        /* ========== 移动端输入栏无分割线 ========== */
+        .mobile-input-bar {
+            border-top: none;
+            background: #000;
+        }
     </style>
 </head>
 <body>
@@ -509,7 +595,7 @@
             </div>
             <textarea class="w-full h-40 bg-dark border border-gray-800 rounded p-3 text-white outline-none resize-none mb-2" placeholder="输入剧本内容，AI会根据剧本回答问题
 
-支持内联样式标记（见下方说明）" id="agent-prompt"></textarea>
+        支持内联样式标记（见下方说明）" id="agent-prompt"></textarea>
             <button class="w-full bg-gray-800 rounded p-2 mb-3 text-sm" id="toggle-mark-help">
                 <i class="fa fa-info-circle mr-1"></i> 查看样式标记写法
             </button>
@@ -611,7 +697,7 @@
                 </div>
             </div>
 
-            <!-- ========== 【新增】回复模式切换开关 ========== -->
+            <!-- ========== AI回复模式切换开关 ========== -->
             <div class="bg-dark border border-gray-800 rounded p-3 mb-3">
                 <h3 class="text-sm font-medium mb-2">🤖 AI回复模式</h3>
                 <div class="flex items-center justify-between mb-1">
@@ -623,11 +709,21 @@
                 </div>
                 <p class="mode-toggle-desc">
                     <strong>关闭</strong>（默认）：发送消息后AI<strong>自动</strong>回复<br>
-                    <strong>开启</strong>：发送消息后AI<strong>不回复</strong>，可连续发送多条消息，点击输入框上方的<strong>「⚡召唤AI回复」</strong>按钮后AI才回复
+                    <strong>开启</strong>：发送消息后AI<strong>不回复</strong>，可连续发送多条消息，点击下方的<strong>「⚡召唤AI回复」</strong>按钮后AI才回复
                 </p>
                 <p class="mode-toggle-desc mt-1 text-yellow-500/70">
                     💡 手动模式示例：你可以先发"你好"，再发"介绍一下你自己"，然后点击召唤按钮，AI会一次性看到这两条消息并回复。
                 </p>
+
+                <!-- ========== 【核心改动】召唤AI回复按钮（从聊天区移到了设置面板） ========== -->
+                <div id="summon-area" class="mt-3 pt-3 border-t border-gray-700" style="display:none;">
+                    <div class="flex items-center justify-between gap-3 flex-wrap">
+                        <span id="summon-status-text" class="text-xs text-gray-400">暂无待回复消息</span>
+                        <button id="summon-btn" class="px-4 py-2 rounded-lg text-sm font-medium idle-btn" disabled>
+                            ⚡ 召唤AI回复
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <button class="w-full bg-gray-800 rounded p-2 mb-3 text-sm" id="toggle-settings">
@@ -658,7 +754,7 @@
                         <input type="number" id="chat-h-padding" value="16" class="w-full bg-darker rounded p-2 text-white style-live-input">
                     </div>
 
-                    <!-- ========== AI回复打字速度调节器 ========== -->
+                    <!-- AI回复打字速度调节器 -->
                     <div class="border-t border-gray-700 pt-3 mt-3">
                         <div class="flex items-center justify-between mb-1">
                             <label class="text-xs text-gray-400 font-medium">⚡ AI回复打字速度</label>
@@ -697,26 +793,25 @@
         <div class="chat-main-panel bg-dark">
             <div class="chat-header p-3 border-b border-gray-800 flex items-center justify-between">
                 <div class="flex items-center gap-3">
-                    <button class="text-gray-400 hover:text-white mr-1" id="phone-open-set"><i class="fa fa-bars"></i></button>
+                    <button class="text-gray-400 hover:text-white mr-1 relative" id="phone-open-set">
+                        <i class="fa fa-bars"></i>
+                        <span id="pending-dot" style="display:none;"></span>
+                    </button>
                     <div id="agent-avatar" class="w-10 h-10 bg-accent/20 flex items-center justify-center overflow-hidden rounded-lg"><span class="avatar-placeholder">AI</span></div>
                     <span id="agent-name-display" class="font-medium name-tag text-white">剧本助手 <i class="fa fa-pencil"></i></span>
                 </div>
             </div>
             <div class="flex-1 overflow-y-auto scrollbar-hide" id="chat-box"></div>
 
-            <!-- ========== 【新增】Pending提示条（手动模式下的召唤AI按钮） ========== -->
-            <div id="pending-indicator" class="pending-indicator" style="display:none;">
-                <span class="pending-text" id="pending-count-text">📩 已发送 1 条消息，AI等待召唤中</span>
-                <button class="trigger-ai-btn" id="trigger-ai-btn">⚡ 召唤AI回复</button>
-            </div>
-
-            <!-- 底部输入栏 -->
+            <!-- 底部输入栏（无分割线，参考DeepSeek/豆包风格） -->
             <div class="mobile-input-bar" id="mobile-input-area">
                 <button id="file-upload-btn" title="上传文件/图片">
-                    <i class="fa fa-plus-circle fa-lg"></i>
+                    <i class="fa fa-plus"></i>
                 </button>
-                <input type="text" placeholder="输入消息..." class="flex-1 bg-darker border border-gray-800 rounded-lg p-3 text-white outline-none" id="msg-input">
-                <button class="bg-accent px-5 rounded-lg" id="send-btn"><i class="fa fa-arrow-up"></i></button>
+                <input type="text" placeholder="输入消息..." class="flex-1" id="msg-input">
+                <button id="send-btn">
+                    <i class="fa fa-arrow-up"></i>
+                </button>
             </div>
             <input type="file" id="file-input" style="display:none" accept="*/*">
         </div>
@@ -838,11 +933,13 @@
                 const typewriterSpeedInput = document.getElementById('typewriter-speed');
                 const speedDisplay = document.getElementById('speed-display');
 
-                // ========== 【新增】回复模式相关元素 ==========
+                // ========== 回复模式相关元素 ==========
                 const replyModeToggle = document.getElementById('reply-mode-toggle');
-                const pendingIndicator = document.getElementById('pending-indicator');
-                const pendingCountText = document.getElementById('pending-count-text');
-                const triggerAiBtn = document.getElementById('trigger-ai-btn');
+                // 【改动】召唤按钮相关元素现在在设置面板中
+                const summonArea = document.getElementById('summon-area');
+                const summonStatusText = document.getElementById('summon-status-text');
+                const summonBtn = document.getElementById('summon-btn');
+                const pendingDot = document.getElementById('pending-dot');
 
                 let currentAgentName = '剧本助手';
                 let currentUserName = '我';
@@ -857,7 +954,7 @@
                 // ========== 打字机速度变量（毫秒/字符），默认30ms ==========
                 let typewriterSpeed = 30;
 
-                // ========== 【新增】回复模式：'auto'=自动回复，'manual'=手动触发回复 ==========
+                // ========== 回复模式：'auto'=自动回复，'manual'=手动触发回复 ==========
                 let replyMode = 'auto';
                 // 记录最后一次AI回复在messages数组中的索引，用于计算pending消息
                 let lastAIResponseIndex = -1;
@@ -956,6 +1053,8 @@
                     if (leftPanel.classList.contains('show') && document.body.classList.contains('is-large-screen')) {
                         applyPanelWidth();
                     }
+                    // 打开设置面板时更新召唤按钮状态
+                    updatePendingIndicator();
                     setTimeout(() => { chatBox.scrollTop = chatBox.scrollHeight; }, 300);
                 }
 
@@ -979,7 +1078,7 @@
                 }
                 showVersionRegenerateCheckbox.addEventListener('change', updateVersionRegenerateVisibility);
 
-                // ========== 【新增】回复模式切换事件 ==========
+                // ========== 回复模式切换事件 ==========
                 replyModeToggle.addEventListener('change', () => {
                     replyMode = replyModeToggle.checked ? 'manual' : 'auto';
                     updatePendingIndicator();
@@ -996,8 +1095,8 @@
                     console.log('🔄 回复模式切换为：' + (replyMode === 'auto' ? '自动回复' : '手动触发回复'));
                 });
 
-                // ========== 【新增】召唤AI回复按钮事件 ==========
-                triggerAiBtn.addEventListener('click', () => {
+                // ========== 【核心改动】召唤AI回复按钮事件（现在在设置面板中） ==========
+                summonBtn.addEventListener('click', () => {
                     if (isTyping) {
                         console.log('⏳ AI正在回复中，请等待...');
                         return;
@@ -1155,7 +1254,6 @@
                             loadMessagesFromLocal();
                             if (messages.length > 0) await syncLocalMessagesToCloud();
                         }
-                        // 【新增】更新lastAIResponseIndex
                         updateLastAIResponseIndex();
                         return true;
                     } catch (err) {
@@ -1274,10 +1372,10 @@
                     const total = msg.versions.length;
                     const current = msg.currentVersion + 1;
                     switcher.innerHTML = `
-                        <button class="version-prev" ${current === 1 ? 'disabled' : ''}><</button>
-                        <span>${current}/${total}</span>
-                        <button class="version-next" ${current === total ? 'disabled' : ''}>></button>
-                    `;
+                            <button class="version-prev" ${current === 1 ? 'disabled' : ''}><</button>
+                            <span>${current}/${total}</span>
+                            <button class="version-next" ${current === total ? 'disabled' : ''}>></button>
+                        `;
                     switcher.querySelector('.version-prev').addEventListener('click', (e) => {
                         e.stopPropagation();
                         if (msg.currentVersion > 0) {
@@ -1341,18 +1439,18 @@
 
                     if (isUser) {
                         div.innerHTML = `
-                            <div class="max-w-[75%]">
-                                <span class="msg-name-label text-right">${senderName}</span>
-                                <div class="inline-block rounded-lg chat-bubble-content user-bubble">${content}</div>
-                            </div>
-                            <div class="msg-avatar">${avatarHTML}</div>`;
+                                <div class="max-w-[75%]">
+                                    <span class="msg-name-label text-right">${senderName}</span>
+                                    <div class="inline-block rounded-lg chat-bubble-content user-bubble">${content}</div>
+                                </div>
+                                <div class="msg-avatar">${avatarHTML}</div>`;
                     } else {
                         div.innerHTML = `
-                            <div class="msg-avatar">${avatarHTML}</div>
-                            <div class="max-w-[75%]">
-                                <span class="msg-name-label">${senderName}</span>
-                                <div class="inline-block rounded-lg chat-bubble-content ai-bubble">${content}</div>
-                            </div>`;
+                                <div class="msg-avatar">${avatarHTML}</div>
+                                <div class="max-w-[75%]">
+                                    <span class="msg-name-label">${senderName}</span>
+                                    <div class="inline-block rounded-lg chat-bubble-content ai-bubble">${content}</div>
+                                </div>`;
                     }
 
                     chatBox.appendChild(div);
@@ -1380,6 +1478,8 @@
                     let output = '';
                     bubble.innerHTML = '';
                     isTyping = true;
+                    // 更新召唤按钮状态为"回复中"
+                    updatePendingIndicator();
 
                     const currentSpeed = typewriterSpeed;
                     console.log('🚀 打字机启动，速度：' + currentSpeed + 'ms/字符');
@@ -1430,7 +1530,7 @@
                             }
                             addRegenButtonToMessage(msgElement);
                             updateVersionSwitcher(msgElement, msgIndex);
-                            // 【新增】AI回复完成后更新lastAIResponseIndex
+                            // AI回复完成后更新lastAIResponseIndex
                             updateLastAIResponseIndex();
                             chatBox.scrollTop = chatBox.scrollHeight;
                         }
@@ -1481,7 +1581,6 @@
 
                     addMessageToDOM(role, content, animate, idx);
 
-                    // 【新增】如果添加的是AI回复，更新lastAIResponseIndex
                     if (role === 'assistant' && !animate) {
                         updateLastAIResponseIndex();
                     }
@@ -1531,22 +1630,22 @@
                     const script = agentPrompt.value.trim();
                     if (!script) return "请先在左侧设置中填写剧本内容。";
                     const systemPrompt = `
-                你是一个严格按照剧本回答问题的助手。
-                【最高优先级规则，必须100%遵守】
-
-                1. 所有回答只能来自下面的剧本内容，绝对不能编造任何剧本里没有的信息。
-                2. 如果用户的问题剧本里没有答案，只说"这个我暂时不知道哦"。
-                3. 【格式铁则】
-                    - 所有动作、神态、语气、场景备注，必须用中文方括号【】完整包裹，放在句子对应位置，绝对不能直接写在正文里。
-                    - 需要重点强调的关键词，可以加粗显示。
-                    - 需要换行的地方直接换行。
-                4. 正确示例：【挑眉轻笑】你说什么？我没听清。
-                5. 错误示例：挑眉笑着说："你说什么？我没听清。"
-                6. 不要加任何剧本以外的解释或客套话。
-                --- 剧本开始 ---
-                ${script}
-                --- 剧本结束 ---
-                `;
+                    你是一个严格按照剧本回答问题的助手。
+                    【最高优先级规则，必须100%遵守】
+        
+                    1. 所有回答只能来自下面的剧本内容，绝对不能编造任何剧本里没有的信息。
+                    2. 如果用户的问题剧本里没有答案，只说"这个我暂时不知道哦"。
+                    3. 【格式铁则】
+                        - 所有动作、神态、语气、场景备注，必须用中文方括号【】完整包裹，放在句子对应位置，绝对不能直接写在正文里。
+                        - 需要重点强调的关键词，可以加粗显示。
+                        - 需要换行的地方直接换行。
+                    4. 正确示例：【挑眉轻笑】你说什么？我没听清。
+                    5. 错误示例：挑眉笑着说："你说什么？我没听清。"
+                    6. 不要加任何剧本以外的解释或客套话。
+                    --- 剧本开始 ---
+                    ${script}
+                    --- 剧本结束 ---
+                    `;
                     try {
                         const response = await fetch(AI_PROXY_URL, {
                             method: 'POST',
@@ -1569,7 +1668,7 @@
                     }
                 }
 
-                // ========== 【新增】获取pending用户消息数量 ==========
+                // ========== 获取pending用户消息数量 ==========
                 function getPendingCount() {
                     let count = 0;
                     for (let i = lastAIResponseIndex + 1; i < messages.length; i++) {
@@ -1580,7 +1679,7 @@
                     return count;
                 }
 
-                // ========== 【新增】获取pending用户消息内容（合并） ==========
+                // ========== 获取pending用户消息内容（合并） ==========
                 function getPendingUserMessagesContent() {
                     const pending = [];
                     for (let i = lastAIResponseIndex + 1; i < messages.length; i++) {
@@ -1591,18 +1690,57 @@
                     return pending.join('\n\n');
                 }
 
-                // ========== 【新增】更新pending提示条显示 ==========
+                // ========== 【核心改动】更新召唤按钮状态（在设置面板中）和菜单红点 ==========
                 function updatePendingIndicator() {
                     const count = getPendingCount();
-                    if (replyMode === 'manual' && count > 0 && !isTyping) {
-                        pendingIndicator.style.display = 'flex';
-                        pendingCountText.textContent = '📩 已发送 ' + count + ' 条消息，AI等待召唤中';
-                    } else {
-                        pendingIndicator.style.display = 'none';
+                    const isManual = replyMode === 'manual';
+
+                    // 处理设置面板中的召唤区域
+                    if (summonArea) {
+                        if (isManual) {
+                            summonArea.style.display = 'block';
+                            // 移除所有旧的状态类
+                            summonBtn.classList.remove('active-btn', 'typing-btn', 'idle-btn');
+
+                            if (isTyping) {
+                                // AI正在回复中
+                                summonStatusText.textContent = '⏳ AI正在回复中...';
+                                summonStatusText.className = 'text-xs text-gray-400';
+                                summonBtn.textContent = '⏳ 回复中...';
+                                summonBtn.classList.add('typing-btn');
+                                summonBtn.disabled = true;
+                            } else if (count > 0) {
+                                // 有pending消息，可以召唤
+                                summonStatusText.textContent = '📩 已发送 ' + count + ' 条消息，AI等待召唤中';
+                                summonStatusText.className = 'text-xs has-pending';
+                                summonBtn.textContent = '⚡ 召唤AI回复';
+                                summonBtn.classList.add('active-btn');
+                                summonBtn.disabled = false;
+                            } else {
+                                // 手动模式但无pending消息
+                                summonStatusText.textContent = '暂无待回复消息，发送消息后可召唤AI';
+                                summonStatusText.className = 'text-xs text-gray-400';
+                                summonBtn.textContent = '⚡ 召唤AI回复';
+                                summonBtn.classList.add('idle-btn');
+                                summonBtn.disabled = true;
+                            }
+                        } else {
+                            // 自动模式，隐藏召唤区域
+                            summonArea.style.display = 'none';
+                        }
+                    }
+
+                    // 处理菜单按钮红点提示（手动模式且有pending且不在回复中时显示）
+                    if (pendingDot) {
+                        if (isManual && count > 0 && !isTyping) {
+                            pendingDot.style.display = 'block';
+                        } else {
+                            pendingDot.style.display = 'none';
+                        }
                     }
                 }
 
-                // ========== 【新增】更新lastAIResponseIndex ==========
+                // ========== 更新lastAIResponseIndex ==========
                 function updateLastAIResponseIndex() {
                     let lastIdx = -1;
                     for (let i = messages.length - 1; i >= 0; i--) {
@@ -1615,7 +1753,7 @@
                     updatePendingIndicator();
                 }
 
-                // ========== 【新增】手动触发AI回复 ==========
+                // ========== 手动触发AI回复 ==========
                 async function triggerAIReply() {
                     if (isTyping) return;
                     const pendingContent = getPendingUserMessagesContent();
@@ -1626,19 +1764,19 @@
                     const count = getPendingCount();
                     console.log('⚡ 召唤AI回复，共' + count + '条pending消息');
 
-                    // 隐藏pending提示条
-                    pendingIndicator.style.display = 'none';
+                    // 立即更新召唤按钮状态为"回复中"
+                    updatePendingIndicator();
 
                     // 显示loading
                     const loadingDiv = document.createElement('div');
                     loadingDiv.className = 'message-row flex mb-4 justify-start items-start gap-2';
                     loadingDiv.setAttribute('data-loading', 'true');
                     loadingDiv.innerHTML = `
-                         <div class="msg-avatar">${agentAvatarUrl ? `<img src="${agentAvatarUrl}" class="avatar-img">` : (currentAgentName || 'AI').charAt(0)}</div>
-                         <div class="max-w-[75%]">
-                             <span class="msg-name-label">${currentAgentName}</span>
-                             <div class="inline-block rounded-lg ai-bubble chat-bubble-content">思考中...</div>
-                         </div>`;
+                             <div class="msg-avatar">${agentAvatarUrl ? `<img src="${agentAvatarUrl}" class="avatar-img">` : (currentAgentName || 'AI').charAt(0)}</div>
+                             <div class="max-w-[75%]">
+                                 <span class="msg-name-label">${currentAgentName}</span>
+                                 <div class="inline-block rounded-lg ai-bubble chat-bubble-content">思考中...</div>
+                             </div>`;
                     chatBox.appendChild(loadingDiv);
                     chatBox.scrollTop = chatBox.scrollHeight;
 
@@ -1654,7 +1792,7 @@
                         local_id,
                         versions: [reply],
                         currentVersion: 0,
-                        mergedUserMessage: pendingContent // 【重要】存储合并后的用户消息，用于重新生成
+                        mergedUserMessage: pendingContent
                     };
                     messages.push(msg);
                     const idx = messages.length - 1;
@@ -1662,7 +1800,7 @@
                     addMessageToDOM('assistant', reply, true, idx);
                 }
 
-                // ========== 修改sendMessage函数以支持手动模式 ==========
+                // ========== 发送消息函数 ==========
                 async function sendMessage() {
                     const value = msgInput.value.trim();
                     if (!value) return;
@@ -1671,16 +1809,16 @@
                     msgInput.value = '';
 
                     if (replyMode === 'auto') {
-                        // 【正常模式】自动触发AI回复
+                        // 自动模式：自动触发AI回复
                         const loadingDiv = document.createElement('div');
                         loadingDiv.className = 'message-row flex mb-4 justify-start items-start gap-2';
                         loadingDiv.setAttribute('data-loading', 'true');
                         loadingDiv.innerHTML = `
-                             <div class="msg-avatar">${agentAvatarUrl ? `<img src="${agentAvatarUrl}" class="avatar-img">` : (currentAgentName || 'AI').charAt(0)}</div>
-                             <div class="max-w-[75%]">
-                                 <span class="msg-name-label">${currentAgentName}</span>
-                                 <div class="inline-block rounded-lg ai-bubble chat-bubble-content">思考中...</div>
-                             </div>`;
+                                 <div class="msg-avatar">${agentAvatarUrl ? `<img src="${agentAvatarUrl}" class="avatar-img">` : (currentAgentName || 'AI').charAt(0)}</div>
+                                 <div class="max-w-[75%]">
+                                     <span class="msg-name-label">${currentAgentName}</span>
+                                     <div class="inline-block rounded-lg ai-bubble chat-bubble-content">思考中...</div>
+                                 </div>`;
                         chatBox.appendChild(loadingDiv);
                         chatBox.scrollTop = chatBox.scrollHeight;
 
@@ -1688,9 +1826,9 @@
                         if (chatBox.contains(loadingDiv)) chatBox.removeChild(loadingDiv);
                         await addMessage('assistant', reply, true);
                     } else {
-                        // 【手动模式】不自动触发AI回复，更新pending提示条
+                        // 手动模式：不自动触发AI回复，更新召唤按钮状态
                         updatePendingIndicator();
-                        console.log('📩 手动模式：消息已发送，AI等待召唤中。已发送' + getPendingCount() + '条消息。');
+                        console.log('📩 手动模式：消息已发送，AI等待召唤中。已发送' + getPendingCount() + '条消息。请打开左侧设置面板点击召唤按钮。');
                     }
                 }
 
@@ -1700,7 +1838,6 @@
                     const { error } = await supabase.from('chat_messages').delete().eq('user_id', USER_ID);
                     if (error) console.error('云端清空失败', error);
                     chatBox.innerHTML = '';
-                    // 移除所有loading元素
                     chatBox.querySelectorAll('[data-loading="true"]').forEach(el => el.remove());
                     addMessageToDOM('assistant', '聊天记录已清空。', false, 0);
                     lastAIResponseIndex = 0;
@@ -1759,7 +1896,6 @@
                                 typewriterSpeedInput.value = typewriterSpeed;
                                 speedDisplay.textContent = typewriterSpeed + 'ms';
                             }
-                            // ========== 【新增】加载回复模式设置 ==========
                             if (data.reply_mode !== undefined && data.reply_mode !== null) {
                                 replyMode = data.reply_mode;
                                 replyModeToggle.checked = (replyMode === 'manual');
@@ -1828,7 +1964,6 @@
                         typewriterSpeedInput.value = typewriterSpeed;
                         speedDisplay.textContent = typewriterSpeed + 'ms';
                     }
-                    // ========== 【新增】加载回复模式设置 ==========
                     if (saved.replyMode !== undefined) {
                         replyMode = saved.replyMode;
                         replyModeToggle.checked = (replyMode === 'manual');
@@ -1874,7 +2009,7 @@
                         emph_weight: stylePresets.emph.weight,
                         show_version_regenerate: showVersionRegenerateCheckbox.checked,
                         typewriter_speed: typewriterSpeed,
-                        reply_mode: replyMode, // ========== 【新增】保存回复模式 ==========
+                        reply_mode: replyMode,
                         updated_at: new Date().toISOString()
                     };
                     localStorage.setItem('chat-settings', JSON.stringify({
@@ -1907,7 +2042,6 @@
                     const msg = messages[index];
                     if (!msg || msg.role !== 'assistant') return;
 
-                    // 【修改】优先使用mergedUserMessage（手动模式下的合并消息）
                     let userMsgContent = '';
                     if (msg.mergedUserMessage) {
                         userMsgContent = msg.mergedUserMessage;
@@ -1950,7 +2084,7 @@
                     } else if (file.type.startsWith('image/')) {
                         const reader = new FileReader();
                         reader.onload = (ev) => {
-                            msgInput.value = `图片:${[file.name]}`;
+                            msgInput.value = `图片:${file.name}`;
                             msgInput.focus();
                         };
                         reader.readAsDataURL(file);
@@ -2047,7 +2181,6 @@
                     typewriterSpeedInput.value = typewriterSpeed;
                     speedDisplay.textContent = typewriterSpeed + 'ms';
 
-                    // 【新增】从本地加载回复模式
                     if (localSaved.replyMode !== undefined) {
                         replyMode = localSaved.replyMode;
                         replyModeToggle.checked = (replyMode === 'manual');
