@@ -43,8 +43,10 @@
             --bubble-py: 8px;
             --chat-h-padding: 16px;
             --safe-bottom: env(safe-area-inset-bottom, 0px);
-            --panel-width: 380px;
+            --left-panel-width: 300px;
+            --middle-panel-width: 350px;
             --panel-height: 50vh;
+            --middle-panel-height: 40vh;
         }
 
         * {
@@ -78,6 +80,7 @@
             flex-direction: column;
         }
 
+        /* ========== 左面板（设置） ========== */
         .left-set-panel {
             width: 100%;
             height: 0;
@@ -94,6 +97,24 @@
             padding: 24px 16px;
         }
 
+        /* ========== 中间面板（对话稿子） ========== */
+        .middle-draft-panel {
+            width: 100%;
+            height: 0;
+            flex-shrink: 0;
+            background: #0d0d0d;
+            border-bottom: 1px solid #2a2a2a;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 0 16px;
+            transition: height 0.3s ease, padding 0.3s ease;
+        }
+        .middle-draft-panel.show {
+            height: var(--middle-panel-height);
+            padding: 20px 16px;
+        }
+
+        /* ========== 聊天主面板 ========== */
         .chat-main-panel {
             flex: 1;
             display: flex;
@@ -111,7 +132,7 @@
             padding-bottom: 12px;
         }
 
-        /* ========== 召唤按钮在设置面板中的样式 ========== */
+        /* ========== 召唤按钮样式 ========== */
         #summon-area {
             transition: all 0.3s ease;
         }
@@ -167,7 +188,7 @@
             font-weight: 500;
         }
 
-        /* 菜单按钮红点提示 */
+        /* 菜单按钮红点 */
         #pending-dot {
             position: absolute;
             top: -2px;
@@ -201,20 +222,37 @@
             align-items: center;
         }
 
+        /* ========== 大屏三栏布局 ========== */
         body.is-large-screen .layout-container {
             flex-direction: row;
         }
         body.is-large-screen .left-set-panel {
-            width: 0;
+            width: var(--left-panel-width);
             height: 100%;
             border-right: 1px solid #333;
             border-bottom: none;
             transition: width 0.3s ease, padding 0.3s ease;
+            padding: 24px 16px;
+            overflow-y: auto;
         }
         body.is-large-screen .left-set-panel.show {
-            width: var(--panel-width);
+            width: var(--left-panel-width);
             height: 100%;
             padding: 24px 16px;
+        }
+        body.is-large-screen .middle-draft-panel {
+            width: var(--middle-panel-width);
+            height: 100%;
+            border-right: 1px solid #2a2a2a;
+            border-bottom: none;
+            transition: width 0.3s ease, padding 0.3s ease;
+            padding: 20px 16px;
+            overflow-y: auto;
+        }
+        body.is-large-screen .middle-draft-panel.show {
+            width: var(--middle-panel-width);
+            height: 100%;
+            padding: 20px 16px;
         }
         body.is-large-screen .chat-main-panel {
             flex: 1;
@@ -223,7 +261,11 @@
         body.is-large-screen #close-drawer-btn {
             display: none;
         }
+        body.is-large-screen #close-draft-btn {
+            display: none;
+        }
 
+        /* ========== 分隔条 ========== */
         .panel-resizer {
             display: none;
         }
@@ -240,6 +282,7 @@
             background: #165DFF;
         }
 
+        /* 滚动条隐藏 */
         .scrollbar-hide::-webkit-scrollbar {
             display: none;
         }
@@ -411,6 +454,10 @@
             display: block;
             margin-left: auto;
         }
+        #close-draft-btn {
+            display: block;
+            margin-left: auto;
+        }
 
         .regenerate-btn-container {
             opacity: 0.7;
@@ -520,7 +567,7 @@
             display: none !important;
         }
 
-        /* ========== 速度调节器样式 ========== */
+        /* 速度调节器 */
         #typewriter-speed {
             -webkit-appearance: none;
             appearance: none;
@@ -560,7 +607,7 @@
             text-align: right;
         }
 
-        /* ========== 回复模式开关样式 ========== */
+        /* 回复模式开关 */
         .mode-toggle-label {
             font-size: 12px;
             color: #ccc;
@@ -573,16 +620,61 @@
             margin-top: 2px;
         }
 
-        /* ========== 移动端输入栏无分割线 ========== */
         .mobile-input-bar {
             border-top: none;
             background: #000;
+        }
+
+        /* ========== 中间面板特有样式 ========== */
+        #script-draft-textarea {
+            background: #0a0a0a;
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+            color: #ddd;
+            font-size: 13px;
+            line-height: 1.7;
+            resize: none;
+            outline: none;
+            font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+            transition: border-color 0.2s;
+        }
+        #script-draft-textarea:focus {
+            border-color: #555;
+        }
+        #script-draft-textarea::placeholder {
+            color: #444;
+        }
+        .draft-header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        .draft-save-btn {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            color: #ccc;
+            border-radius: 6px;
+            padding: 6px 14px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+        .draft-save-btn:hover {
+            background: #2a2a2a;
+            color: #fff;
+            border-color: #555;
+        }
+        .draft-status-text {
+            font-size: 10px;
+            color: #666;
+            margin-top: 6px;
         }
     </style>
 </head>
 <body>
     <div class="layout-container">
-        <!-- 左侧/顶部设置面板 -->
+        <!-- ========== 左侧：设置面板 ========== -->
         <div class="left-set-panel scrollbar-hide" id="left-panel">
             <button class="text-gray-400 hover:text-white mb-4" id="close-drawer-btn">
                 <i class="fa fa-times fa-lg"></i>
@@ -595,7 +687,7 @@
             </div>
             <textarea class="w-full h-40 bg-dark border border-gray-800 rounded p-3 text-white outline-none resize-none mb-2" placeholder="输入剧本内容，AI会根据剧本回答问题
 
-        支持内联样式标记（见下方说明）" id="agent-prompt"></textarea>
+支持内联样式标记（见下方说明）" id="agent-prompt"></textarea>
             <button class="w-full bg-gray-800 rounded p-2 mb-3 text-sm" id="toggle-mark-help">
                 <i class="fa fa-info-circle mr-1"></i> 查看样式标记写法
             </button>
@@ -697,7 +789,7 @@
                 </div>
             </div>
 
-            <!-- ========== AI回复模式切换开关 ========== -->
+            <!-- AI回复模式切换 -->
             <div class="bg-dark border border-gray-800 rounded p-3 mb-3">
                 <h3 class="text-sm font-medium mb-2">🤖 AI回复模式</h3>
                 <div class="flex items-center justify-between mb-1">
@@ -715,7 +807,7 @@
                     💡 手动模式示例：你可以先发"你好"，再发"介绍一下你自己"，然后点击召唤按钮，AI会一次性看到这两条消息并回复。
                 </p>
 
-                <!-- ========== 【核心改动】召唤AI回复按钮（从聊天区移到了设置面板） ========== -->
+                <!-- 召唤AI回复按钮 -->
                 <div id="summon-area" class="mt-3 pt-3 border-t border-gray-700" style="display:none;">
                     <div class="flex items-center justify-between gap-3 flex-wrap">
                         <span id="summon-status-text" class="text-xs text-gray-400">暂无待回复消息</span>
@@ -766,10 +858,10 @@
                             <span>标准(30ms)</span>
                             <span>🐢极慢(100ms)</span>
                         </div>
-                        <p class="text-[10px] text-gray-500 mt-1">数值越小越快，5=极快(约200字/秒)，30=标准，100=极慢(约10字/秒)。<strong>仅对新消息生效</strong>，当前正在输出的消息速度不变。</p>
+                        <p class="text-[10px] text-gray-500 mt-1">数值越小越快，5=极快(约200字/秒)，30=标准，100=极慢(约10字/秒)。<strong>仅对新消息生效</strong>。</p>
                     </div>
 
-                    <!-- 隐藏版本与重新生成功能的开关 -->
+                    <!-- 隐藏版本与重新生成 -->
                     <div class="border-t border-gray-700 pt-3 mt-3">
                         <div class="flex items-center justify-between">
                             <label class="text-xs text-gray-400">显示版本切换 & 重新生成</label>
@@ -786,10 +878,41 @@
             <p class="text-xs text-gray-500 mt-2 text-center" id="sync-status-text">数据自动云端同步，多端一致</p>
         </div>
 
-        <!-- 拖拽分隔条 -->
-        <div id="panel-resizer" class="panel-resizer"></div>
+        <!-- 分隔条1（左-中之间） -->
+        <div id="panel-resizer-left" class="panel-resizer"></div>
 
-        <!-- 聊天主面板 -->
+        <!-- ========== 中间：对话稿子面板 ========== -->
+        <div class="middle-draft-panel scrollbar-hide" id="middle-panel">
+            <button class="text-gray-400 hover:text-white mb-2" id="close-draft-btn">
+                <i class="fa fa-times fa-lg"></i>
+            </button>
+            <div class="draft-header-row">
+                <h2 class="text-lg font-bold text-white">📝 对话稿子</h2>
+                <button class="draft-save-btn" id="draft-save-btn">
+                    <i class="fa fa-cloud-upload mr-1"></i>保存稿子
+                </button>
+            </div>
+            <p class="text-xs text-gray-500 mb-3">
+                在此手动输入完整的多轮对话稿子（参考模板），AI在右侧对话时会参考此稿子的风格和内容来动态生成回复。
+            </p>
+            <textarea id="script-draft-textarea" class="w-full p-3" rows="20" placeholder="在此粘贴/输入完整的多轮对话稿子...
+
+示例格式：
+用户：你好，请问你是谁？
+AI：【微笑】你好，我是剧本助手，很高兴认识你。
+
+用户：介绍一下你自己吧
+AI：【正色】我是一名专业的剧本AI，能够根据你提供的剧本来回答问题。我的回答风格和内容完全遵循你设定的剧本。
+
+用户：今天天气不错
+AI：【抬头看天】是啊，阳光很好呢。不过这个话题剧本里没有写哦~"></textarea>
+            <p class="draft-status-text" id="draft-status-text">稿子自动保存到本地，点击保存按钮同步云端</p>
+        </div>
+
+        <!-- 分隔条2（中-右之间） -->
+        <div id="panel-resizer-right" class="panel-resizer"></div>
+
+        <!-- ========== 右侧：聊天主面板 ========== -->
         <div class="chat-main-panel bg-dark">
             <div class="chat-header p-3 border-b border-gray-800 flex items-center justify-between">
                 <div class="flex items-center gap-3">
@@ -797,13 +920,16 @@
                         <i class="fa fa-bars"></i>
                         <span id="pending-dot" style="display:none;"></span>
                     </button>
+                    <button class="text-gray-400 hover:text-white mr-1" id="phone-open-draft" title="打开对话稿子">
+                        <i class="fa fa-file-text-o"></i>
+                    </button>
                     <div id="agent-avatar" class="w-10 h-10 bg-accent/20 flex items-center justify-center overflow-hidden rounded-lg"><span class="avatar-placeholder">AI</span></div>
                     <span id="agent-name-display" class="font-medium name-tag text-white">剧本助手 <i class="fa fa-pencil"></i></span>
                 </div>
             </div>
             <div class="flex-1 overflow-y-auto scrollbar-hide" id="chat-box"></div>
 
-            <!-- 底部输入栏（无分割线，参考DeepSeek/豆包风格） -->
+            <!-- 底部输入栏 -->
             <div class="mobile-input-bar" id="mobile-input-area">
                 <button id="file-upload-btn" title="上传文件/图片">
                     <i class="fa fa-plus"></i>
@@ -828,182 +954,201 @@
                 </div>
             </div>
         </div>
+    </div>
 
-        <script>
-            (function() {
-                const SUPABASE_URL = 'https://vkeaimeytsymepgkizqk.supabase.co';
-                const SUPABASE_ANON_KEY = 'sb_publishable_R66fP0xmbxUZTeu7kjQYjQ_FHdXlRvm';
-                const AI_PROXY_URL = 'https://vkeaimeytsymepgkizqk.supabase.co/functions/v1/swift-api';
-                const USER_ID = 'default';
+    <script>
+        (function() {
+            const SUPABASE_URL = 'https://vkeaimeytsymepgkizqk.supabase.co';
+            const SUPABASE_ANON_KEY = 'sb_publishable_R66fP0xmbxUZTeu7kjQYjQ_FHdXlRvm';
+            const AI_PROXY_URL = 'https://vkeaimeytsymepgkizqk.supabase.co/functions/v1/swift-api';
+            const USER_ID = 'default';
 
-                const WIDTH_THRESHOLD = 600;
-                const ASPECT_RATIO_THRESHOLD = 0.85;
+            const WIDTH_THRESHOLD = 900;
+            const ASPECT_RATIO_THRESHOLD = 0.85;
 
-                function debounce(func, wait = 100) {
-                    let timeout;
-                    return function(...args) {
-                        clearTimeout(timeout);
-                        timeout = setTimeout(() => func.apply(this, args), wait);
-                    };
-                }
-
-                function checkIsLargeScreen() {
-                    const width = window.innerWidth;
-                    const height = window.innerHeight;
-                    return width >= WIDTH_THRESHOLD && (width / height) >= ASPECT_RATIO_THRESHOLD;
-                }
-
-                function updateLayoutMode() {
-                    const isLarge = checkIsLargeScreen();
-                    document.body.classList.toggle('is-large-screen', isLarge);
-                    if (isLarge && leftPanel.classList.contains('show')) {
-                        applyPanelWidth();
-                    }
-                    setTimeout(() => { chatBox.scrollTop = chatBox.scrollHeight; }, 300);
-                }
-
-                function applyPanelWidth() {
-                    document.documentElement.style.setProperty('--panel-width', currentPanelWidth + 'px');
-                }
-
-                const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-                    realtime: { params: { eventsPerSecond: 10 } }
-                });
-
-                const chatBox = document.getElementById('chat-box');
-                const msgInput = document.getElementById('msg-input');
-                const sendBtn = document.getElementById('send-btn');
-                const clearBtn = document.getElementById('clear-chat');
-                const resetScriptBtn = document.getElementById('reset-script');
-                const leftPanel = document.getElementById('left-panel');
-                const phoneOpenSet = document.getElementById('phone-open-set');
-                const closeDrawerBtn = document.getElementById('close-drawer-btn');
-                const toggleSettingsBtn = document.getElementById('toggle-settings');
-                const collapsibleSettings = document.getElementById('collapsible-settings');
-                const toggleMarkHelpBtn = document.getElementById('toggle-mark-help');
-                const markHelpBox = document.getElementById('mark-help-box');
-                const agentPrompt = document.getElementById('agent-prompt');
-                const agentNameSet = document.getElementById('agent-name-set');
-                const userNameInput = document.getElementById('user-name');
-                const saveSetBtn = document.getElementById('save-set');
-                const agentAvatarUpload = document.getElementById('agent-avatar-upload');
-                const agentAvatarFile = document.getElementById('agent-avatar-file');
-                const agentAvatarPreview = document.getElementById('agent-avatar-preview');
-                const userAvatarUpload = document.getElementById('user-avatar-upload');
-                const userAvatarFile = document.getElementById('user-avatar-file');
-                const userAvatarPreview = document.getElementById('user-avatar-preview');
-                const fontSizeInput = document.getElementById('font-size');
-                const lineHeightInput = document.getElementById('line-height');
-                const userTextColor = document.getElementById('user-text-color');
-                const aiTextColor = document.getElementById('ai-text-color');
-                const bubblePxInput = document.getElementById('bubble-px');
-                const bubblePyInput = document.getElementById('bubble-py');
-                const chatHPaddingInput = document.getElementById('chat-h-padding');
-                const agentNameDisplay = document.getElementById('agent-name-display');
-                const agentAvatarDiv = document.getElementById('agent-avatar');
-                const nameEditModal = document.getElementById('name-edit-modal');
-                const nameEditTitle = document.getElementById('name-edit-title');
-                const nameEditSubtitle = document.getElementById('name-edit-subtitle');
-                const nameEditInput = document.getElementById('name-edit-input');
-                const nameEditCancel = document.getElementById('name-edit-cancel');
-                const nameEditConfirm = document.getElementById('name-edit-confirm');
-                const syncStatusText = document.getElementById('sync-status-text');
-                const headerSyncStatus = document.getElementById('header-sync-status');
-
-                const fileUploadBtn = document.getElementById('file-upload-btn');
-                const fileInput = document.getElementById('file-input');
-
-                const panelResizer = document.getElementById('panel-resizer');
-
-                const actionOuterColorInput = document.getElementById('action-outer-color');
-                const actionOuterSizeInput = document.getElementById('action-outer-size');
-                const actionOuterWeightInput = document.getElementById('action-outer-weight');
-                const actionPrefixInput = document.getElementById('action-prefix');
-                const actionSuffixInput = document.getElementById('action-suffix');
-                const actionInnerColorInput = document.getElementById('action-inner-color');
-                const actionInnerSizeInput = document.getElementById('action-inner-size');
-                const actionInnerWeightInput = document.getElementById('action-inner-weight');
-                const emphColorInput = document.getElementById('emph-color');
-                const emphSizeInput = document.getElementById('emph-size');
-                const emphWeightInput = document.getElementById('emph-weight');
-
-                const showVersionRegenerateCheckbox = document.getElementById('show-version-regenerate');
-
-                // ========== 速度调节器相关元素 ==========
-                const typewriterSpeedInput = document.getElementById('typewriter-speed');
-                const speedDisplay = document.getElementById('speed-display');
-
-                // ========== 回复模式相关元素 ==========
-                const replyModeToggle = document.getElementById('reply-mode-toggle');
-                // 【改动】召唤按钮相关元素现在在设置面板中
-                const summonArea = document.getElementById('summon-area');
-                const summonStatusText = document.getElementById('summon-status-text');
-                const summonBtn = document.getElementById('summon-btn');
-                const pendingDot = document.getElementById('pending-dot');
-
-                let currentAgentName = '剧本助手';
-                let currentUserName = '我';
-                let agentAvatarUrl = '';
-                let userAvatarUrl = '';
-                let currentEditTarget = null;
-                let messages = [];
-                let realtimeSubscription = null;
-                let isOnline = false;
-                let isTyping = false;
-
-                // ========== 打字机速度变量（毫秒/字符），默认30ms ==========
-                let typewriterSpeed = 30;
-
-                // ========== 回复模式：'auto'=自动回复，'manual'=手动触发回复 ==========
-                let replyMode = 'auto';
-                // 记录最后一次AI回复在messages数组中的索引，用于计算pending消息
-                let lastAIResponseIndex = -1;
-
-                let stylePresets = {
-                    action: {
-                        outer: { color: '#888888', size: 14, weight: '300' },
-                        inner: { color: '#888888', size: 14, weight: '300' },
-                        prefix: '【',
-                        suffix: '】'
-                    },
-                    emph: { color: '#ffcc00', size: 16, weight: '700' }
+            function debounce(func, wait = 100) {
+                let timeout;
+                return function(...args) {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => func.apply(this, args), wait);
                 };
+            }
 
-                let currentPanelWidth = 380;
+            function checkIsLargeScreen() {
+                const width = window.innerWidth;
+                const height = window.innerHeight;
+                return width >= WIDTH_THRESHOLD && (width / height) >= ASPECT_RATIO_THRESHOLD;
+            }
 
-                function loadPanelWidth() {
-                    const saved = localStorage.getItem('panel-width');
-                    if (saved && !isNaN(parseInt(saved))) {
-                        currentPanelWidth = parseInt(saved);
+            function updateLayoutMode() {
+                const isLarge = checkIsLargeScreen();
+                document.body.classList.toggle('is-large-screen', isLarge);
+                if (isLarge) {
+                    applyAllPanelWidths();
+                    // 大屏下确保面板可见
+                    if (!leftPanel.classList.contains('show')) {
+                        leftPanel.classList.add('show');
                     }
-                    applyPanelWidth();
+                    if (!middlePanel.classList.contains('show')) {
+                        middlePanel.classList.add('show');
+                    }
                 }
+                setTimeout(() => { chatBox.scrollTop = chatBox.scrollHeight; }, 300);
+            }
 
-                function savePanelWidth() {
-                    localStorage.setItem('panel-width', currentPanelWidth);
+            function applyAllPanelWidths() {
+                document.documentElement.style.setProperty('--left-panel-width', currentLeftPanelWidth + 'px');
+                document.documentElement.style.setProperty('--middle-panel-width', currentMiddlePanelWidth + 'px');
+            }
+
+            const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+                realtime: { params: { eventsPerSecond: 10 } }
+            });
+
+            const chatBox = document.getElementById('chat-box');
+            const msgInput = document.getElementById('msg-input');
+            const sendBtn = document.getElementById('send-btn');
+            const clearBtn = document.getElementById('clear-chat');
+            const resetScriptBtn = document.getElementById('reset-script');
+            const leftPanel = document.getElementById('left-panel');
+            const middlePanel = document.getElementById('middle-panel');
+            const phoneOpenSet = document.getElementById('phone-open-set');
+            const phoneOpenDraft = document.getElementById('phone-open-draft');
+            const closeDrawerBtn = document.getElementById('close-drawer-btn');
+            const closeDraftBtn = document.getElementById('close-draft-btn');
+            const toggleSettingsBtn = document.getElementById('toggle-settings');
+            const collapsibleSettings = document.getElementById('collapsible-settings');
+            const toggleMarkHelpBtn = document.getElementById('toggle-mark-help');
+            const markHelpBox = document.getElementById('mark-help-box');
+            const agentPrompt = document.getElementById('agent-prompt');
+            const scriptDraftTextarea = document.getElementById('script-draft-textarea');
+            const draftSaveBtn = document.getElementById('draft-save-btn');
+            const draftStatusText = document.getElementById('draft-status-text');
+            const agentNameSet = document.getElementById('agent-name-set');
+            const userNameInput = document.getElementById('user-name');
+            const saveSetBtn = document.getElementById('save-set');
+            const agentAvatarUpload = document.getElementById('agent-avatar-upload');
+            const agentAvatarFile = document.getElementById('agent-avatar-file');
+            const agentAvatarPreview = document.getElementById('agent-avatar-preview');
+            const userAvatarUpload = document.getElementById('user-avatar-upload');
+            const userAvatarFile = document.getElementById('user-avatar-file');
+            const userAvatarPreview = document.getElementById('user-avatar-preview');
+            const fontSizeInput = document.getElementById('font-size');
+            const lineHeightInput = document.getElementById('line-height');
+            const userTextColor = document.getElementById('user-text-color');
+            const aiTextColor = document.getElementById('ai-text-color');
+            const bubblePxInput = document.getElementById('bubble-px');
+            const bubblePyInput = document.getElementById('bubble-py');
+            const chatHPaddingInput = document.getElementById('chat-h-padding');
+            const agentNameDisplay = document.getElementById('agent-name-display');
+            const agentAvatarDiv = document.getElementById('agent-avatar');
+            const nameEditModal = document.getElementById('name-edit-modal');
+            const nameEditTitle = document.getElementById('name-edit-title');
+            const nameEditSubtitle = document.getElementById('name-edit-subtitle');
+            const nameEditInput = document.getElementById('name-edit-input');
+            const nameEditCancel = document.getElementById('name-edit-cancel');
+            const nameEditConfirm = document.getElementById('name-edit-confirm');
+            const syncStatusText = document.getElementById('sync-status-text');
+            const headerSyncStatus = document.getElementById('header-sync-status');
+            const fileUploadBtn = document.getElementById('file-upload-btn');
+            const fileInput = document.getElementById('file-input');
+            const panelResizerLeft = document.getElementById('panel-resizer-left');
+            const panelResizerRight = document.getElementById('panel-resizer-right');
+            const actionOuterColorInput = document.getElementById('action-outer-color');
+            const actionOuterSizeInput = document.getElementById('action-outer-size');
+            const actionOuterWeightInput = document.getElementById('action-outer-weight');
+            const actionPrefixInput = document.getElementById('action-prefix');
+            const actionSuffixInput = document.getElementById('action-suffix');
+            const actionInnerColorInput = document.getElementById('action-inner-color');
+            const actionInnerSizeInput = document.getElementById('action-inner-size');
+            const actionInnerWeightInput = document.getElementById('action-inner-weight');
+            const emphColorInput = document.getElementById('emph-color');
+            const emphSizeInput = document.getElementById('emph-size');
+            const emphWeightInput = document.getElementById('emph-weight');
+            const showVersionRegenerateCheckbox = document.getElementById('show-version-regenerate');
+            const typewriterSpeedInput = document.getElementById('typewriter-speed');
+            const speedDisplay = document.getElementById('speed-display');
+            const replyModeToggle = document.getElementById('reply-mode-toggle');
+            const summonArea = document.getElementById('summon-area');
+            const summonStatusText = document.getElementById('summon-status-text');
+            const summonBtn = document.getElementById('summon-btn');
+            const pendingDot = document.getElementById('pending-dot');
+
+            let currentAgentName = '剧本助手';
+            let currentUserName = '我';
+            let agentAvatarUrl = '';
+            let userAvatarUrl = '';
+            let currentEditTarget = null;
+            let messages = [];
+            let realtimeSubscription = null;
+            let isOnline = false;
+            let isTyping = false;
+            let typewriterSpeed = 30;
+            let replyMode = 'auto';
+            let lastAIResponseIndex = -1;
+            let scriptDraftContent = '';
+
+            let stylePresets = {
+                action: {
+                    outer: { color: '#888888', size: 14, weight: '300' },
+                    inner: { color: '#888888', size: 14, weight: '300' },
+                    prefix: '【',
+                    suffix: '】'
+                },
+                emph: { color: '#ffcc00', size: 16, weight: '700' }
+            };
+
+            let currentLeftPanelWidth = 300;
+            let currentMiddlePanelWidth = 350;
+
+            function loadPanelWidths() {
+                const savedLeft = localStorage.getItem('left-panel-width');
+                if (savedLeft && !isNaN(parseInt(savedLeft))) {
+                    currentLeftPanelWidth = parseInt(savedLeft);
                 }
+                const savedMiddle = localStorage.getItem('middle-panel-width');
+                if (savedMiddle && !isNaN(parseInt(savedMiddle))) {
+                    currentMiddlePanelWidth = parseInt(savedMiddle);
+                }
+                applyAllPanelWidths();
+            }
 
+            function savePanelWidths() {
+                localStorage.setItem('left-panel-width', currentLeftPanelWidth);
+                localStorage.setItem('middle-panel-width', currentMiddlePanelWidth);
+            }
+
+            // ========== 分隔条拖拽逻辑 ==========
+            function setupResizer(resizerElement, panelKey) {
                 let isResizing = false;
                 let startX = 0;
                 let startWidth = 0;
 
-                panelResizer.addEventListener('mousedown', (e) => {
+                resizerElement.addEventListener('mousedown', (e) => {
                     if (!document.body.classList.contains('is-large-screen')) return;
                     isResizing = true;
                     startX = e.clientX;
-                    startWidth = leftPanel.getBoundingClientRect().width;
-                    panelResizer.classList.add('active');
+                    if (panelKey === 'left') {
+                        startWidth = leftPanel.getBoundingClientRect().width;
+                    } else {
+                        startWidth = middlePanel.getBoundingClientRect().width;
+                    }
+                    resizerElement.classList.add('active');
                     document.body.style.userSelect = 'none';
                     e.preventDefault();
                 });
 
-                panelResizer.addEventListener('touchstart', (e) => {
+                resizerElement.addEventListener('touchstart', (e) => {
                     if (!document.body.classList.contains('is-large-screen')) return;
                     if (e.touches.length === 1) {
                         isResizing = true;
                         startX = e.touches[0].clientX;
-                        startWidth = leftPanel.getBoundingClientRect().width;
-                        panelResizer.classList.add('active');
+                        if (panelKey === 'left') {
+                            startWidth = leftPanel.getBoundingClientRect().width;
+                        } else {
+                            startWidth = middlePanel.getBoundingClientRect().width;
+                        }
+                        resizerElement.classList.add('active');
                         document.body.style.userSelect = 'none';
                     }
                 });
@@ -1012,10 +1157,14 @@
                     if (!isResizing) return;
                     const delta = e.clientX - startX;
                     let newWidth = startWidth + delta;
-                    const maxWidth = Math.min(window.innerWidth * 0.6, 600);
-                    newWidth = Math.max(200, Math.min(newWidth, maxWidth));
-                    currentPanelWidth = newWidth;
-                    applyPanelWidth();
+                    const maxWidth = Math.min(window.innerWidth * 0.5, 600);
+                    newWidth = Math.max(180, Math.min(newWidth, maxWidth));
+                    if (panelKey === 'left') {
+                        currentLeftPanelWidth = newWidth;
+                    } else {
+                        currentMiddlePanelWidth = newWidth;
+                    }
+                    applyAllPanelWidths();
                 });
 
                 window.addEventListener('touchmove', (e) => {
@@ -1023,1188 +1172,1267 @@
                     if (e.touches.length === 1) {
                         const delta = e.touches[0].clientX - startX;
                         let newWidth = startWidth + delta;
-                        const maxWidth = Math.min(window.innerWidth * 0.6, 600);
-                        newWidth = Math.max(200, Math.min(newWidth, maxWidth));
-                        currentPanelWidth = newWidth;
-                        applyPanelWidth();
+                        const maxWidth = Math.min(window.innerWidth * 0.5, 600);
+                        newWidth = Math.max(180, Math.min(newWidth, maxWidth));
+                        if (panelKey === 'left') {
+                            currentLeftPanelWidth = newWidth;
+                        } else {
+                            currentMiddlePanelWidth = newWidth;
+                        }
+                        applyAllPanelWidths();
                     }
                 });
 
                 window.addEventListener('mouseup', () => {
                     if (isResizing) {
                         isResizing = false;
-                        panelResizer.classList.remove('active');
+                        resizerElement.classList.remove('active');
                         document.body.style.userSelect = '';
-                        savePanelWidth();
+                        savePanelWidths();
                     }
                 });
 
                 window.addEventListener('touchend', () => {
                     if (isResizing) {
                         isResizing = false;
-                        panelResizer.classList.remove('active');
+                        resizerElement.classList.remove('active');
                         document.body.style.userSelect = '';
-                        savePanelWidth();
+                        savePanelWidths();
                     }
                 });
+            }
 
-                function toggleSettingsPanel() {
-                    leftPanel.classList.toggle('show');
-                    if (leftPanel.classList.contains('show') && document.body.classList.contains('is-large-screen')) {
-                        applyPanelWidth();
-                    }
-                    // 打开设置面板时更新召唤按钮状态
-                    updatePendingIndicator();
-                    setTimeout(() => { chatBox.scrollTop = chatBox.scrollHeight; }, 300);
+            setupResizer(panelResizerLeft, 'left');
+            setupResizer(panelResizerRight, 'middle');
+
+            // ========== 面板切换（小屏模式） ==========
+            function toggleLeftPanel() {
+                const isLarge = checkIsLargeScreen();
+                if (isLarge) {
+                    // 大屏下始终显示，不做切换
+                    return;
                 }
-
-                function closeSettingsPanel() {
+                // 小屏：切换左面板，关闭中间面板
+                const isLeftOpen = leftPanel.classList.contains('show');
+                if (isLeftOpen) {
                     leftPanel.classList.remove('show');
-                    setTimeout(() => { chatBox.scrollTop = chatBox.scrollHeight; }, 300);
+                } else {
+                    leftPanel.classList.add('show');
+                    middlePanel.classList.remove('show');
                 }
+                updatePendingIndicator();
+                setTimeout(() => { chatBox.scrollTop = chatBox.scrollHeight; }, 300);
+            }
 
-                phoneOpenSet.addEventListener('click', toggleSettingsPanel);
-                closeDrawerBtn.addEventListener('click', closeSettingsPanel);
-                toggleMarkHelpBtn.addEventListener('click', () => {
-                    markHelpBox.style.display = markHelpBox.style.display === 'block' ? 'none' : 'block';
-                });
-
-                function updateVersionRegenerateVisibility() {
-                    if (showVersionRegenerateCheckbox.checked) {
-                        document.body.classList.remove('hide-version-regenerate');
-                    } else {
-                        document.body.classList.add('hide-version-regenerate');
-                    }
+            function toggleMiddlePanel() {
+                const isLarge = checkIsLargeScreen();
+                if (isLarge) {
+                    // 大屏下始终显示
+                    return;
                 }
-                showVersionRegenerateCheckbox.addEventListener('change', updateVersionRegenerateVisibility);
+                const isMiddleOpen = middlePanel.classList.contains('show');
+                if (isMiddleOpen) {
+                    middlePanel.classList.remove('show');
+                } else {
+                    middlePanel.classList.add('show');
+                    leftPanel.classList.remove('show');
+                }
+                setTimeout(() => { chatBox.scrollTop = chatBox.scrollHeight; }, 300);
+            }
 
-                // ========== 回复模式切换事件 ==========
-                replyModeToggle.addEventListener('change', () => {
-                    replyMode = replyModeToggle.checked ? 'manual' : 'auto';
-                    updatePendingIndicator();
-                    // 如果从手动切换到自动，且有pending消息，自动触发AI回复
-                    if (replyMode === 'auto' && getPendingCount() > 0 && !isTyping) {
-                        triggerAIReply();
-                    }
-                    // 实时保存到本地
-                    try {
-                        const saved = JSON.parse(localStorage.getItem('chat-settings') || '{}');
-                        saved.replyMode = replyMode;
-                        localStorage.setItem('chat-settings', JSON.stringify(saved));
-                    } catch (e) {}
-                    console.log('🔄 回复模式切换为：' + (replyMode === 'auto' ? '自动回复' : '手动触发回复'));
-                });
+            function closeLeftPanel() {
+                leftPanel.classList.remove('show');
+                setTimeout(() => { chatBox.scrollTop = chatBox.scrollHeight; }, 300);
+            }
 
-                // ========== 【核心改动】召唤AI回复按钮事件（现在在设置面板中） ==========
-                summonBtn.addEventListener('click', () => {
-                    if (isTyping) {
-                        console.log('⏳ AI正在回复中，请等待...');
-                        return;
-                    }
-                    if (getPendingCount() === 0) {
-                        console.log('📭 没有待回复的消息');
-                        return;
-                    }
+            function closeMiddlePanel() {
+                middlePanel.classList.remove('show');
+                setTimeout(() => { chatBox.scrollTop = chatBox.scrollHeight; }, 300);
+            }
+
+            phoneOpenSet.addEventListener('click', toggleLeftPanel);
+            phoneOpenDraft.addEventListener('click', toggleMiddlePanel);
+            closeDrawerBtn.addEventListener('click', closeLeftPanel);
+            closeDraftBtn.addEventListener('click', closeMiddlePanel);
+            toggleMarkHelpBtn.addEventListener('click', () => {
+                markHelpBox.style.display = markHelpBox.style.display === 'block' ? 'none' : 'block';
+            });
+
+            function updateVersionRegenerateVisibility() {
+                if (showVersionRegenerateCheckbox.checked) {
+                    document.body.classList.remove('hide-version-regenerate');
+                } else {
+                    document.body.classList.add('hide-version-regenerate');
+                }
+            }
+            showVersionRegenerateCheckbox.addEventListener('change', updateVersionRegenerateVisibility);
+
+            // ========== 回复模式切换 ==========
+            replyModeToggle.addEventListener('change', () => {
+                replyMode = replyModeToggle.checked ? 'manual' : 'auto';
+                updatePendingIndicator();
+                if (replyMode === 'auto' && getPendingCount() > 0 && !isTyping) {
                     triggerAIReply();
-                });
-
-                // ========== 速度滑块事件监听 ==========
-                typewriterSpeedInput.addEventListener('input', () => {
-                    typewriterSpeed = parseInt(typewriterSpeedInput.value);
-                    speedDisplay.textContent = typewriterSpeed + 'ms';
-                    try {
-                        const saved = JSON.parse(localStorage.getItem('chat-settings') || '{}');
-                        saved.typewriterSpeed = typewriterSpeed;
-                        localStorage.setItem('chat-settings', JSON.stringify(saved));
-                    } catch (e) {}
-                });
-
-                function updateCSSVariables() {
-                    document.documentElement.style.setProperty('--font-size', fontSizeInput.value + 'px');
-                    document.documentElement.style.setProperty('--line-height', lineHeightInput.value);
-                    document.documentElement.style.setProperty('--user-text-color', userTextColor.value);
-                    document.documentElement.style.setProperty('--ai-text-color', aiTextColor.value);
-                    document.documentElement.style.setProperty('--bubble-px', bubblePxInput.value + 'px');
-                    document.documentElement.style.setProperty('--bubble-py', bubblePyInput.value + 'px');
-                    document.documentElement.style.setProperty('--chat-h-padding', chatHPaddingInput.value + 'px');
                 }
+                try {
+                    const saved = JSON.parse(localStorage.getItem('chat-settings') || '{}');
+                    saved.replyMode = replyMode;
+                    localStorage.setItem('chat-settings', JSON.stringify(saved));
+                } catch (e) {}
+                console.log('🔄 回复模式切换为：' + (replyMode === 'auto' ? '自动回复' : '手动触发回复'));
+            });
 
-                function syncPresetsFromInput() {
-                    stylePresets.action.outer.color = actionOuterColorInput.value;
-                    stylePresets.action.outer.size = parseInt(actionOuterSizeInput.value) || 14;
-                    stylePresets.action.outer.weight = actionOuterWeightInput.value;
-                    stylePresets.action.prefix = actionPrefixInput.value;
-                    stylePresets.action.suffix = actionSuffixInput.value;
-                    stylePresets.action.inner.color = actionInnerColorInput.value;
-                    stylePresets.action.inner.size = parseInt(actionInnerSizeInput.value) || 14;
-                    stylePresets.action.inner.weight = actionInnerWeightInput.value;
-                    stylePresets.emph.color = emphColorInput.value;
-                    stylePresets.emph.size = parseInt(emphSizeInput.value) || 16;
-                    stylePresets.emph.weight = emphWeightInput.value;
+            // ========== 召唤按钮 ==========
+            summonBtn.addEventListener('click', () => {
+                if (isTyping) {
+                    console.log('⏳ AI正在回复中，请等待...');
+                    return;
                 }
-
-                function refreshAllMessageStyles() {
-                    if (isTyping) return;
-                    syncPresetsFromInput();
-                    renderStoredMessages();
+                if (getPendingCount() === 0) {
+                    console.log('📭 没有待回复的消息');
+                    return;
                 }
+                triggerAIReply();
+            });
 
-                function renderLatex(element) {
-                    try {
-                        renderMathInElement(element, {
-                            delimiters: [
-                                { left: '$', right: '$', display: true },
-                                { left: '$', right: '$', display: false },
-                                { left: '\\(', right: '\\)', display: false },
-                                { left: '\\[', right: '\\]', display: true }
-                            ],
-                            throwOnError: false
+            // ========== 速度滑块 ==========
+            typewriterSpeedInput.addEventListener('input', () => {
+                typewriterSpeed = parseInt(typewriterSpeedInput.value);
+                speedDisplay.textContent = typewriterSpeed + 'ms';
+                try {
+                    const saved = JSON.parse(localStorage.getItem('chat-settings') || '{}');
+                    saved.typewriterSpeed = typewriterSpeed;
+                    localStorage.setItem('chat-settings', JSON.stringify(saved));
+                } catch (e) {}
+            });
+
+            // ========== 稿子保存按钮 ==========
+            draftSaveBtn.addEventListener('click', async () => {
+                scriptDraftContent = scriptDraftTextarea.value;
+                await saveDraftToCloud();
+                draftStatusText.textContent = '✅ 稿子已保存并同步云端';
+                setTimeout(() => {
+                    draftStatusText.textContent = '稿子自动保存到本地，点击保存按钮同步云端';
+                }, 3000);
+            });
+
+            // 稿子本地自动保存
+            scriptDraftTextarea.addEventListener('input', () => {
+                scriptDraftContent = scriptDraftTextarea.value;
+                try {
+                    const saved = JSON.parse(localStorage.getItem('chat-settings') || '{}');
+                    saved.scriptDraft = scriptDraftContent;
+                    localStorage.setItem('chat-settings', JSON.stringify(saved));
+                } catch (e) {}
+            });
+
+            async function saveDraftToCloud() {
+                try {
+                    const { error } = await supabase.from('user_settings').upsert({
+                        id: USER_ID,
+                        script_draft: scriptDraftContent,
+                        updated_at: new Date().toISOString()
+                    }, { onConflict: 'id' });
+                    if (error) throw error;
+                    return true;
+                } catch (err) {
+                    console.error('稿子云端同步失败', err);
+                    return false;
+                }
+            }
+
+            function updateCSSVariables() {
+                document.documentElement.style.setProperty('--font-size', fontSizeInput.value + 'px');
+                document.documentElement.style.setProperty('--line-height', lineHeightInput.value);
+                document.documentElement.style.setProperty('--user-text-color', userTextColor.value);
+                document.documentElement.style.setProperty('--ai-text-color', aiTextColor.value);
+                document.documentElement.style.setProperty('--bubble-px', bubblePxInput.value + 'px');
+                document.documentElement.style.setProperty('--bubble-py', bubblePyInput.value + 'px');
+                document.documentElement.style.setProperty('--chat-h-padding', chatHPaddingInput.value + 'px');
+            }
+
+            function syncPresetsFromInput() {
+                stylePresets.action.outer.color = actionOuterColorInput.value;
+                stylePresets.action.outer.size = parseInt(actionOuterSizeInput.value) || 14;
+                stylePresets.action.outer.weight = actionOuterWeightInput.value;
+                stylePresets.action.prefix = actionPrefixInput.value;
+                stylePresets.action.suffix = actionSuffixInput.value;
+                stylePresets.action.inner.color = actionInnerColorInput.value;
+                stylePresets.action.inner.size = parseInt(actionInnerSizeInput.value) || 14;
+                stylePresets.action.inner.weight = actionInnerWeightInput.value;
+                stylePresets.emph.color = emphColorInput.value;
+                stylePresets.emph.size = parseInt(emphSizeInput.value) || 16;
+                stylePresets.emph.weight = emphWeightInput.value;
+            }
+
+            function refreshAllMessageStyles() {
+                if (isTyping) return;
+                syncPresetsFromInput();
+                renderStoredMessages();
+            }
+
+            function renderLatex(element) {
+                try {
+                    renderMathInElement(element, {
+                        delimiters: [
+                            { left: '$', right: '$', display: true },
+                            { left: '$', right: '$', display: false },
+                            { left: '\\(', right: '\\)', display: false },
+                            { left: '\\[', right: '\\]', display: true }
+                        ],
+                        throwOnError: false
+                    });
+                } catch (e) {}
+            }
+
+            function updateNameDisplays() {
+                agentNameDisplay.innerHTML = `${currentAgentName} <i class="fa fa-pencil"></i>`;
+            }
+
+            function updateAgentAvatarDisplay() {
+                agentAvatarDiv.innerHTML = agentAvatarUrl ?
+                    `<img src="${agentAvatarUrl}" class="avatar-img" alt="agent avatar">` :
+                    '<span class="avatar-placeholder">AI</span>';
+            }
+
+            function updateSyncStatus(status, message) {
+                const statusText = {
+                    'online': '云端已连接',
+                    'offline': '离线模式（仅本地保存）',
+                    'syncing': '正在同步...',
+                    'error': '同步失败'
+                };
+                headerSyncStatus.textContent = statusText[status] || message;
+                syncStatusText.textContent = message || statusText[status];
+                isOnline = status === 'online';
+            }
+
+            function openNameEditor(target) {
+                if (target !== 'agent') return;
+                currentEditTarget = target;
+                nameEditTitle.textContent = '修改智能体名称';
+                nameEditSubtitle.textContent = '输入新的名称';
+                nameEditInput.value = currentAgentName;
+                nameEditModal.style.display = 'flex';
+                nameEditInput.focus();
+            }
+
+            function closeNameEditor() {
+                nameEditModal.style.display = 'none';
+                currentEditTarget = null;
+            }
+
+            function saveMessagesToLocal() {
+                try { localStorage.setItem('chat-messages', JSON.stringify(messages)); } catch (e) {}
+            }
+
+            function loadMessagesFromLocal() {
+                try {
+                    const saved = localStorage.getItem('chat-messages');
+                    if (saved) {
+                        messages = JSON.parse(saved) || [];
+                        messages.forEach(msg => {
+                            if (msg.role === 'assistant') {
+                                if (!msg.versions) msg.versions = [msg.content];
+                                if (msg.currentVersion === undefined) msg.currentVersion = 0;
+                                if (!msg.local_id) msg.local_id = generateId();
+                            } else if (msg.role === 'user') {
+                                if (!msg.local_id) msg.local_id = generateId();
+                            }
                         });
-                    } catch (e) {}
-                }
-
-                function updateNameDisplays() {
-                    agentNameDisplay.innerHTML = `${currentAgentName} <i class="fa fa-pencil"></i>`;
-                }
-
-                function updateAgentAvatarDisplay() {
-                    agentAvatarDiv.innerHTML = agentAvatarUrl ?
-                        `<img src="${agentAvatarUrl}" class="avatar-img" alt="agent avatar">` :
-                        '<span class="avatar-placeholder">AI</span>';
-                }
-
-                function updateSyncStatus(status, message) {
-                    const statusText = {
-                        'online': '云端已连接',
-                        'offline': '离线模式（仅本地保存）',
-                        'syncing': '正在同步...',
-                        'error': '同步失败'
-                    };
-                    headerSyncStatus.textContent = statusText[status] || message;
-                    syncStatusText.textContent = message || statusText[status];
-                    isOnline = status === 'online';
-                }
-
-                function openNameEditor(target) {
-                    if (target !== 'agent') return;
-                    currentEditTarget = target;
-                    nameEditTitle.textContent = '修改智能体名称';
-                    nameEditSubtitle.textContent = '输入新的名称';
-                    nameEditInput.value = currentAgentName;
-                    nameEditModal.style.display = 'flex';
-                    nameEditInput.focus();
-                }
-
-                function closeNameEditor() {
-                    nameEditModal.style.display = 'none';
-                    currentEditTarget = null;
-                }
-
-                function saveMessagesToLocal() {
-                    try { localStorage.setItem('chat-messages', JSON.stringify(messages)); } catch (e) {}
-                }
-
-                function loadMessagesFromLocal() {
-                    try {
-                        const saved = localStorage.getItem('chat-messages');
-                        if (saved) {
-                            messages = JSON.parse(saved) || [];
-                            messages.forEach(msg => {
-                                if (msg.role === 'assistant') {
-                                    if (!msg.versions) msg.versions = [msg.content];
-                                    if (msg.currentVersion === undefined) msg.currentVersion = 0;
-                                    if (!msg.local_id) msg.local_id = generateId();
-                                } else if (msg.role === 'user') {
-                                    if (!msg.local_id) msg.local_id = generateId();
-                                }
-                            });
-                        }
-                    } catch (e) { messages = []; }
-                }
-
-                function generateId() {
-                    return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
-                }
-
-                async function loadMessagesFromCloud() {
-                    try {
-                        const { data, error } = await supabase
-                            .from('chat_messages')
-                            .select('role, content, created_at, local_id, versions, current_version')
-                            .eq('user_id', USER_ID)
-                            .order('created_at', { ascending: true });
-                        if (error) throw error;
-                        if (data.length > 0) {
-                            messages = data.map(d => {
-                                const msg = {
-                                    role: d.role,
-                                    content: d.content,
-                                    local_id: d.local_id || generateId(),
-                                    versions: d.versions || (d.role === 'assistant' ? [d.content] :
-                                        undefined),
-                                    currentVersion: d.current_version !== undefined ? d.current_version :
-                                        0,
-                                    mergedUserMessage: d.merged_user_message || undefined
-                                };
-                                if (msg.role === 'assistant' && !msg.versions) msg.versions = [msg.content];
-                                return msg;
-                            });
-                            saveMessagesToLocal();
-                        } else {
-                            loadMessagesFromLocal();
-                            if (messages.length > 0) await syncLocalMessagesToCloud();
-                        }
-                        updateLastAIResponseIndex();
-                        return true;
-                    } catch (err) {
-                        loadMessagesFromLocal();
-                        updateLastAIResponseIndex();
-                        return false;
                     }
-                }
+                } catch (e) { messages = []; }
+            }
 
-                async function syncLocalMessagesToCloud() {
-                    try {
-                        const messagesWithUserId = messages.map(msg => ({
-                            user_id: USER_ID,
-                            role: msg.role,
-                            content: msg.content,
-                            local_id: msg.local_id,
-                            versions: msg.versions || null,
-                            current_version: msg.currentVersion || 0,
-                            merged_user_message: msg.mergedUserMessage || null
-                        }));
-                        const { error } = await supabase.from('chat_messages').insert(messagesWithUserId);
-                        if (error) throw error;
-                        return true;
-                    } catch (err) {
-                        return false;
-                    }
-                }
+            function generateId() {
+                return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+            }
 
-                function setupRealtimeSubscription() {
-                    if (realtimeSubscription) supabase.removeChannel(realtimeSubscription);
-                    realtimeSubscription = supabase
-                        .channel('public:chat_messages')
-                        .on('postgres_changes', {
-                            event: 'INSERT',
-                            schema: 'public',
-                            table: 'chat_messages',
-                            filter: `user_id=eq.${USER_ID}`
-                        }, (payload) => {
-                            const newMsg = {
-                                role: payload.new.role,
-                                content: payload.new.content,
-                                local_id: payload.new.local_id || generateId(),
-                                versions: payload.new.versions || (payload.new.role === 'assistant' ? [
-                                    payload.new.content
-                                ] : undefined),
-                                currentVersion: payload.new.current_version || 0,
-                                mergedUserMessage: payload.new.merged_user_message || undefined
+            async function loadMessagesFromCloud() {
+                try {
+                    const { data, error } = await supabase
+                        .from('chat_messages')
+                        .select('role, content, created_at, local_id, versions, current_version')
+                        .eq('user_id', USER_ID)
+                        .order('created_at', { ascending: true });
+                    if (error) throw error;
+                    if (data.length > 0) {
+                        messages = data.map(d => {
+                            const msg = {
+                                role: d.role,
+                                content: d.content,
+                                local_id: d.local_id || generateId(),
+                                versions: d.versions || (d.role === 'assistant' ? [d.content] : undefined),
+                                currentVersion: d.current_version !== undefined ? d.current_version : 0,
+                                mergedUserMessage: d.merged_user_message || undefined
                             };
-                            if (newMsg.role === 'assistant' && !newMsg.versions) newMsg.versions = [newMsg
-                                .content
-                            ];
-                            const isDuplicate = messages.some(msg =>
-                                msg.role === newMsg.role &&
-                                msg.content === newMsg.content &&
-                                Math.abs(Date.now() - new Date(payload.new.created_at).getTime()) < 3000
-                            );
-                            if (!isDuplicate) {
-                                messages.push(newMsg);
-                                saveMessagesToLocal();
-                                addMessageToDOM(newMsg.role, newMsg.content, false, messages.length - 1);
-                                updateLastAIResponseIndex();
-                            }
-                        })
-                        .on('postgres_changes', {
-                            event: 'DELETE',
-                            schema: 'public',
-                            table: 'chat_messages',
-                            filter: `user_id=eq.${USER_ID}`
-                        }, () => {
-                            messages = [];
-                            saveMessagesToLocal();
-                            chatBox.innerHTML = '';
-                            addMessageToDOM('assistant', '聊天记录已清空。', false, 0);
-                            lastAIResponseIndex = 0;
-                            updatePendingIndicator();
-                        })
-                        .subscribe((status) => {
-                            if (status === 'SUBSCRIBED') updateSyncStatus('online', '实时同步已开启');
-                            else updateSyncStatus('offline', '实时同步未连接');
+                            if (msg.role === 'assistant' && !msg.versions) msg.versions = [msg.content];
+                            return msg;
                         });
+                        saveMessagesToLocal();
+                    } else {
+                        loadMessagesFromLocal();
+                        if (messages.length > 0) await syncLocalMessagesToCloud();
+                    }
+                    updateLastAIResponseIndex();
+                    return true;
+                } catch (err) {
+                    loadMessagesFromLocal();
+                    updateLastAIResponseIndex();
+                    return false;
                 }
+            }
 
-                function addRegenButtonToMessage(msgElement) {
-                    if (!showVersionRegenerateCheckbox.checked) return;
-                    const bubbleContainer = msgElement.querySelector('.max-w-\\[75\\%\\]');
-                    if (!bubbleContainer) return;
-                    const existing = bubbleContainer.querySelector('.regenerate-btn-container');
+            async function syncLocalMessagesToCloud() {
+                try {
+                    const messagesWithUserId = messages.map(msg => ({
+                        user_id: USER_ID,
+                        role: msg.role,
+                        content: msg.content,
+                        local_id: msg.local_id,
+                        versions: msg.versions || null,
+                        current_version: msg.currentVersion || 0,
+                        merged_user_message: msg.mergedUserMessage || null
+                    }));
+                    const { error } = await supabase.from('chat_messages').insert(messagesWithUserId);
+                    if (error) throw error;
+                    return true;
+                } catch (err) {
+                    return false;
+                }
+            }
+
+            function setupRealtimeSubscription() {
+                if (realtimeSubscription) supabase.removeChannel(realtimeSubscription);
+                realtimeSubscription = supabase
+                    .channel('public:chat_messages')
+                    .on('postgres_changes', {
+                        event: 'INSERT',
+                        schema: 'public',
+                        table: 'chat_messages',
+                        filter: `user_id=eq.${USER_ID}`
+                    }, (payload) => {
+                        const newMsg = {
+                            role: payload.new.role,
+                            content: payload.new.content,
+                            local_id: payload.new.local_id || generateId(),
+                            versions: payload.new.versions || (payload.new.role === 'assistant' ? [payload.new
+                                .content
+                            ] : undefined),
+                            currentVersion: payload.new.current_version || 0,
+                            mergedUserMessage: payload.new.merged_user_message || undefined
+                        };
+                        if (newMsg.role === 'assistant' && !newMsg.versions) newMsg.versions = [newMsg.content];
+                        const isDuplicate = messages.some(msg =>
+                            msg.role === newMsg.role &&
+                            msg.content === newMsg.content &&
+                            Math.abs(Date.now() - new Date(payload.new.created_at).getTime()) < 3000
+                        );
+                        if (!isDuplicate) {
+                            messages.push(newMsg);
+                            saveMessagesToLocal();
+                            addMessageToDOM(newMsg.role, newMsg.content, false, messages.length - 1);
+                            updateLastAIResponseIndex();
+                        }
+                    })
+                    .on('postgres_changes', {
+                        event: 'DELETE',
+                        schema: 'public',
+                        table: 'chat_messages',
+                        filter: `user_id=eq.${USER_ID}`
+                    }, () => {
+                        messages = [];
+                        saveMessagesToLocal();
+                        chatBox.innerHTML = '';
+                        addMessageToDOM('assistant', '聊天记录已清空。', false, 0);
+                        lastAIResponseIndex = 0;
+                        updatePendingIndicator();
+                    })
+                    .subscribe((status) => {
+                        if (status === 'SUBSCRIBED') updateSyncStatus('online', '实时同步已开启');
+                        else updateSyncStatus('offline', '实时同步未连接');
+                    });
+            }
+
+            function addRegenButtonToMessage(msgElement) {
+                if (!showVersionRegenerateCheckbox.checked) return;
+                const bubbleContainer = msgElement.querySelector('.max-w-\\[75\\%\\]');
+                if (!bubbleContainer) return;
+                const existing = bubbleContainer.querySelector('.regenerate-btn-container');
+                if (existing) existing.remove();
+                const actionDiv = document.createElement('div');
+                actionDiv.className = 'regenerate-btn-container text-right mt-1';
+                actionDiv.innerHTML =
+                    '<button class="regenerate-btn bg-transparent border-none text-gray-500 hover:text-white p-1" title="重新生成"><i class="fa fa-refresh"></i></button>';
+                bubbleContainer.appendChild(actionDiv);
+            }
+
+            function updateVersionSwitcher(msgElement, msgIndex) {
+                if (!showVersionRegenerateCheckbox.checked) {
+                    const existing = msgElement.querySelector('.version-switcher');
                     if (existing) existing.remove();
-                    const actionDiv = document.createElement('div');
-                    actionDiv.className = 'regenerate-btn-container text-right mt-1';
-                    actionDiv.innerHTML =
-                        '<button class="regenerate-btn bg-transparent border-none text-gray-500 hover:text-white p-1" title="重新生成"><i class="fa fa-refresh"></i></button>';
-                    bubbleContainer.appendChild(actionDiv);
+                    return;
+                }
+                const msg = messages[msgIndex];
+                if (!msg || msg.role !== 'assistant' || !msg.versions || msg.versions.length <= 1) {
+                    const existing = msgElement.querySelector('.version-switcher');
+                    if (existing) existing.remove();
+                    return;
+                }
+                const bubbleContainer = msgElement.querySelector('.max-w-\\[75\\%\\]');
+                if (!bubbleContainer) return;
+                let switcher = msgElement.querySelector('.version-switcher');
+                if (!switcher) {
+                    switcher = document.createElement('div');
+                    switcher.className = 'version-switcher';
+                    bubbleContainer.appendChild(switcher);
+                }
+                const total = msg.versions.length;
+                const current = msg.currentVersion + 1;
+                switcher.innerHTML = `
+                    <button class="version-prev" ${current === 1 ? 'disabled' : ''}><</button>
+                    <span>${current}/${total}</span>
+                    <button class="version-next" ${current === total ? 'disabled' : ''}>></button>
+                `;
+                switcher.querySelector('.version-prev').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (msg.currentVersion > 0) {
+                        msg.currentVersion--;
+                        updateMessageContentAndUI(msgIndex);
+                    }
+                });
+                switcher.querySelector('.version-next').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (msg.currentVersion < msg.versions.length - 1) {
+                        msg.currentVersion++;
+                        updateMessageContentAndUI(msgIndex);
+                    }
+                });
+            }
+
+            function updateMessageContentAndUI(msgIndex) {
+                const msg = messages[msgIndex];
+                if (!msg || msg.role !== 'assistant') return;
+                msg.content = msg.versions[msg.currentVersion];
+                const msgDiv = chatBox.querySelector(`.message-row[data-msg-index="${msgIndex}"]`);
+                if (msgDiv) {
+                    const bubble = msgDiv.querySelector('.chat-bubble-content');
+                    if (bubble) {
+                        bubble.innerHTML = msg.content;
+                        renderLatex(msgDiv);
+                    }
+                    updateVersionSwitcher(msgDiv, msgIndex);
+                }
+                saveMessagesToLocal();
+                if (isOnline) {
+                    (async () => {
+                        const { error } = await supabase
+                            .from('chat_messages')
+                            .update({ content: msg.content, current_version: msg.currentVersion, versions: msg
+                                    .versions })
+                            .eq('user_id', USER_ID)
+                            .eq('local_id', msg.local_id);
+                        if (error) console.error('版本切换同步失败', error);
+                    })();
+                }
+            }
+
+            function addMessageToDOM(role, content, animate = false, index = null) {
+                const isUser = role === 'user';
+                const avatarSrc = isUser ? userAvatarUrl : agentAvatarUrl;
+                const avatarInitial = isUser ? (currentUserName || '我').charAt(0) : (currentAgentName || 'AI').charAt(0);
+                const senderName = isUser ? currentUserName : currentAgentName;
+                const idx = index !== null ? index : messages.length - 1;
+
+                const div = document.createElement('div');
+                div.className =
+                    `message-row flex mb-4 ${isUser ? 'justify-end' : 'justify-start'} items-start gap-2`;
+                div.setAttribute('data-role', role);
+                div.setAttribute('data-msg-index', idx);
+
+                const avatarHTML = avatarSrc ?
+                    `<img src="${avatarSrc}" class="avatar-img" alt="avatar">` :
+                    `<span>${avatarInitial}</span>`;
+
+                if (isUser) {
+                    div.innerHTML = `
+                        <div class="max-w-[75%]">
+                            <span class="msg-name-label text-right">${senderName}</span>
+                            <div class="inline-block rounded-lg chat-bubble-content user-bubble">${content}</div>
+                        </div>
+                        <div class="msg-avatar">${avatarHTML}</div>`;
+                } else {
+                    div.innerHTML = `
+                        <div class="msg-avatar">${avatarHTML}</div>
+                        <div class="max-w-[75%]">
+                            <span class="msg-name-label">${senderName}</span>
+                            <div class="inline-block rounded-lg chat-bubble-content ai-bubble">${content}</div>
+                        </div>`;
                 }
 
-                function updateVersionSwitcher(msgElement, msgIndex) {
-                    if (!showVersionRegenerateCheckbox.checked) {
-                        const existing = msgElement.querySelector('.version-switcher');
-                        if (existing) existing.remove();
-                        return;
-                    }
-                    const msg = messages[msgIndex];
-                    if (!msg || msg.role !== 'assistant' || !msg.versions || msg.versions.length <= 1) {
-                        const existing = msgElement.querySelector('.version-switcher');
-                        if (existing) existing.remove();
-                        return;
-                    }
-                    const bubbleContainer = msgElement.querySelector('.max-w-\\[75\\%\\]');
-                    if (!bubbleContainer) return;
-                    let switcher = msgElement.querySelector('.version-switcher');
-                    if (!switcher) {
-                        switcher = document.createElement('div');
-                        switcher.className = 'version-switcher';
-                        bubbleContainer.appendChild(switcher);
-                    }
-                    const total = msg.versions.length;
-                    const current = msg.currentVersion + 1;
-                    switcher.innerHTML = `
-                            <button class="version-prev" ${current === 1 ? 'disabled' : ''}><</button>
-                            <span>${current}/${total}</span>
-                            <button class="version-next" ${current === total ? 'disabled' : ''}>></button>
-                        `;
-                    switcher.querySelector('.version-prev').addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        if (msg.currentVersion > 0) {
-                            msg.currentVersion--;
-                            updateMessageContentAndUI(msgIndex);
-                        }
-                    });
-                    switcher.querySelector('.version-next').addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        if (msg.currentVersion < msg.versions.length - 1) {
-                            msg.currentVersion++;
-                            updateMessageContentAndUI(msgIndex);
-                        }
-                    });
-                }
+                chatBox.appendChild(div);
 
-                function updateMessageContentAndUI(msgIndex) {
-                    const msg = messages[msgIndex];
-                    if (!msg || msg.role !== 'assistant') return;
-                    msg.content = msg.versions[msg.currentVersion];
-                    const msgDiv = chatBox.querySelector(`.message-row[data-msg-index="${msgIndex}"]`);
-                    if (msgDiv) {
-                        const bubble = msgDiv.querySelector('.chat-bubble-content');
-                        if (bubble) {
-                            bubble.innerHTML = msg.content;
-                            renderLatex(msgDiv);
+                if (role === 'assistant' && animate) {
+                    typewriterEffect(content, div, idx);
+                } else {
+                    renderLatex(div);
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                    if (role === 'assistant') {
+                        addRegenButtonToMessage(div);
+                        const msg = messages[idx];
+                        if (msg && msg.versions && msg.versions.length > 1) {
+                            updateVersionSwitcher(div, idx);
                         }
-                        updateVersionSwitcher(msgDiv, msgIndex);
-                    }
-                    saveMessagesToLocal();
-                    if (isOnline) {
-                        (async () => {
-                            const { error } = await supabase
-                                .from('chat_messages')
-                                .update({ content: msg.content, current_version: msg.currentVersion,
-                                    versions: msg.versions })
-                                .eq('user_id', USER_ID)
-                                .eq('local_id', msg.local_id);
-                            if (error) console.error('版本切换同步失败', error);
-                        })();
                     }
                 }
+                return div;
+            }
 
-                function addMessageToDOM(role, content, animate = false, index = null) {
-                    const isUser = role === 'user';
-                    const avatarSrc = isUser ? userAvatarUrl : agentAvatarUrl;
-                    const avatarInitial = isUser ? (currentUserName || '我').charAt(0) : (currentAgentName || 'AI')
-                        .charAt(0);
-                    const senderName = isUser ? currentUserName : currentAgentName;
-                    const idx = index !== null ? index : messages.length - 1;
+            // ========== 打字机效果 ==========
+            function typewriterEffect(fullText, msgElement, msgIndex) {
+                const bubble = msgElement.querySelector('.chat-bubble-content');
+                let index = 0;
+                let output = '';
+                bubble.innerHTML = '';
+                isTyping = true;
+                updatePendingIndicator();
 
-                    const div = document.createElement('div');
-                    div.className =
-                        `message-row flex mb-4 ${isUser ? 'justify-end' : 'justify-start'} items-start gap-2`;
-                    div.setAttribute('data-role', role);
-                    div.setAttribute('data-msg-index', idx);
+                const currentSpeed = typewriterSpeed;
+                console.log('🚀 打字机启动，速度：' + currentSpeed + 'ms/字符');
 
-                    const avatarHTML = avatarSrc ?
-                        `<img src="${avatarSrc}" class="avatar-img" alt="avatar">` :
-                        `<span>${avatarInitial}</span>`;
-
-                    if (isUser) {
-                        div.innerHTML = `
-                                <div class="max-w-[75%]">
-                                    <span class="msg-name-label text-right">${senderName}</span>
-                                    <div class="inline-block rounded-lg chat-bubble-content user-bubble">${content}</div>
-                                </div>
-                                <div class="msg-avatar">${avatarHTML}</div>`;
-                    } else {
-                        div.innerHTML = `
-                                <div class="msg-avatar">${avatarHTML}</div>
-                                <div class="max-w-[75%]">
-                                    <span class="msg-name-label">${senderName}</span>
-                                    <div class="inline-block rounded-lg chat-bubble-content ai-bubble">${content}</div>
-                                </div>`;
-                    }
-
-                    chatBox.appendChild(div);
-
-                    if (role === 'assistant' && animate) {
-                        typewriterEffect(content, div, idx);
-                    } else {
-                        renderLatex(div);
-                        chatBox.scrollTop = chatBox.scrollHeight;
-                        if (role === 'assistant') {
-                            addRegenButtonToMessage(div);
-                            const msg = messages[idx];
-                            if (msg && msg.versions && msg.versions.length > 1) {
-                                updateVersionSwitcher(div, idx);
-                            }
-                        }
-                    }
-                    return div;
-                }
-
-                // ========== 打字机效果 ==========
-                function typewriterEffect(fullText, msgElement, msgIndex) {
-                    const bubble = msgElement.querySelector('.chat-bubble-content');
-                    let index = 0;
-                    let output = '';
-                    bubble.innerHTML = '';
-                    isTyping = true;
-                    // 更新召唤按钮状态为"回复中"
-                    updatePendingIndicator();
-
-                    const currentSpeed = typewriterSpeed;
-                    console.log('🚀 打字机启动，速度：' + currentSpeed + 'ms/字符');
-
-                    const interval = setInterval(() => {
-                        if (index < fullText.length) {
-                            if (fullText.charAt(index) === '<') {
-                                const endIndex = fullText.indexOf('>', index);
-                                if (endIndex !== -1) {
-                                    output += fullText.substring(index, endIndex + 1);
-                                    index = endIndex + 1;
-                                } else {
-                                    output += fullText.charAt(index);
-                                    index++;
-                                }
+                const interval = setInterval(() => {
+                    if (index < fullText.length) {
+                        if (fullText.charAt(index) === '<') {
+                            const endIndex = fullText.indexOf('>', index);
+                            if (endIndex !== -1) {
+                                output += fullText.substring(index, endIndex + 1);
+                                index = endIndex + 1;
                             } else {
                                 output += fullText.charAt(index);
                                 index++;
                             }
-                            bubble.innerHTML = output;
-                            chatBox.scrollTop = chatBox.scrollHeight;
-                            renderLatex(msgElement);
                         } else {
-                            clearInterval(interval);
-                            isTyping = false;
-                            const lastMsg = messages[msgIndex];
-                            if (lastMsg && lastMsg.role === 'assistant') {
-                                lastMsg.content = fullText;
-                                if (!lastMsg.versions) lastMsg.versions = [fullText];
-                                if (lastMsg.currentVersion === undefined) lastMsg.currentVersion = lastMsg.versions
-                                    .indexOf(fullText);
-                                if (lastMsg.currentVersion === -1) lastMsg.currentVersion = 0;
-                                saveMessagesToLocal();
-                                (async () => {
-                                    const { error } = await supabase
-                                        .from('chat_messages')
-                                        .upsert([{
-                                            user_id: USER_ID,
-                                            role: 'assistant',
-                                            content: fullText,
-                                            local_id: lastMsg.local_id,
-                                            versions: lastMsg.versions,
-                                            current_version: lastMsg.currentVersion,
-                                            merged_user_message: lastMsg.mergedUserMessage || null
-                                        }], { onConflict: 'local_id' });
-                                    if (error) console.error('AI回复同步失败', error);
-                                })();
-                            }
-                            addRegenButtonToMessage(msgElement);
-                            updateVersionSwitcher(msgElement, msgIndex);
-                            // AI回复完成后更新lastAIResponseIndex
-                            updateLastAIResponseIndex();
-                            chatBox.scrollTop = chatBox.scrollHeight;
+                            output += fullText.charAt(index);
+                            index++;
                         }
-                    }, currentSpeed);
-                }
-
-                function renderStoredMessages() {
-                    chatBox.innerHTML = '';
-                    messages.forEach((msg, idx) => {
-                        if (msg.role === 'assistant' && msg.versions && msg.versions.length > 0) {
-                            const currentContent = msg.versions[msg.currentVersion] || msg.content;
-                            addMessageToDOM(msg.role, currentContent, false, idx);
-                        } else {
-                            addMessageToDOM(msg.role, msg.content, false, idx);
+                        bubble.innerHTML = output;
+                        chatBox.scrollTop = chatBox.scrollHeight;
+                        renderLatex(msgElement);
+                    } else {
+                        clearInterval(interval);
+                        isTyping = false;
+                        const lastMsg = messages[msgIndex];
+                        if (lastMsg && lastMsg.role === 'assistant') {
+                            lastMsg.content = fullText;
+                            if (!lastMsg.versions) lastMsg.versions = [fullText];
+                            if (lastMsg.currentVersion === undefined) lastMsg.currentVersion = lastMsg.versions.indexOf(
+                                fullText);
+                            if (lastMsg.currentVersion === -1) lastMsg.currentVersion = 0;
+                            saveMessagesToLocal();
+                            (async () => {
+                                const { error } = await supabase
+                                    .from('chat_messages')
+                                    .upsert([{
+                                        user_id: USER_ID,
+                                        role: 'assistant',
+                                        content: fullText,
+                                        local_id: lastMsg.local_id,
+                                        versions: lastMsg.versions,
+                                        current_version: lastMsg.currentVersion,
+                                        merged_user_message: lastMsg.mergedUserMessage || null
+                                    }], { onConflict: 'local_id' });
+                                if (error) console.error('AI回复同步失败', error);
+                            })();
                         }
-                    });
-                    if (messages.length === 0) {
-                        addMessageToDOM('assistant', '欢迎使用剧本智能助手！点击左上角按钮设置剧本。', false, 0);
-                        lastAIResponseIndex = 0;
+                        addRegenButtonToMessage(msgElement);
+                        updateVersionSwitcher(msgElement, msgIndex);
+                        updateLastAIResponseIndex();
+                        chatBox.scrollTop = chatBox.scrollHeight;
                     }
-                    updateLastAIResponseIndex();
-                    chatBox.scrollTop = chatBox.scrollHeight;
-                }
+                }, currentSpeed);
+            }
 
-                async function addMessage(role, content, animate = false, extraData = {}) {
-                    const local_id = generateId();
-                    const msg = {
+            function renderStoredMessages() {
+                chatBox.innerHTML = '';
+                messages.forEach((msg, idx) => {
+                    if (msg.role === 'assistant' && msg.versions && msg.versions.length > 0) {
+                        const currentContent = msg.versions[msg.currentVersion] || msg.content;
+                        addMessageToDOM(msg.role, currentContent, false, idx);
+                    } else {
+                        addMessageToDOM(msg.role, msg.content, false, idx);
+                    }
+                });
+                if (messages.length === 0) {
+                    addMessageToDOM('assistant', '欢迎使用剧本智能助手！左侧设置剧本，中间输入对话稿子，右侧开始聊天。', false, 0);
+                    lastAIResponseIndex = 0;
+                }
+                updateLastAIResponseIndex();
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
+
+            async function addMessage(role, content, animate = false, extraData = {}) {
+                const local_id = generateId();
+                const msg = {
+                    role,
+                    content,
+                    local_id,
+                    versions: role === 'assistant' ? [content] : undefined,
+                    currentVersion: 0,
+                    ...extraData
+                };
+                messages.push(msg);
+                const idx = messages.length - 1;
+                saveMessagesToLocal();
+
+                if (role === 'user') {
+                    const { error } = await supabase.from('chat_messages').insert([{
+                        user_id: USER_ID,
                         role,
                         content,
-                        local_id,
-                        versions: role === 'assistant' ? [content] : undefined,
-                        currentVersion: 0,
-                        ...extraData
-                    };
-                    messages.push(msg);
-                    const idx = messages.length - 1;
-                    saveMessagesToLocal();
-
-                    if (role === 'user') {
-                        const { error } = await supabase.from('chat_messages').insert([{
-                            user_id: USER_ID,
-                            role,
-                            content,
-                            local_id
-                        }]);
-                        if (error) console.error('用户消息同步失败', error);
-                    }
-
-                    addMessageToDOM(role, content, animate, idx);
-
-                    if (role === 'assistant' && !animate) {
-                        updateLastAIResponseIndex();
-                    }
-
-                    return idx;
+                        local_id
+                    }]);
+                    if (error) console.error('用户消息同步失败', error);
                 }
 
-                function parseScriptFormat(text) {
-                    let result = text;
-                    syncPresetsFromInput();
-                    const outer = stylePresets.action.outer;
-                    const inner = stylePresets.action.inner;
-                    const prefix = stylePresets.action.prefix;
-                    const suffix = stylePresets.action.suffix;
+                addMessageToDOM(role, content, animate, idx);
 
-                    result = result.replace(/\[action:(.*?)\]/g,
-                        `<span style="color:${outer.color};font-size:${outer.size}px;font-weight:${outer.weight};line-height:1.4;">${prefix}</span>` +
-                        `<span style="color:${inner.color};font-size:${inner.size}px;font-weight:${inner.weight};line-height:1.4;">$1</span>` +
-                        `<span style="color:${outer.color};font-size:${outer.size}px;font-weight:${outer.weight};line-height:1.4;">${suffix}</span>`
-                    );
-
-                    result = result.replace(/【(.*?)】/g,
-                        `<span style="color:${outer.color};font-size:${outer.size}px;font-weight:${outer.weight};line-height:1.4;">【</span>` +
-                        `<span style="color:${inner.color};font-size:${inner.size}px;font-weight:${inner.weight};line-height:1.4;">$1</span>` +
-                        `<span style="color:${outer.color};font-size:${outer.size}px;font-weight:${outer.weight};line-height:1.4;">】</span>`
-                    );
-
-                    const emph = stylePresets.emph;
-                    result = result.replace(/\[emph:(.*?)\]/g,
-                        `<span style="color:${emph.color};font-size:${emph.size}px;font-weight:${emph.weight};line-height:1.4;">$1</span>`
-                    );
-
-                    result = result.replace(/\[br\]/g, '<br>');
-                    result = result.replace(/\[b:(.*?)\]/g, '<strong>$1</strong>');
-                    result = result.replace(/\[gray:(.*?)\]/g,
-                        '<span style="color:#888888;font-weight:300;">$1</span>');
-                    result = result.replace(/\[red:(.*?)\]/g, '<span style="color:#ff4444;">$1</span>');
-                    result = result.replace(/\[color:([#a-zA-Z0-9]+):(.*?)\]/g,
-                        '<span style="color:$1;">$2</span>');
-                    result = result.replace(/\[size:(\d+):(.*?)\]/g,
-                        '<span style="font-size:$1px;line-height:1.4;">$2</span>');
-
-                    return result;
+                if (role === 'assistant' && !animate) {
+                    updateLastAIResponseIndex();
                 }
 
-                async function getAIResponse(userMessage) {
-                    const script = agentPrompt.value.trim();
-                    if (!script) return "请先在左侧设置中填写剧本内容。";
-                    const systemPrompt = `
-                    你是一个严格按照剧本回答问题的助手。
-                    【最高优先级规则，必须100%遵守】
-        
-                    1. 所有回答只能来自下面的剧本内容，绝对不能编造任何剧本里没有的信息。
-                    2. 如果用户的问题剧本里没有答案，只说"这个我暂时不知道哦"。
-                    3. 【格式铁则】
-                        - 所有动作、神态、语气、场景备注，必须用中文方括号【】完整包裹，放在句子对应位置，绝对不能直接写在正文里。
-                        - 需要重点强调的关键词，可以加粗显示。
-                        - 需要换行的地方直接换行。
-                    4. 正确示例：【挑眉轻笑】你说什么？我没听清。
-                    5. 错误示例：挑眉笑着说："你说什么？我没听清。"
-                    6. 不要加任何剧本以外的解释或客套话。
-                    --- 剧本开始 ---
-                    ${script}
-                    --- 剧本结束 ---
-                    `;
-                    try {
-                        const response = await fetch(AI_PROXY_URL, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                messages: [
-                                    { role: 'system', content: systemPrompt },
-                                    { role: 'user', content: userMessage }
-                                ],
-                            }),
-                        });
-                        if (!response.ok) {
-                            const errorData = await response.json();
-                            throw new Error(errorData.error?.message || '请求失败');
-                        }
-                        const data = await response.json();
-                        return parseScriptFormat(data.choices[0].message.content.trim());
-                    } catch (error) {
-                        return `AI 模式出错：${error.message}<br>请检查 Supabase Edge Function 是否部署正常。`;
+                return idx;
+            }
+
+            function parseScriptFormat(text) {
+                let result = text;
+                syncPresetsFromInput();
+                const outer = stylePresets.action.outer;
+                const inner = stylePresets.action.inner;
+                const prefix = stylePresets.action.prefix;
+                const suffix = stylePresets.action.suffix;
+
+                result = result.replace(/\[action:(.*?)\]/g,
+                    `<span style="color:${outer.color};font-size:${outer.size}px;font-weight:${outer.weight};line-height:1.4;">${prefix}</span>` +
+                    `<span style="color:${inner.color};font-size:${inner.size}px;font-weight:${inner.weight};line-height:1.4;">$1</span>` +
+                    `<span style="color:${outer.color};font-size:${outer.size}px;font-weight:${outer.weight};line-height:1.4;">${suffix}</span>`
+                );
+
+                result = result.replace(/【(.*?)】/g,
+                    `<span style="color:${outer.color};font-size:${outer.size}px;font-weight:${outer.weight};line-height:1.4;">【</span>` +
+                    `<span style="color:${inner.color};font-size:${inner.size}px;font-weight:${inner.weight};line-height:1.4;">$1</span>` +
+                    `<span style="color:${outer.color};font-size:${outer.size}px;font-weight:${outer.weight};line-height:1.4;">】</span>`
+                );
+
+                const emph = stylePresets.emph;
+                result = result.replace(/\[emph:(.*?)\]/g,
+                    `<span style="color:${emph.color};font-size:${emph.size}px;font-weight:${emph.weight};line-height:1.4;">$1</span>`
+                );
+
+                result = result.replace(/\[br\]/g, '<br>');
+                result = result.replace(/\[b:(.*?)\]/g, '<strong>$1</strong>');
+                result = result.replace(/\[gray:(.*?)\]/g, '<span style="color:#888888;font-weight:300;">$1</span>');
+                result = result.replace(/\[red:(.*?)\]/g, '<span style="color:#ff4444;">$1</span>');
+                result = result.replace(/\[color:([#a-zA-Z0-9]+):(.*?)\]/g, '<span style="color:$1;">$2</span>');
+                result = result.replace(/\[size:(\d+):(.*?)\]/g,
+                    '<span style="font-size:$1px;line-height:1.4;">$2</span>');
+
+                return result;
+            }
+
+            // ========== AI回复（结合剧本+稿子） ==========
+            async function getAIResponse(userMessage) {
+                const script = agentPrompt.value.trim();
+                const draft = scriptDraftContent.trim();
+                if (!script && !draft) return "请先在左侧设置中填写剧本内容，或在中间面板输入对话稿子。";
+
+                let systemPrompt = `你是一个严格按照剧本回答问题的助手。
+        【最高优先级规则，必须100%遵守】
+
+        1. 所有回答只能来自下面的剧本内容，绝对不能编造任何剧本里没有的信息。
+        2. 如果用户的问题剧本里没有答案，只说"这个我暂时不知道哦"。
+        3. 【格式铁则】
+            - 所有动作、神态、语气、场景备注，必须用中文方括号【】完整包裹，放在句子对应位置，绝对不能直接写在正文里。
+            - 需要重点强调的关键词，可以加粗显示。
+            - 需要换行的地方直接换行。
+        4. 正确示例：【挑眉轻笑】你说什么？我没听清。
+        5. 错误示例：挑眉笑着说："你说什么？我没听清。"
+        6. 不要加任何剧本以外的解释或客套话。
+        `;
+
+                if (script) {
+                    systemPrompt += `\n--- 剧本开始 ---\n${script}\n--- 剧本结束 ---\n`;
+                }
+                if (draft) {
+                    systemPrompt +=
+                        `\n【对话参考稿子】请参考以下对话风格和内容来生成回复，尽量贴近稿子中的语气和表达方式：\n--- 稿子开始 ---\n${draft}\n--- 稿子结束 ---\n`;
+                }
+
+                try {
+                    const response = await fetch(AI_PROXY_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            messages: [
+                                { role: 'system', content: systemPrompt },
+                                { role: 'user', content: userMessage }
+                            ],
+                        }),
+                    });
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error?.message || '请求失败');
+                    }
+                    const data = await response.json();
+                    return parseScriptFormat(data.choices[0].message.content.trim());
+                } catch (error) {
+                    return `AI 模式出错：${error.message}<br>请检查 Supabase Edge Function 是否部署正常。`;
+                }
+            }
+
+            // ========== pending消息计数 ==========
+            function getPendingCount() {
+                let count = 0;
+                for (let i = lastAIResponseIndex + 1; i < messages.length; i++) {
+                    if (messages[i].role === 'user') {
+                        count++;
                     }
                 }
+                return count;
+            }
 
-                // ========== 获取pending用户消息数量 ==========
-                function getPendingCount() {
-                    let count = 0;
-                    for (let i = lastAIResponseIndex + 1; i < messages.length; i++) {
-                        if (messages[i].role === 'user') {
-                            count++;
-                        }
+            function getPendingUserMessagesContent() {
+                const pending = [];
+                for (let i = lastAIResponseIndex + 1; i < messages.length; i++) {
+                    if (messages[i].role === 'user') {
+                        pending.push(messages[i].content);
                     }
-                    return count;
                 }
+                return pending.join('\n\n');
+            }
 
-                // ========== 获取pending用户消息内容（合并） ==========
-                function getPendingUserMessagesContent() {
-                    const pending = [];
-                    for (let i = lastAIResponseIndex + 1; i < messages.length; i++) {
-                        if (messages[i].role === 'user') {
-                            pending.push(messages[i].content);
-                        }
-                    }
-                    return pending.join('\n\n');
-                }
+            function updatePendingIndicator() {
+                const count = getPendingCount();
+                const isManual = replyMode === 'manual';
 
-                // ========== 【核心改动】更新召唤按钮状态（在设置面板中）和菜单红点 ==========
-                function updatePendingIndicator() {
-                    const count = getPendingCount();
-                    const isManual = replyMode === 'manual';
+                if (summonArea) {
+                    if (isManual) {
+                        summonArea.style.display = 'block';
+                        summonBtn.classList.remove('active-btn', 'typing-btn', 'idle-btn');
 
-                    // 处理设置面板中的召唤区域
-                    if (summonArea) {
-                        if (isManual) {
-                            summonArea.style.display = 'block';
-                            // 移除所有旧的状态类
-                            summonBtn.classList.remove('active-btn', 'typing-btn', 'idle-btn');
-
-                            if (isTyping) {
-                                // AI正在回复中
-                                summonStatusText.textContent = '⏳ AI正在回复中...';
-                                summonStatusText.className = 'text-xs text-gray-400';
-                                summonBtn.textContent = '⏳ 回复中...';
-                                summonBtn.classList.add('typing-btn');
-                                summonBtn.disabled = true;
-                            } else if (count > 0) {
-                                // 有pending消息，可以召唤
-                                summonStatusText.textContent = '📩 已发送 ' + count + ' 条消息，AI等待召唤中';
-                                summonStatusText.className = 'text-xs has-pending';
-                                summonBtn.textContent = '⚡ 召唤AI回复';
-                                summonBtn.classList.add('active-btn');
-                                summonBtn.disabled = false;
-                            } else {
-                                // 手动模式但无pending消息
-                                summonStatusText.textContent = '暂无待回复消息，发送消息后可召唤AI';
-                                summonStatusText.className = 'text-xs text-gray-400';
-                                summonBtn.textContent = '⚡ 召唤AI回复';
-                                summonBtn.classList.add('idle-btn');
-                                summonBtn.disabled = true;
-                            }
+                        if (isTyping) {
+                            summonStatusText.textContent = '⏳ AI正在回复中...';
+                            summonStatusText.className = 'text-xs text-gray-400';
+                            summonBtn.textContent = '⏳ 回复中...';
+                            summonBtn.classList.add('typing-btn');
+                            summonBtn.disabled = true;
+                        } else if (count > 0) {
+                            summonStatusText.textContent = '📩 已发送 ' + count + ' 条消息，AI等待召唤中';
+                            summonStatusText.className = 'text-xs has-pending';
+                            summonBtn.textContent = '⚡ 召唤AI回复';
+                            summonBtn.classList.add('active-btn');
+                            summonBtn.disabled = false;
                         } else {
-                            // 自动模式，隐藏召唤区域
-                            summonArea.style.display = 'none';
+                            summonStatusText.textContent = '暂无待回复消息，发送消息后可召唤AI';
+                            summonStatusText.className = 'text-xs text-gray-400';
+                            summonBtn.textContent = '⚡ 召唤AI回复';
+                            summonBtn.classList.add('idle-btn');
+                            summonBtn.disabled = true;
                         }
-                    }
-
-                    // 处理菜单按钮红点提示（手动模式且有pending且不在回复中时显示）
-                    if (pendingDot) {
-                        if (isManual && count > 0 && !isTyping) {
-                            pendingDot.style.display = 'block';
-                        } else {
-                            pendingDot.style.display = 'none';
-                        }
+                    } else {
+                        summonArea.style.display = 'none';
                     }
                 }
 
-                // ========== 更新lastAIResponseIndex ==========
-                function updateLastAIResponseIndex() {
-                    let lastIdx = -1;
-                    for (let i = messages.length - 1; i >= 0; i--) {
-                        if (messages[i].role === 'assistant') {
-                            lastIdx = i;
-                            break;
-                        }
+                if (pendingDot) {
+                    if (isManual && count > 0 && !isTyping) {
+                        pendingDot.style.display = 'block';
+                    } else {
+                        pendingDot.style.display = 'none';
                     }
-                    lastAIResponseIndex = lastIdx;
-                    updatePendingIndicator();
                 }
+            }
 
-                // ========== 手动触发AI回复 ==========
-                async function triggerAIReply() {
-                    if (isTyping) return;
-                    const pendingContent = getPendingUserMessagesContent();
-                    if (!pendingContent) {
-                        console.log('📭 没有待回复的消息');
-                        return;
+            function updateLastAIResponseIndex() {
+                let lastIdx = -1;
+                for (let i = messages.length - 1; i >= 0; i--) {
+                    if (messages[i].role === 'assistant') {
+                        lastIdx = i;
+                        break;
                     }
-                    const count = getPendingCount();
-                    console.log('⚡ 召唤AI回复，共' + count + '条pending消息');
+                }
+                lastAIResponseIndex = lastIdx;
+                updatePendingIndicator();
+            }
 
-                    // 立即更新召唤按钮状态为"回复中"
-                    updatePendingIndicator();
+            // ========== 手动触发AI回复 ==========
+            async function triggerAIReply() {
+                if (isTyping) return;
+                const pendingContent = getPendingUserMessagesContent();
+                if (!pendingContent) {
+                    console.log('📭 没有待回复的消息');
+                    return;
+                }
+                const count = getPendingCount();
+                console.log('⚡ 召唤AI回复，共' + count + '条pending消息');
 
-                    // 显示loading
+                updatePendingIndicator();
+
+                const loadingDiv = document.createElement('div');
+                loadingDiv.className = 'message-row flex mb-4 justify-start items-start gap-2';
+                loadingDiv.setAttribute('data-loading', 'true');
+                loadingDiv.innerHTML = `
+                    <div class="msg-avatar">${agentAvatarUrl ? `<img src="${agentAvatarUrl}" class="avatar-img">` : (currentAgentName || 'AI').charAt(0)}</div>
+                    <div class="max-w-[75%]">
+                        <span class="msg-name-label">${currentAgentName}</span>
+                        <div class="inline-block rounded-lg ai-bubble chat-bubble-content">思考中...</div>
+                    </div>`;
+                chatBox.appendChild(loadingDiv);
+                chatBox.scrollTop = chatBox.scrollHeight;
+
+                const reply = await getAIResponse(pendingContent);
+                if (chatBox.contains(loadingDiv)) chatBox.removeChild(loadingDiv);
+
+                const local_id = generateId();
+                const msg = {
+                    role: 'assistant',
+                    content: reply,
+                    local_id,
+                    versions: [reply],
+                    currentVersion: 0,
+                    mergedUserMessage: pendingContent
+                };
+                messages.push(msg);
+                const idx = messages.length - 1;
+                saveMessagesToLocal();
+                addMessageToDOM('assistant', reply, true, idx);
+            }
+
+            // ========== 发送消息 ==========
+            async function sendMessage() {
+                const value = msgInput.value.trim();
+                if (!value) return;
+                await addMessage('user', value);
+                msgInput.value = '';
+
+                if (replyMode === 'auto') {
                     const loadingDiv = document.createElement('div');
                     loadingDiv.className = 'message-row flex mb-4 justify-start items-start gap-2';
                     loadingDiv.setAttribute('data-loading', 'true');
                     loadingDiv.innerHTML = `
-                             <div class="msg-avatar">${agentAvatarUrl ? `<img src="${agentAvatarUrl}" class="avatar-img">` : (currentAgentName || 'AI').charAt(0)}</div>
-                             <div class="max-w-[75%]">
-                                 <span class="msg-name-label">${currentAgentName}</span>
-                                 <div class="inline-block rounded-lg ai-bubble chat-bubble-content">思考中...</div>
-                             </div>`;
+                        <div class="msg-avatar">${agentAvatarUrl ? `<img src="${agentAvatarUrl}" class="avatar-img">` : (currentAgentName || 'AI').charAt(0)}</div>
+                        <div class="max-w-[75%]">
+                            <span class="msg-name-label">${currentAgentName}</span>
+                            <div class="inline-block rounded-lg ai-bubble chat-bubble-content">思考中...</div>
+                        </div>`;
                     chatBox.appendChild(loadingDiv);
                     chatBox.scrollTop = chatBox.scrollHeight;
 
-                    // 调用AI
-                    const reply = await getAIResponse(pendingContent);
+                    const reply = await getAIResponse(value);
                     if (chatBox.contains(loadingDiv)) chatBox.removeChild(loadingDiv);
-
-                    // 添加AI回复（带打字机效果），并存储合并的用户消息用于重新生成
-                    const local_id = generateId();
-                    const msg = {
-                        role: 'assistant',
-                        content: reply,
-                        local_id,
-                        versions: [reply],
-                        currentVersion: 0,
-                        mergedUserMessage: pendingContent
-                    };
-                    messages.push(msg);
-                    const idx = messages.length - 1;
-                    saveMessagesToLocal();
-                    addMessageToDOM('assistant', reply, true, idx);
-                }
-
-                // ========== 发送消息函数 ==========
-                async function sendMessage() {
-                    const value = msgInput.value.trim();
-                    if (!value) return;
-                    // 添加用户消息到界面
-                    await addMessage('user', value);
-                    msgInput.value = '';
-
-                    if (replyMode === 'auto') {
-                        // 自动模式：自动触发AI回复
-                        const loadingDiv = document.createElement('div');
-                        loadingDiv.className = 'message-row flex mb-4 justify-start items-start gap-2';
-                        loadingDiv.setAttribute('data-loading', 'true');
-                        loadingDiv.innerHTML = `
-                                 <div class="msg-avatar">${agentAvatarUrl ? `<img src="${agentAvatarUrl}" class="avatar-img">` : (currentAgentName || 'AI').charAt(0)}</div>
-                                 <div class="max-w-[75%]">
-                                     <span class="msg-name-label">${currentAgentName}</span>
-                                     <div class="inline-block rounded-lg ai-bubble chat-bubble-content">思考中...</div>
-                                 </div>`;
-                        chatBox.appendChild(loadingDiv);
-                        chatBox.scrollTop = chatBox.scrollHeight;
-
-                        const reply = await getAIResponse(value);
-                        if (chatBox.contains(loadingDiv)) chatBox.removeChild(loadingDiv);
-                        await addMessage('assistant', reply, true);
-                    } else {
-                        // 手动模式：不自动触发AI回复，更新召唤按钮状态
-                        updatePendingIndicator();
-                        console.log('📩 手动模式：消息已发送，AI等待召唤中。已发送' + getPendingCount() + '条消息。请打开左侧设置面板点击召唤按钮。');
-                    }
-                }
-
-                async function clearChat() {
-                    messages = [];
-                    saveMessagesToLocal();
-                    const { error } = await supabase.from('chat_messages').delete().eq('user_id', USER_ID);
-                    if (error) console.error('云端清空失败', error);
-                    chatBox.innerHTML = '';
-                    chatBox.querySelectorAll('[data-loading="true"]').forEach(el => el.remove());
-                    addMessageToDOM('assistant', '聊天记录已清空。', false, 0);
-                    lastAIResponseIndex = 0;
+                    await addMessage('assistant', reply, true);
+                } else {
                     updatePendingIndicator();
+                    console.log('📩 手动模式：消息已发送，AI等待召唤中。已发送' + getPendingCount() +
+                        '条消息。请打开左侧设置面板点击召唤按钮。');
                 }
+            }
 
-                function resetScript() {
-                    clearChat();
-                    addMessageToDOM('assistant', '剧本已重置，可以重新开始。', false, 1);
-                    lastAIResponseIndex = 1;
-                    updatePendingIndicator();
-                }
+            async function clearChat() {
+                messages = [];
+                saveMessagesToLocal();
+                const { error } = await supabase.from('chat_messages').delete().eq('user_id', USER_ID);
+                if (error) console.error('云端清空失败', error);
+                chatBox.innerHTML = '';
+                chatBox.querySelectorAll('[data-loading="true"]').forEach(el => el.remove());
+                addMessageToDOM('assistant', '聊天记录已清空。', false, 0);
+                lastAIResponseIndex = 0;
+                updatePendingIndicator();
+            }
 
-                async function loadSettingsFromCloud() {
-                    try {
-                        const { data, error } = await supabase
-                            .from('user_settings')
-                            .select('*')
-                            .eq('id', USER_ID)
-                            .single();
-                        if (error && error.code !== 'PGRST116') throw error;
-                        if (data) {
-                            if (data.agent_prompt) agentPrompt.value = data.agent_prompt;
-                            if (data.agent_name) { currentAgentName = data.agent_name;
-                                agentNameSet.value = data.agent_name; }
-                            if (data.user_name) { currentUserName = data.user_name;
-                                userNameInput.value = data.user_name; }
-                            if (data.agent_avatar_url) { agentAvatarUrl = data.agent_avatar_url;
-                                updateAgentAvatarDisplay(); }
-                            if (data.user_avatar_url) userAvatarUrl = data.user_avatar_url;
-                            if (data.font_size) fontSizeInput.value = data.font_size;
-                            if (data.line_height) lineHeightInput.value = data.line_height;
-                            if (data.user_text_color) userTextColor.value = data.user_text_color;
-                            if (data.ai_text_color) aiTextColor.value = data.ai_text_color;
-                            if (data.bubble_px) bubblePxInput.value = data.bubble_px;
-                            if (data.bubble_py) bubblePyInput.value = data.bubble_py;
-                            if (data.chat_h_padding) chatHPaddingInput.value = data.chat_h_padding;
-                            if (data.action_outer_color) actionOuterColorInput.value = data.action_outer_color;
-                            if (data.action_outer_size) actionOuterSizeInput.value = data.action_outer_size;
-                            if (data.action_outer_weight) actionOuterWeightInput.value = data.action_outer_weight;
-                            if (data.action_prefix !== undefined) actionPrefixInput.value = data.action_prefix;
-                            if (data.action_suffix !== undefined) actionSuffixInput.value = data.action_suffix;
-                            if (data.action_inner_color) actionInnerColorInput.value = data.action_inner_color;
-                            if (data.action_inner_size) actionInnerSizeInput.value = data.action_inner_size;
-                            if (data.action_inner_weight) actionInnerWeightInput.value = data.action_inner_weight;
-                            if (data.emph_color) emphColorInput.value = data.emph_color;
-                            if (data.emph_size) emphSizeInput.value = data.emph_size;
-                            if (data.emph_weight) emphWeightInput.value = data.emph_weight;
-                            if (data.show_version_regenerate !== undefined) {
-                                showVersionRegenerateCheckbox.checked = data.show_version_regenerate;
-                            } else {
-                                showVersionRegenerateCheckbox.checked = true;
-                            }
-                            if (data.typewriter_speed !== undefined && data.typewriter_speed !== null) {
-                                typewriterSpeed = data.typewriter_speed;
-                                typewriterSpeedInput.value = typewriterSpeed;
-                                speedDisplay.textContent = typewriterSpeed + 'ms';
-                            }
-                            if (data.reply_mode !== undefined && data.reply_mode !== null) {
-                                replyMode = data.reply_mode;
-                                replyModeToggle.checked = (replyMode === 'manual');
-                            } else {
-                                replyMode = 'auto';
-                                replyModeToggle.checked = false;
-                            }
-                            updateVersionRegenerateVisibility();
-                            syncPresetsFromInput();
-                            updateNameDisplays();
-                            updateCSSVariables();
+            function resetScript() {
+                clearChat();
+                addMessageToDOM('assistant', '剧本已重置，可以重新开始。', false, 1);
+                lastAIResponseIndex = 1;
+                updatePendingIndicator();
+            }
+
+            // ========== 加载设置（含稿子） ==========
+            async function loadSettingsFromCloud() {
+                try {
+                    const { data, error } = await supabase
+                        .from('user_settings')
+                        .select('*')
+                        .eq('id', USER_ID)
+                        .single();
+                    if (error && error.code !== 'PGRST116') throw error;
+                    if (data) {
+                        if (data.agent_prompt) agentPrompt.value = data.agent_prompt;
+                        if (data.agent_name) { currentAgentName = data.agent_name;
+                            agentNameSet.value = data.agent_name; }
+                        if (data.user_name) { currentUserName = data.user_name;
+                            userNameInput.value = data.user_name; }
+                        if (data.agent_avatar_url) { agentAvatarUrl = data.agent_avatar_url;
+                            updateAgentAvatarDisplay(); }
+                        if (data.user_avatar_url) userAvatarUrl = data.user_avatar_url;
+                        if (data.font_size) fontSizeInput.value = data.font_size;
+                        if (data.line_height) lineHeightInput.value = data.line_height;
+                        if (data.user_text_color) userTextColor.value = data.user_text_color;
+                        if (data.ai_text_color) aiTextColor.value = data.ai_text_color;
+                        if (data.bubble_px) bubblePxInput.value = data.bubble_px;
+                        if (data.bubble_py) bubblePyInput.value = data.bubble_py;
+                        if (data.chat_h_padding) chatHPaddingInput.value = data.chat_h_padding;
+                        if (data.action_outer_color) actionOuterColorInput.value = data.action_outer_color;
+                        if (data.action_outer_size) actionOuterSizeInput.value = data.action_outer_size;
+                        if (data.action_outer_weight) actionOuterWeightInput.value = data.action_outer_weight;
+                        if (data.action_prefix !== undefined) actionPrefixInput.value = data.action_prefix;
+                        if (data.action_suffix !== undefined) actionSuffixInput.value = data.action_suffix;
+                        if (data.action_inner_color) actionInnerColorInput.value = data.action_inner_color;
+                        if (data.action_inner_size) actionInnerSizeInput.value = data.action_inner_size;
+                        if (data.action_inner_weight) actionInnerWeightInput.value = data.action_inner_weight;
+                        if (data.emph_color) emphColorInput.value = data.emph_color;
+                        if (data.emph_size) emphSizeInput.value = data.emph_size;
+                        if (data.emph_weight) emphWeightInput.value = data.emph_weight;
+                        if (data.show_version_regenerate !== undefined) {
+                            showVersionRegenerateCheckbox.checked = data.show_version_regenerate;
+                        } else {
+                            showVersionRegenerateCheckbox.checked = true;
                         }
-                        return true;
-                    } catch (err) {
-                        loadSettingsFromLocal();
-                        return false;
-                    }
-                }
-
-                function loadSettingsFromLocal() {
-                    const saved = JSON.parse(localStorage.getItem('chat-settings') || '{}');
-                    if (saved.agentPrompt) agentPrompt.value = saved.agentPrompt;
-                    if (saved.agentName) { currentAgentName = saved.agentName;
-                        agentNameSet.value = saved.agentName; }
-                    if (saved.userName) { currentUserName = saved.userName;
-                        userNameInput.value = saved.userName; }
-                    if (saved.agentAvatarUrl) { agentAvatarUrl = saved.agentAvatarUrl;
-                        updateAgentAvatarDisplay(); }
-                    if (saved.userAvatarUrl) userAvatarUrl = saved.userAvatarUrl;
-                    if (saved.fontSize) fontSizeInput.value = saved.fontSize;
-                    if (saved.lineHeight) lineHeightInput.value = saved.lineHeight;
-                    if (saved.userTextColor) userTextColor.value = saved.userTextColor;
-                    if (saved.aiTextColor) aiTextColor.value = saved.aiTextColor;
-                    if (saved.bubblePx) bubblePxInput.value = saved.bubblePx;
-                    if (saved.bubblePy) bubblePyInput.value = saved.bubblePy;
-                    if (saved.chatHPadding) chatHPaddingInput.value = saved.chatHPadding;
-                    if (saved.stylePresets) {
-                        stylePresets = saved.stylePresets;
-                        if (stylePresets.action?.outer) {
-                            actionOuterColorInput.value = stylePresets.action.outer.color;
-                            actionOuterSizeInput.value = stylePresets.action.outer.size;
-                            actionOuterWeightInput.value = stylePresets.action.outer.weight;
+                        if (data.typewriter_speed !== undefined && data.typewriter_speed !== null) {
+                            typewriterSpeed = data.typewriter_speed;
+                            typewriterSpeedInput.value = typewriterSpeed;
+                            speedDisplay.textContent = typewriterSpeed + 'ms';
                         }
-                        if (stylePresets.action?.prefix !== undefined) actionPrefixInput.value = stylePresets.action
-                            .prefix;
-                        if (stylePresets.action?.suffix !== undefined) actionSuffixInput.value = stylePresets.action
-                            .suffix;
-                        if (stylePresets.action?.inner) {
-                            actionInnerColorInput.value = stylePresets.action.inner.color;
-                            actionInnerSizeInput.value = stylePresets.action.inner.size;
-                            actionInnerWeightInput.value = stylePresets.action.inner.weight;
+                        if (data.reply_mode !== undefined && data.reply_mode !== null) {
+                            replyMode = data.reply_mode;
+                            replyModeToggle.checked = (replyMode === 'manual');
+                        } else {
+                            replyMode = 'auto';
+                            replyModeToggle.checked = false;
                         }
-                        if (stylePresets.emph) {
-                            emphColorInput.value = stylePresets.emph.color;
-                            emphSizeInput.value = stylePresets.emph.size || 16;
-                            emphWeightInput.value = stylePresets.emph.weight;
+                        // 【新增】加载稿子内容
+                        if (data.script_draft !== undefined && data.script_draft !== null) {
+                            scriptDraftContent = data.script_draft;
+                            scriptDraftTextarea.value = scriptDraftContent;
                         }
-                    }
-                    if (saved.showVersionRegenerate !== undefined) {
-                        showVersionRegenerateCheckbox.checked = saved.showVersionRegenerate;
-                    } else {
-                        showVersionRegenerateCheckbox.checked = true;
-                    }
-                    if (saved.typewriterSpeed !== undefined) {
-                        typewriterSpeed = saved.typewriterSpeed;
-                        typewriterSpeedInput.value = typewriterSpeed;
-                        speedDisplay.textContent = typewriterSpeed + 'ms';
-                    }
-                    if (saved.replyMode !== undefined) {
-                        replyMode = saved.replyMode;
-                        replyModeToggle.checked = (replyMode === 'manual');
-                    } else {
-                        replyMode = 'auto';
-                        replyModeToggle.checked = false;
-                    }
-                    updateVersionRegenerateVisibility();
-                    updateNameDisplays();
-                    updateCSSVariables();
-                }
-
-                async function saveSettingsToCloud() {
-                    currentAgentName = agentNameSet.value || currentAgentName;
-                    currentUserName = userNameInput.value || currentUserName;
-                    syncPresetsFromInput();
-                    updateNameDisplays();
-                    updateCSSVariables();
-                    const settings = {
-                        id: USER_ID,
-                        agent_prompt: agentPrompt.value,
-                        agent_name: currentAgentName,
-                        user_name: currentUserName,
-                        agent_avatar_url: agentAvatarUrl,
-                        user_avatar_url: userAvatarUrl,
-                        font_size: parseInt(fontSizeInput.value) || 16,
-                        line_height: parseFloat(lineHeightInput.value) || 1.6,
-                        user_text_color: userTextColor.value,
-                        ai_text_color: aiTextColor.value,
-                        bubble_px: parseInt(bubblePxInput.value) || 16,
-                        bubble_py: parseInt(bubblePyInput.value) || 8,
-                        chat_h_padding: parseInt(chatHPaddingInput.value) || 16,
-                        action_outer_color: stylePresets.action.outer.color,
-                        action_outer_size: stylePresets.action.outer.size,
-                        action_outer_weight: stylePresets.action.outer.weight,
-                        action_prefix: stylePresets.action.prefix,
-                        action_suffix: stylePresets.action.suffix,
-                        action_inner_color: stylePresets.action.inner.color,
-                        action_inner_size: stylePresets.action.inner.size,
-                        action_inner_weight: stylePresets.action.inner.weight,
-                        emph_color: stylePresets.emph.color,
-                        emph_size: stylePresets.emph.size,
-                        emph_weight: stylePresets.emph.weight,
-                        show_version_regenerate: showVersionRegenerateCheckbox.checked,
-                        typewriter_speed: typewriterSpeed,
-                        reply_mode: replyMode,
-                        updated_at: new Date().toISOString()
-                    };
-                    localStorage.setItem('chat-settings', JSON.stringify({
-                        ...settings,
-                        stylePresets: JSON.parse(JSON.stringify(stylePresets)),
-                        showVersionRegenerate: showVersionRegenerateCheckbox.checked,
-                        typewriterSpeed: typewriterSpeed,
-                        replyMode: replyMode
-                    }));
-                    try {
-                        updateSyncStatus('syncing', '正在保存设置...');
-                        const { error } = await supabase.from('user_settings').upsert(settings, { onConflict: 'id' });
-                        if (error) throw error;
-                        updateSyncStatus('online', '设置已保存并同步');
-                        return true;
-                    } catch (err) {
-                        updateSyncStatus('error', '设置仅本地有效');
-                        return false;
-                    }
-                }
-
-                // ========== 重新生成功能（版本管理 + 打字机效果） ==========
-                chatBox.addEventListener('click', async (e) => {
-                    const btn = e.target.closest('.regenerate-btn');
-                    if (!btn) return;
-                    const msgRow = btn.closest('.message-row');
-                    const index = parseInt(msgRow?.getAttribute('data-msg-index'));
-                    if (isNaN(index)) return;
-
-                    const msg = messages[index];
-                    if (!msg || msg.role !== 'assistant') return;
-
-                    let userMsgContent = '';
-                    if (msg.mergedUserMessage) {
-                        userMsgContent = msg.mergedUserMessage;
-                    } else {
-                        const userMsg = messages[index - 1];
-                        if (!userMsg || userMsg.role !== 'user') return;
-                        userMsgContent = userMsg.content;
-                    }
-
-                    const bubbleContainer = msgRow.querySelector('.max-w-\\[75\\%\\]');
-                    const bubble = bubbleContainer?.querySelector('.chat-bubble-content');
-                    if (bubble) {
-                        bubble.innerHTML = '思考中...';
-                    }
-                    const regenBtn = bubbleContainer?.querySelector('.regenerate-btn-container');
-                    if (regenBtn) regenBtn.remove();
-                    const switcher = bubbleContainer?.querySelector('.version-switcher');
-                    if (switcher) switcher.remove();
-
-                    const reply = await getAIResponse(userMsgContent);
-
-                    if (!msg.versions) msg.versions = [msg.content];
-                    msg.versions.push(reply);
-                    msg.currentVersion = msg.versions.length - 1;
-
-                    if (bubble) {
-                        typewriterEffect(reply, msgRow, index);
-                    }
-                });
-
-                // 文件上传
-                fileUploadBtn.addEventListener('click', () => fileInput.click());
-                fileInput.addEventListener('change', async (e) => {
-                    const file = e.target.files[0];
-                    if (!file) return;
-                    if (file.type.startsWith('text/') || file.name.match(/\.(txt|md|json|xml|csv|log)$/i)) {
-                        const text = await file.text();
-                        msgInput.value = text;
-                        msgInput.focus();
-                    } else if (file.type.startsWith('image/')) {
-                        const reader = new FileReader();
-                        reader.onload = (ev) => {
-                            msgInput.value = `图片:${file.name}`;
-                            msgInput.focus();
-                        };
-                        reader.readAsDataURL(file);
-                    } else {
-                        alert('暂不支持该文件类型，仅支持文本和图片');
-                    }
-                    fileInput.value = '';
-                });
-
-                saveSetBtn.addEventListener('click', async () => {
-                    const ok = await saveSettingsToCloud();
-                    alert(ok ? '已保存并同步到云端' : '已保存到本地（云端同步失败）');
-                });
-
-                agentAvatarUpload.addEventListener('click', () => agentAvatarFile.click());
-                agentAvatarFile.addEventListener('change', e => {
-                    const file = e.target.files[0];
-                    if (file) {
-                        const reader = new FileReader();
-                        reader.onload = ev => {
-                            agentAvatarUrl = ev.target.result;
-                            agentAvatarPreview.innerHTML = `<img src="${agentAvatarUrl}" class="avatar-img">`;
-                            updateAgentAvatarDisplay();
-                        };
-                        reader.readAsDataURL(file);
-                    }
-                });
-
-                userAvatarUpload.addEventListener('click', () => userAvatarFile.click());
-                userAvatarFile.addEventListener('change', e => {
-                    const file = e.target.files[0];
-                    if (file) {
-                        const reader = new FileReader();
-                        reader.onload = ev => {
-                            userAvatarUrl = ev.target.result;
-                            userAvatarPreview.innerHTML = `<img src="${userAvatarUrl}" class="avatar-img">`;
-                        };
-                        reader.readAsDataURL(file);
-                    }
-                });
-
-                agentNameDisplay.addEventListener('click', () => openNameEditor('agent'));
-                nameEditCancel.addEventListener('click', closeNameEditor);
-                nameEditConfirm.addEventListener('click', async () => {
-                    const newName = nameEditInput.value.trim();
-                    if (!newName) return;
-                    if (currentEditTarget === 'agent') {
-                        currentAgentName = newName;
-                        agentNameSet.value = newName;
+                        updateVersionRegenerateVisibility();
+                        syncPresetsFromInput();
                         updateNameDisplays();
-                    }
-                    closeNameEditor();
-                    await saveSettingsToCloud();
-                });
-
-                [fontSizeInput, lineHeightInput, userTextColor, aiTextColor, bubblePxInput, bubblePyInput,
-                    chatHPaddingInput
-                ].forEach(el => {
-                    el.addEventListener('input', () => {
                         updateCSSVariables();
-                        refreshAllMessageStyles();
-                    });
-                });
+                    }
+                    return true;
+                } catch (err) {
+                    loadSettingsFromLocal();
+                    return false;
+                }
+            }
 
-                document.querySelectorAll('.style-live-input').forEach(el => {
-                    el.addEventListener('input', refreshAllMessageStyles);
-                });
+            function loadSettingsFromLocal() {
+                const saved = JSON.parse(localStorage.getItem('chat-settings') || '{}');
+                if (saved.agentPrompt) agentPrompt.value = saved.agentPrompt;
+                if (saved.agentName) { currentAgentName = saved.agentName;
+                    agentNameSet.value = saved.agentName; }
+                if (saved.userName) { currentUserName = saved.userName;
+                    userNameInput.value = saved.userName; }
+                if (saved.agentAvatarUrl) { agentAvatarUrl = saved.agentAvatarUrl;
+                    updateAgentAvatarDisplay(); }
+                if (saved.userAvatarUrl) userAvatarUrl = saved.userAvatarUrl;
+                if (saved.fontSize) fontSizeInput.value = saved.fontSize;
+                if (saved.lineHeight) lineHeightInput.value = saved.lineHeight;
+                if (saved.userTextColor) userTextColor.value = saved.userTextColor;
+                if (saved.aiTextColor) aiTextColor.value = saved.aiTextColor;
+                if (saved.bubblePx) bubblePxInput.value = saved.bubblePx;
+                if (saved.bubblePy) bubblePyInput.value = saved.bubblePy;
+                if (saved.chatHPadding) chatHPaddingInput.value = saved.chatHPadding;
+                if (saved.stylePresets) {
+                    stylePresets = saved.stylePresets;
+                    if (stylePresets.action?.outer) {
+                        actionOuterColorInput.value = stylePresets.action.outer.color;
+                        actionOuterSizeInput.value = stylePresets.action.outer.size;
+                        actionOuterWeightInput.value = stylePresets.action.outer.weight;
+                    }
+                    if (stylePresets.action?.prefix !== undefined) actionPrefixInput.value = stylePresets.action.prefix;
+                    if (stylePresets.action?.suffix !== undefined) actionSuffixInput.value = stylePresets.action.suffix;
+                    if (stylePresets.action?.inner) {
+                        actionInnerColorInput.value = stylePresets.action.inner.color;
+                        actionInnerSizeInput.value = stylePresets.action.inner.size;
+                        actionInnerWeightInput.value = stylePresets.action.inner.weight;
+                    }
+                    if (stylePresets.emph) {
+                        emphColorInput.value = stylePresets.emph.color;
+                        emphSizeInput.value = stylePresets.emph.size || 16;
+                        emphWeightInput.value = stylePresets.emph.weight;
+                    }
+                }
+                if (saved.showVersionRegenerate !== undefined) {
+                    showVersionRegenerateCheckbox.checked = saved.showVersionRegenerate;
+                } else {
+                    showVersionRegenerateCheckbox.checked = true;
+                }
+                if (saved.typewriterSpeed !== undefined) {
+                    typewriterSpeed = saved.typewriterSpeed;
+                    typewriterSpeedInput.value = typewriterSpeed;
+                    speedDisplay.textContent = typewriterSpeed + 'ms';
+                }
+                if (saved.replyMode !== undefined) {
+                    replyMode = saved.replyMode;
+                    replyModeToggle.checked = (replyMode === 'manual');
+                } else {
+                    replyMode = 'auto';
+                    replyModeToggle.checked = false;
+                }
+                // 【新增】加载稿子内容
+                if (saved.scriptDraft !== undefined) {
+                    scriptDraftContent = saved.scriptDraft;
+                    scriptDraftTextarea.value = scriptDraftContent;
+                }
+                updateVersionRegenerateVisibility();
+                updateNameDisplays();
+                updateCSSVariables();
+            }
 
-                sendBtn.addEventListener('click', sendMessage);
-                msgInput.addEventListener('keypress', e => { if (e.key === 'Enter') sendMessage(); });
-                clearBtn.addEventListener('click', clearChat);
-                resetScriptBtn.addEventListener('click', resetScript);
-                toggleSettingsBtn.addEventListener('click', () => {
-                    collapsibleSettings.style.display = collapsibleSettings.style.display === 'block' ? 'none' :
-                        'block';
-                });
+            async function saveSettingsToCloud() {
+                currentAgentName = agentNameSet.value || currentAgentName;
+                currentUserName = userNameInput.value || currentUserName;
+                syncPresetsFromInput();
+                updateNameDisplays();
+                updateCSSVariables();
+                scriptDraftContent = scriptDraftTextarea.value;
+                const settings = {
+                    id: USER_ID,
+                    agent_prompt: agentPrompt.value,
+                    agent_name: currentAgentName,
+                    user_name: currentUserName,
+                    agent_avatar_url: agentAvatarUrl,
+                    user_avatar_url: userAvatarUrl,
+                    font_size: parseInt(fontSizeInput.value) || 16,
+                    line_height: parseFloat(lineHeightInput.value) || 1.6,
+                    user_text_color: userTextColor.value,
+                    ai_text_color: aiTextColor.value,
+                    bubble_px: parseInt(bubblePxInput.value) || 16,
+                    bubble_py: parseInt(bubblePyInput.value) || 8,
+                    chat_h_padding: parseInt(chatHPaddingInput.value) || 16,
+                    action_outer_color: stylePresets.action.outer.color,
+                    action_outer_size: stylePresets.action.outer.size,
+                    action_outer_weight: stylePresets.action.outer.weight,
+                    action_prefix: stylePresets.action.prefix,
+                    action_suffix: stylePresets.action.suffix,
+                    action_inner_color: stylePresets.action.inner.color,
+                    action_inner_size: stylePresets.action.inner.size,
+                    action_inner_weight: stylePresets.action.inner.weight,
+                    emph_color: stylePresets.emph.color,
+                    emph_size: stylePresets.emph.size,
+                    emph_weight: stylePresets.emph.weight,
+                    show_version_regenerate: showVersionRegenerateCheckbox.checked,
+                    typewriter_speed: typewriterSpeed,
+                    reply_mode: replyMode,
+                    script_draft: scriptDraftContent,
+                    updated_at: new Date().toISOString()
+                };
+                localStorage.setItem('chat-settings', JSON.stringify({
+                    ...settings,
+                    stylePresets: JSON.parse(JSON.stringify(stylePresets)),
+                    showVersionRegenerate: showVersionRegenerateCheckbox.checked,
+                    typewriterSpeed: typewriterSpeed,
+                    replyMode: replyMode,
+                    scriptDraft: scriptDraftContent
+                }));
+                try {
+                    updateSyncStatus('syncing', '正在保存设置...');
+                    const { error } = await supabase.from('user_settings').upsert(settings, { onConflict: 'id' });
+                    if (error) throw error;
+                    updateSyncStatus('online', '设置已保存并同步');
+                    return true;
+                } catch (err) {
+                    updateSyncStatus('error', '设置仅本地有效');
+                    return false;
+                }
+            }
 
-                window.addEventListener('resize', () => {
-                    chatBox.scrollTop = chatBox.scrollHeight;
-                });
-                window.addEventListener('resize', debounce(updateLayoutMode));
+            // ========== 重新生成功能 ==========
+            chatBox.addEventListener('click', async (e) => {
+                const btn = e.target.closest('.regenerate-btn');
+                if (!btn) return;
+                const msgRow = btn.closest('.message-row');
+                const index = parseInt(msgRow?.getAttribute('data-msg-index'));
+                if (isNaN(index)) return;
 
-                async function init() {
-                    loadPanelWidth();
+                const msg = messages[index];
+                if (!msg || msg.role !== 'assistant') return;
+
+                let userMsgContent = '';
+                if (msg.mergedUserMessage) {
+                    userMsgContent = msg.mergedUserMessage;
+                } else {
+                    const userMsg = messages[index - 1];
+                    if (!userMsg || userMsg.role !== 'user') return;
+                    userMsgContent = userMsg.content;
+                }
+
+                const bubbleContainer = msgRow.querySelector('.max-w-\\[75\\%\\]');
+                const bubble = bubbleContainer?.querySelector('.chat-bubble-content');
+                if (bubble) {
+                    bubble.innerHTML = '思考中...';
+                }
+                const regenBtn = bubbleContainer?.querySelector('.regenerate-btn-container');
+                if (regenBtn) regenBtn.remove();
+                const switcher = bubbleContainer?.querySelector('.version-switcher');
+                if (switcher) switcher.remove();
+
+                const reply = await getAIResponse(userMsgContent);
+
+                if (!msg.versions) msg.versions = [msg.content];
+                msg.versions.push(reply);
+                msg.currentVersion = msg.versions.length - 1;
+
+                if (bubble) {
+                    typewriterEffect(reply, msgRow, index);
+                }
+            });
+
+            // 文件上传
+            fileUploadBtn.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                if (file.type.startsWith('text/') || file.name.match(/\.(txt|md|json|xml|csv|log)$/i)) {
+                    const text = await file.text();
+                    msgInput.value = text;
+                    msgInput.focus();
+                } else if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                        msgInput.value = `图片:${file.name}`;
+                        msgInput.focus();
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    alert('暂不支持该文件类型，仅支持文本和图片');
+                }
+                fileInput.value = '';
+            });
+
+            saveSetBtn.addEventListener('click', async () => {
+                const ok = await saveSettingsToCloud();
+                alert(ok ? '已保存并同步到云端' : '已保存到本地（云端同步失败）');
+            });
+
+            agentAvatarUpload.addEventListener('click', () => agentAvatarFile.click());
+            agentAvatarFile.addEventListener('change', e => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = ev => {
+                        agentAvatarUrl = ev.target.result;
+                        agentAvatarPreview.innerHTML = `<img src="${agentAvatarUrl}" class="avatar-img">`;
+                        updateAgentAvatarDisplay();
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            userAvatarUpload.addEventListener('click', () => userAvatarFile.click());
+            userAvatarFile.addEventListener('change', e => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = ev => {
+                        userAvatarUrl = ev.target.result;
+                        userAvatarPreview.innerHTML = `<img src="${userAvatarUrl}" class="avatar-img">`;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            agentNameDisplay.addEventListener('click', () => openNameEditor('agent'));
+            nameEditCancel.addEventListener('click', closeNameEditor);
+            nameEditConfirm.addEventListener('click', async () => {
+                const newName = nameEditInput.value.trim();
+                if (!newName) return;
+                if (currentEditTarget === 'agent') {
+                    currentAgentName = newName;
+                    agentNameSet.value = newName;
+                    updateNameDisplays();
+                }
+                closeNameEditor();
+                await saveSettingsToCloud();
+            });
+
+            [fontSizeInput, lineHeightInput, userTextColor, aiTextColor, bubblePxInput, bubblePyInput,
+                chatHPaddingInput
+            ].forEach(el => {
+                el.addEventListener('input', () => {
                     updateCSSVariables();
-                    syncPresetsFromInput();
-                    updateLayoutMode();
-                    updateSyncStatus('syncing', '正在连接云端...');
+                    refreshAllMessageStyles();
+                });
+            });
 
-                    const localSaved = JSON.parse(localStorage.getItem('chat-settings') || '{}');
-                    if (localSaved.typewriterSpeed !== undefined) {
-                        typewriterSpeed = localSaved.typewriterSpeed;
-                    }
-                    typewriterSpeedInput.value = typewriterSpeed;
-                    speedDisplay.textContent = typewriterSpeed + 'ms';
+            document.querySelectorAll('.style-live-input').forEach(el => {
+                el.addEventListener('input', refreshAllMessageStyles);
+            });
 
-                    if (localSaved.replyMode !== undefined) {
-                        replyMode = localSaved.replyMode;
-                        replyModeToggle.checked = (replyMode === 'manual');
-                    }
+            sendBtn.addEventListener('click', sendMessage);
+            msgInput.addEventListener('keypress', e => { if (e.key === 'Enter') sendMessage(); });
+            clearBtn.addEventListener('click', clearChat);
+            resetScriptBtn.addEventListener('click', resetScript);
+            toggleSettingsBtn.addEventListener('click', () => {
+                collapsibleSettings.style.display = collapsibleSettings.style.display === 'block' ? 'none' : 'block';
+            });
 
-                    await loadSettingsFromCloud();
-                    await loadMessagesFromCloud();
-                    renderStoredMessages();
-                    setupRealtimeSubscription();
+            window.addEventListener('resize', () => {
+                chatBox.scrollTop = chatBox.scrollHeight;
+            });
+            window.addEventListener('resize', debounce(updateLayoutMode));
 
-                    typewriterSpeedInput.value = typewriterSpeed;
-                    speedDisplay.textContent = typewriterSpeed + 'ms';
-                    updatePendingIndicator();
-                    console.log('✅ 应用初始化完成，打字速度：' + typewriterSpeed + 'ms/字符，回复模式：' + replyMode);
+            async function init() {
+                loadPanelWidths();
+                updateCSSVariables();
+                syncPresetsFromInput();
+                updateLayoutMode();
+                updateSyncStatus('syncing', '正在连接云端...');
+
+                const localSaved = JSON.parse(localStorage.getItem('chat-settings') || '{}');
+                if (localSaved.typewriterSpeed !== undefined) {
+                    typewriterSpeed = localSaved.typewriterSpeed;
+                }
+                typewriterSpeedInput.value = typewriterSpeed;
+                speedDisplay.textContent = typewriterSpeed + 'ms';
+
+                if (localSaved.replyMode !== undefined) {
+                    replyMode = localSaved.replyMode;
+                    replyModeToggle.checked = (replyMode === 'manual');
+                }
+                if (localSaved.scriptDraft !== undefined) {
+                    scriptDraftContent = localSaved.scriptDraft;
+                    scriptDraftTextarea.value = scriptDraftContent;
                 }
 
-                init();
+                await loadSettingsFromCloud();
+                await loadMessagesFromCloud();
+                renderStoredMessages();
+                setupRealtimeSubscription();
 
-                if ('serviceWorker' in navigator) {
-                    window.addEventListener('load', () => {
-                        navigator.serviceWorker.register('./sw-chat.js').catch(console.log);
-                    });
+                typewriterSpeedInput.value = typewriterSpeed;
+                speedDisplay.textContent = typewriterSpeed + 'ms';
+                updatePendingIndicator();
+
+                // 大屏初始化时确保面板可见
+                if (checkIsLargeScreen()) {
+                    leftPanel.classList.add('show');
+                    middlePanel.classList.add('show');
+                    applyAllPanelWidths();
                 }
-            })();
-        </script>
+
+                console.log('✅ 三栏布局初始化完成，打字速度：' + typewriterSpeed + 'ms/字符，回复模式：' + replyMode);
+            }
+
+            init();
+
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('./sw-chat.js').catch(console.log);
+                });
+            }
+        })();
+    </script>
 </body>
 </html>
