@@ -798,55 +798,56 @@
             <div class="border-t border-gray-600 pt-3 mt-2 mb-3">
                 <label class="text-sm font-medium text-gray-300 mb-2 block">📝 剧本内容（输入你的剧本，AI据此回复）</label>
                 <textarea
-                class="w-full h-40 bg-dark border border-gray-600 rounded p-3 text-white outline-none resize-none mb-2"
-                placeholder="输入剧本内容，AI会根据剧本回答问题
+                    class="w-full h-40 bg-dark border border-gray-600 rounded p-3 text-white outline-none resize-none mb-2"
+                    placeholder="输入剧本内容，AI会根据剧本回答问题
 
             支持内联样式标记（见上方说明）" id="agent-prompt"></textarea>
-        </div>
-
-        <button class="w-full bg-accent rounded p-3" id="save-set">保存所有设置（同步云端）</button>
-        <p class="text-xs text-gray-500 mt-2 text-center" id="sync-status-text">数据自动云端同步，多端一致</p>
-    </div>
-
-    <!-- 拖拽分隔条 -->
-    <div id="panel-resizer" class="panel-resizer"></div>
-
-    <!-- 聊天主面板 -->
-    <div class="chat-main-panel bg-dark">
-        <div class="chat-header p-3 border-b border-gray-800 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <button class="text-gray-400 hover:text-white mr-1 relative" id="phone-open-set">
-                    <i class="fa fa-bars"></i>
-                    <span id="pending-dot" style="display:none;"></span>
-                </button>
-                <div id="agent-avatar" class="w-10 h-10 bg-accent/20 flex items-center justify-center overflow-hidden rounded-lg"><span class="avatar-placeholder">AI</span></div>
-                <span id="agent-name-display" class="font-medium name-tag text-white">剧本助手 <i class="fa fa-pencil"></i></span>
             </div>
-        </div>
-        <div class="flex-1 overflow-y-auto scrollbar-hide" id="chat-box"></div>
 
-        <!-- 底部输入栏（无分割线，参考DeepSeek/豆包风格） -->
-        <div class="mobile-input-bar" id="mobile-input-area">
-            <button id="file-upload-btn" title="上传文件/图片">
-                <i class="fa fa-plus"></i>
-            </button>
-            <input type="text" placeholder="输入消息..." class="flex-1" id="msg-input">
-            <button id="send-btn">
-                <i class="fa fa-arrow-up"></i>
-            </button>
+            <button class="w-full bg-accent rounded p-3" id="save-set">保存所有设置（同步云端）</button>
+            <p class="text-xs text-gray-500 mt-2 text-center" id="sync-status-text">数据自动云端同步，多端一致</p>
         </div>
-        <input type="file" id="file-input" style="display:none" accept="*/*">
-    </div>
 
-    <!-- 名称编辑弹窗 -->
-    <div id="name-edit-modal" class="name-edit-modal">
-        <div class="name-edit-dialog">
-            <h3 class="text-lg font-bold mb-1" id="name-edit-title"></h3>
-            <p class="text-sm text-gray-400 mb-4" id="name-edit-subtitle"></p>
-            <input type="text" id="name-edit-input" class="w-full bg-dark border border-gray-700 rounded-lg p-3 text-white mb-4" placeholder="输入名称">
-            <div class="flex gap-2 justify-end">
-                <button class="px-4 py-2 bg-gray-700 rounded-lg" id="name-edit-cancel">取消</button>
-                <button class="px-4 py-2 bg-accent rounded-lg" id="name-edit-confirm">确认修改</button>
+        <!-- 拖拽分隔条 -->
+        <div id="panel-resizer" class="panel-resizer"></div>
+
+        <!-- 聊天主面板 -->
+        <div class="chat-main-panel bg-dark">
+            <div class="chat-header p-3 border-b border-gray-800 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <button class="text-gray-400 hover:text-white mr-1 relative" id="phone-open-set">
+                        <i class="fa fa-bars"></i>
+                        <span id="pending-dot" style="display:none;"></span>
+                    </button>
+                    <div id="agent-avatar" class="w-10 h-10 bg-accent/20 flex items-center justify-center overflow-hidden rounded-lg"><span class="avatar-placeholder">AI</span></div>
+                    <span id="agent-name-display" class="font-medium name-tag text-white">剧本助手 <i class="fa fa-pencil"></i></span>
+                </div>
+            </div>
+            <div class="flex-1 overflow-y-auto scrollbar-hide" id="chat-box"></div>
+
+            <!-- 底部输入栏（无分割线，参考DeepSeek/豆包风格） -->
+            <div class="mobile-input-bar" id="mobile-input-area">
+                <button id="file-upload-btn" title="上传文件/图片">
+                    <i class="fa fa-plus"></i>
+                </button>
+                <input type="text" placeholder="输入消息..." class="flex-1" id="msg-input">
+                <button id="send-btn">
+                    <i class="fa fa-arrow-up"></i>
+                </button>
+            </div>
+            <input type="file" id="file-input" style="display:none" accept="*/*">
+        </div>
+
+        <!-- 名称编辑弹窗 -->
+        <div id="name-edit-modal" class="name-edit-modal">
+            <div class="name-edit-dialog">
+                <h3 class="text-lg font-bold mb-1" id="name-edit-title"></h3>
+                <p class="text-sm text-gray-400 mb-4" id="name-edit-subtitle"></p>
+                <input type="text" id="name-edit-input" class="w-full bg-dark border border-gray-700 rounded-lg p-3 text-white mb-4" placeholder="输入名称">
+                <div class="flex gap-2 justify-end">
+                    <button class="px-4 py-2 bg-gray-700 rounded-lg" id="name-edit-cancel">取消</button>
+                    <button class="px-4 py-2 bg-accent rounded-lg" id="name-edit-confirm">确认修改</button>
+                </div>
             </div>
         </div>
     </div>
@@ -1028,8 +1029,9 @@
                 if (!isResizing) return;
                 const delta = e.clientX - startX;
                 let newWidth = startWidth + delta;
-                const maxWidth = Math.min(window.innerWidth * 0.6, 600);
-                // 【改动】最小宽度从200px改为120px，左边面板可调得更窄
+                // 【关键改动】最大宽度比例从60%(0.6)改为90%(0.9)，右边聊天面板可变得更窄
+                const maxWidth = Math.min(window.innerWidth * 0.9, 600);
+                // 最小宽度为120px，左边面板可调得更窄
                 newWidth = Math.max(120, Math.min(newWidth, maxWidth));
                 currentPanelWidth = newWidth;
                 applyPanelWidth();
@@ -1040,8 +1042,9 @@
                 if (e.touches.length === 1) {
                     const delta = e.touches[0].clientX - startX;
                     let newWidth = startWidth + delta;
-                    const maxWidth = Math.min(window.innerWidth * 0.6, 600);
-                    // 【改动】最小宽度从200px改为120px
+                    // 【关键改动】最大宽度比例从60%(0.6)改为90%(0.9)，右边聊天面板可变得更窄
+                    const maxWidth = Math.min(window.innerWidth * 0.9, 600);
+                    // 最小宽度为120px
                     newWidth = Math.max(120, Math.min(newWidth, maxWidth));
                     currentPanelWidth = newWidth;
                     applyPanelWidth();
@@ -1620,7 +1623,7 @@
                 result = result.replace(/\[red:(.*?)\]/g, '<span style="color:#ff4444;">$1</span>');
                 result = result.replace(/\[color:([#a-zA-Z0-9]+):(.*?)\]/g, '<span style="color:$1;">$2</span>');
                 result = result.replace(/\[size:(\d+):(.*?)\]/g,
-                '<span style="font-size:$1px;line-height:1.4;">$2</span>');
+                    '<span style="font-size:$1px;line-height:1.4;">$2</span>');
 
                 return result;
             }
@@ -2117,12 +2120,12 @@
             });
 
             [fontSizeInput, lineHeightInput, userTextColor, aiTextColor, bubblePxInput, bubblePyInput, chatHPaddingInput]
-            .forEach(el => {
-                el.addEventListener('input', () => {
-                    updateCSSVariables();
-                    refreshAllMessageStyles();
+                .forEach(el => {
+                    el.addEventListener('input', () => {
+                        updateCSSVariables();
+                        refreshAllMessageStyles();
+                    });
                 });
-            });
 
             document.querySelectorAll('.style-live-input').forEach(el => {
                 el.addEventListener('input', refreshAllMessageStyles);
