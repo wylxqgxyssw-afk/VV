@@ -1665,7 +1665,7 @@
             return result;
         }
 
-        async function getAIResponse(userMessage) {
+                async function getAIResponse(userMessage) {
             const script = agentPrompt.value.trim();
             if (!script) return "请先在左侧设置中填写剧本内容（向下滚动即可看到剧本输入框）。";
             const systemPrompt = `
@@ -1696,13 +1696,52 @@
                         ],
                     }),
                 });
+
+                // ========== 【第一步：检查快递员（响应状态）】 ==========
+                // 如果响应状态不是 200，说明云端没接通或者报错了
                 if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error?.message || '请求失败');
+                    let errorMsg = '请求失败，状态码：' + response.status;
+                    try {
+                        // 尝试看看云端返回的具体错误原因
+                        const errorData = await response.json();
+                        errorMsg = errorData.error?.message || JSON.stringify(errorData);
+                    } catch (_) {
+                        // 如果云端连错误信息都没给，就直接拿文字
+                        errorMsg = await response.text() || errorMsg;
+                    }
+                    throw new Error(errorMsg);
                 }
+
+                // ========== 【第二步：检查包裹（JSON数据）】 ==========
                 const data = await response.json();
-                return parseScriptFormat(data.choices[0].message.content.trim());
+
+                // 🌟 这是最重要的“猫眼”检查！先看数据里有没有“choices”
+                if (data.error) {
+                    // 如果云端主动返回了 error 字段
+                    return `云端服务提示：${data.error.message || JSON.stringify(data.error)}`;
+                }
+
+                if (!data || !data.choices || !Array.isArray(data.choices) || data.choices.length === 0) {
+                    // 如果没有 choices 数组，或者数组是空的
+                    console.error('❌ AI返回的原始数据异常:', data);
+                    // 把原始数据截取前200个字符，方便你复制给懂的人看
+                    const rawStr = JSON.stringify(data).substring(0, 200);
+                    return `⚠️ AI返回格式异常，无法解析。请检查 Supabase 日志。原始数据预览：${rawStr}`;
+                }
+
+                // ========== 【第三步：检查里面的内容（消息正文）】 ==========
+                const choice = data.choices[0];
+                if (!choice.message || typeof choice.message.content !== 'string') {
+                    console.error('❌ AI返回的消息结构异常:', choice);
+                    return '⚠️ AI返回消息格式异常，请检查 Supabase Edge Function 日志。';
+                }
+
+                // ========== 【第四步：安全通过，开始翻译（应用你的样式）】 ==========
+                return parseScriptFormat(choice.message.content.trim());
+
             } catch (error) {
+                // ========== 【第五步：兜底网（任何网络错误都在这接住）】 ==========
+                console.error('❌ 网络请求异常:', error);
                 return `AI 模式出错：${error.message}<br>请检查 Supabase Edge Function 是否部署正常。`;
             }
         }
