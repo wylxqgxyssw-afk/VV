@@ -1374,11 +1374,7 @@ tailwind.config = {
                     mergedUserMessage: payload.new.merged_user_message || undefined
                 };
                 if (newMsg.role === 'assistant' && !newMsg.versions) newMsg.versions = [newMsg.content];
-                const isDuplicate = messages.some(msg =>
-                    msg.role === newMsg.role &&
-                    msg.content === newMsg.content &&
-                    Math.abs(Date.now() - new Date(payload.new.created_at).getTime()) < 3000
-                );
+                const isDuplicate = messages.some(msg => msg.local_id === newMsg.local_id);const isDuplicate = messages.some(msg => msg.local_id === newMsg.local_id);
                 if (!isDuplicate) {
                     messages.push(newMsg);
                     saveMessagesToLocal();
