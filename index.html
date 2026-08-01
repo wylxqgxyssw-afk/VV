@@ -246,6 +246,13 @@
     }
     #msg-input:focus { border-color: #444; }
     #msg-input::placeholder { color: #555; }
+    #msg-input::-webkit-scrollbar {
+  display: none;  /* 对 Chrome/Safari/Edge 等浏览器隐藏滚动条 */
+}
+#msg-input {
+  scrollbar-width: none;   /* 对 Firefox 浏览器隐藏滚动条 */
+  -ms-overflow-style: none; /* 对旧版 IE/Edge 隐藏滚动条 */
+}
 
     .version-switcher {
       display: flex; align-items: center; gap: 4px;
