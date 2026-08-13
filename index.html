@@ -1647,6 +1647,7 @@ ${script}
         el.addEventListener('input', refreshAllMessageStyles);
       }
     });
+    hideActionBracketsCheckbox.addEventListener('change', refreshAllMessageStyles);
 
     // ★ 修复发送逻辑：Enter 发送，Shift+Enter 换行
     msgInput.addEventListener('keydown', (e) => {
