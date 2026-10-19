@@ -287,7 +287,8 @@
       pointer-events: auto;
       transform: scale(1);
     }
-    .prefs-fab:hover { transform: scale(1.06); }
+    /* 修正特异性：hover 放大需要比 .left-set-panel.show .prefs-fab 更高 */
+    .left-set-panel.show .prefs-fab:hover { transform: scale(1.06); }
     .prefs-fab i { font-size: 22px; }
 
     /* === 抽屉（Drawer）：从右侧滑入，遮罩渐变 === */
@@ -701,7 +702,7 @@
     const headerSyncStatus = document.getElementById('header-sync-status');
     const panelResizer = document.getElementById('panel-resizer');
 
-    // 召唤相关 DOM（原代码缺失，会直接抛 ReferenceError）
+    // 召唤相关 DOM
     const summonArea = document.getElementById('summon-area');
     const summonBtn = document.getElementById('summon-btn');
     const summonStatusText = document.getElementById('summon-status-text');
@@ -831,7 +832,7 @@
     }
 
     function openPrefs() {
-      // 每次打开回到主页，关闭时若停在外观页会先回退
+      // 每次打开回到主页
       prefsPages.classList.remove('show-appearance');
       preferencesModal.classList.add('show');
     }
@@ -1253,7 +1254,7 @@
       return idx;
     }
 
-    // === 重新生成 / 版本切换（原代码调用但未定义） ===
+    // === 重新生成 / 版本切换 ===
     function addRegenButtonToMessage(msgElement, msgIndex) {
       if (!showVersionRegenerate) return;
       const msg = messages[msgIndex];
