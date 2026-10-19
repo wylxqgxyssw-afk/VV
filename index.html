@@ -188,6 +188,7 @@
       transition: font-size 0.2s, line-height 0.2s, background-color 0.3s, color 0.3s;
     }
     
+    /* 强制应用 AI 的独立字号和行距 */
     .ai-bubble {
       font-size: var(--ai-font-size, var(--font-size)) !important;
       line-height: var(--ai-line-height, var(--line-height)) !important;
@@ -253,27 +254,26 @@
     #msg-input::placeholder { color: #555; }
     #msg-input::-webkit-scrollbar { display: none; }
 
-    /* 【新增】右下角悬浮齿轮按钮 */
+    /* === 【核心】绝对固定在右下角的悬浮球 === */
     .prefs-fab {
-      position: absolute;
-      bottom: 16px;
-      right: 16px;
-      width: 44px;
-      height: 44px;
+      position: fixed;
+      bottom: 30px;
+      right: 20px;
+      width: 50px;
+      height: 50px;
       border-radius: 50%;
-      background: #2a2a2a;
+      background: #165DFF;
       color: #fff;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      box-shadow: 0 4px 15px rgba(22, 93, 255, 0.4);
       cursor: pointer;
-      z-index: 100;
-      transition: background 0.2s, transform 0.2s;
-      border: 1px solid #444;
+      z-index: 9998;
+      transition: transform 0.2s;
     }
-    .prefs-fab:hover { background: #165DFF; transform: scale(1.05); }
-    .prefs-fab i { font-size: 20px; }
+    .prefs-fab:hover { transform: scale(1.05); }
+    .prefs-fab i { font-size: 22px; }
 
     /* === 偏好设置面板 === */
     #preferences-modal {
@@ -301,7 +301,7 @@
     .prefs-slider { width: 100%; height: 6px; background: #333; border-radius: 3px; outline: none; -webkit-appearance: none; }
     .prefs-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #165DFF; cursor: pointer; border: 2px solid #fff; }
 
-    /* === 【核心修复】浅色模式暴力覆盖 === */
+    /* === 浅色模式暴力覆盖 === */
     body.light-mode {
       background-color: #ffffff !important;
       color: #1a1d21 !important;
@@ -337,7 +337,6 @@
     body.light-mode .prefs-item:hover { background: rgba(0,0,0,0.05); }
     body.light-mode .prefs-group-title { color: #4b5563; }
     body.light-mode .theme-options label { color: #1a1d21; }
-    body.light-mode .prefs-fab { background: #fff !important; color: #1a1d21 !important; border-color: #e5e7eb !important; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
   </style>
 </head>
 <body>
@@ -444,13 +443,6 @@
     </div>
 
     <button class="w-full bg-gray-800 rounded p-3 text-white mb-3" id="save-set">保存所有设置（同步云端）</button>
-    
-    <!-- 【核心修复】右下角悬浮设置按钮 -->
-    <div class="prefs-fab" id="open-prefs-btn" title="外观与偏好设置">
-      <i class="fa fa-sliders"></i>
-    </div>
-    
-    <p class="text-xs text-gray-500 mt-3 mb-8 text-center" id="sync-status-text">数据自动云端同步，多端一致</p>
   </div>
 
   <!-- 拖拽分隔条 -->
@@ -484,50 +476,53 @@
     </div>
     <input type="file" id="file-input" style="display:none" accept="*/*">
   </div>
+</div>
 
-  <!-- === 偏好设置弹窗 === -->
-  <div id="preferences-modal">
-    <div class="prefs-card">
-      <!-- 主页 -->
-      <div id="prefs-main-page">
-        <div class="prefs-header">设置</div>
-        <div class="prefs-list">
-          <div class="prefs-item" id="go-to-appearance">
-            <span>🎨 外观</span>
-            <i class="fa fa-angle-right"></i>
-          </div>
-          <div class="prefs-item opacity-30" style="pointer-events:none;">
-            <span>⚙️ 高级设置 (敬请期待)</span>
-          </div>
-          <div class="prefs-item opacity-30" style="pointer-events:none;">
-            <span>👤 账号管理 (敬请期待)</span>
-          </div>
+<!-- === 【核心】绝对固定在屏幕右下角的悬浮球 === -->
+<div class="prefs-fab" id="open-prefs-btn" title="设置">
+  <i class="fa fa-cog"></i>
+</div>
+
+<!-- === 偏好设置弹窗（绝对嵌套） === -->
+<div id="preferences-modal">
+  <div class="prefs-card">
+    <!-- 设置主页 -->
+    <div id="prefs-main-page">
+      <div class="prefs-header">设置</div>
+      <div class="prefs-list">
+        <div class="prefs-item" id="go-to-appearance">
+          <span>🎨 外观</span>
+          <i class="fa fa-angle-right"></i>
+        </div>
+        <!-- 空白占位 -->
+        <div class="prefs-item opacity-30" style="pointer-events:none;">
+          <span>⚙️ 其他设置 (敬请期待)</span>
         </div>
       </div>
-      <!-- 外观子页 -->
-      <div id="prefs-appearance-page" style="display:none;">
-        <div class="prefs-header">
-          <button id="back-to-main"><i class="fa fa-angle-left mr-2"></i>外观</button>
+    </div>
+    <!-- 外观子页面 -->
+    <div id="prefs-appearance-page" style="display:none;">
+      <div class="prefs-header">
+        <button id="back-to-main"><i class="fa fa-angle-left mr-2"></i>外观</button>
+      </div>
+      <div class="prefs-body">
+        <!-- 主题 -->
+        <div class="prefs-group">
+          <div class="prefs-group-title">主题</div>
+          <div class="theme-options">
+            <label><input type="radio" name="theme" value="dark" checked> 深色</label>
+            <label><input type="radio" name="theme" value="light"> 浅色</label>
+          </div>
         </div>
-        <div class="prefs-body">
-          <!-- 主题 -->
-          <div class="prefs-group">
-            <div class="prefs-group-title">主题</div>
-            <div class="theme-options">
-              <label><input type="radio" name="theme" value="dark" checked> 深色</label>
-              <label><input type="radio" name="theme" value="light"> 浅色</label>
-            </div>
-          </div>
-          <!-- AI 回复字号 -->
-          <div class="prefs-group">
-            <div class="prefs-group-title" id="pref-ai-font-size-title">AI回复文字大小 (16px)</div>
-            <input type="range" id="pref-ai-font-size" class="prefs-slider" min="12" max="24" step="1" value="16">
-          </div>
-          <!-- AI 行间距 -->
-          <div class="prefs-group">
-            <div class="prefs-group-title" id="pref-ai-line-height-title">AI回复行间距 (1.6)</div>
-            <input type="range" id="pref-ai-line-height" class="prefs-slider" min="1.2" max="2.5" step="0.1" value="1.6">
-          </div>
+        <!-- AI 字号 -->
+        <div class="prefs-group">
+          <div class="prefs-group-title" id="pref-ai-font-size-title">AI回复文字大小 (16px)</div>
+          <input type="range" id="pref-ai-font-size" class="prefs-slider" min="12" max="24" step="1" value="16">
+        </div>
+        <!-- AI 行距 -->
+        <div class="prefs-group">
+          <div class="prefs-group-title" id="pref-ai-line-height-title">AI回复行间距 (1.6)</div>
+          <input type="range" id="pref-ai-line-height" class="prefs-slider" min="1.2" max="2.5" step="0.1" value="1.6">
         </div>
       </div>
     </div>
@@ -714,7 +709,6 @@
     }
 
     openPrefsBtn.addEventListener('click', () => {
-      if (window.innerWidth < 860) { leftPanel.classList.remove('show'); updateInputHeight(); }
       preferencesModal.classList.add('show');
       prefsMainPage.style.display = 'block';
       prefsAppearancePage.style.display = 'none';
@@ -733,7 +727,6 @@
       prefsAppearancePage.style.display = 'none';
     });
 
-    // 修复：主题切换使用 querySelectorAll
     document.querySelectorAll('input[name="theme"]').forEach(radio => {
       radio.addEventListener('change', (e) => {
         applyTheme(e.target.value);
