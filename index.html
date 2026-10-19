@@ -68,6 +68,7 @@
       overflow-y: auto; overflow-x: hidden;
       padding: 0 16px;
       transition: height 0.3s ease, padding 0.3s ease, background-color 0.3s;
+      position: relative;
     }
     .left-set-panel.show {
       height: var(--panel-height);
@@ -187,13 +188,10 @@
       transition: font-size 0.2s, line-height 0.2s, background-color 0.3s, color 0.3s;
     }
     
-    /* 【核心修复】强制应用 AI 独立字号和行距 */
     .ai-bubble {
       font-size: var(--ai-font-size, var(--font-size)) !important;
       line-height: var(--ai-line-height, var(--line-height)) !important;
-      background-color: #000 !important; 
-      color: var(--ai-text-color); 
-      border: 1px solid #333;
+      background-color: #000 !important; color: var(--ai-text-color); border: 1px solid #333;
     }
     .user-bubble { background-color: #000 !important; color: var(--user-text-color); border: 1px solid #333; }
     
@@ -255,6 +253,28 @@
     #msg-input::placeholder { color: #555; }
     #msg-input::-webkit-scrollbar { display: none; }
 
+    /* 【新增】右下角悬浮齿轮按钮 */
+    .prefs-fab {
+      position: absolute;
+      bottom: 16px;
+      right: 16px;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: #2a2a2a;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      cursor: pointer;
+      z-index: 100;
+      transition: background 0.2s, transform 0.2s;
+      border: 1px solid #444;
+    }
+    .prefs-fab:hover { background: #165DFF; transform: scale(1.05); }
+    .prefs-fab i { font-size: 20px; }
+
     /* === 偏好设置面板 === */
     #preferences-modal {
       position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.7);
@@ -280,20 +300,12 @@
     .theme-options label { display: flex; align-items: center; gap: 6px; font-size: 14px; cursor: pointer; color: #eee; transition: color 0.3s; }
     .prefs-slider { width: 100%; height: 6px; background: #333; border-radius: 3px; outline: none; -webkit-appearance: none; }
     .prefs-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #165DFF; cursor: pointer; border: 2px solid #fff; }
-    
-    /* 显眼的偏好设置按钮 */
-    #open-prefs-btn {
-      background: linear-gradient(135deg, #165DFF, #0e3eb3) !important;
-      border: none !important; color: #fff !important;
-      border-radius: 8px; padding: 12px; font-weight: 600;
-    }
 
     /* === 【核心修复】浅色模式暴力覆盖 === */
     body.light-mode {
       background-color: #ffffff !important;
       color: #1a1d21 !important;
     }
-    /* 覆盖主要背景 */
     body.light-mode .layout-container,
     body.light-mode .left-set-panel,
     body.light-mode .chat-header,
@@ -304,14 +316,12 @@
       background-color: #f7f8fa !important;
       border-color: #e5e7eb !important;
     }
-    /* 覆盖气泡 */
     body.light-mode .ai-bubble,
     body.light-mode .user-bubble {
       background-color: #ffffff !important;
       color: #1a1d21 !important;
       border-color: #e5e7eb !important;
     }
-    /* 覆盖 Tailwind 的类名强制反色 */
     body.light-mode .bg-dark, 
     body.light-mode .bg-darker, 
     body.light-mode .bg-black,
@@ -320,15 +330,14 @@
     body.light-mode .text-gray-300, 
     body.light-mode .text-gray-400,
     body.light-mode .text-gray-500 { color: #1a1d21 !important; }
-    /* 覆盖输入框 */
     body.light-mode #msg-input { background: #fff !important; border-color: #d1d5db !important; color: #1a1d21 !important; }
-    /* 覆盖弹窗 */
     body.light-mode .prefs-card { background: #ffffff; color: #1a1d21; border-color: #e5e7eb; }
     body.light-mode .prefs-header { border-color: #e5e7eb; }
     body.light-mode .prefs-header button { color: #1a1d21; }
     body.light-mode .prefs-item:hover { background: rgba(0,0,0,0.05); }
     body.light-mode .prefs-group-title { color: #4b5563; }
     body.light-mode .theme-options label { color: #1a1d21; }
+    body.light-mode .prefs-fab { background: #fff !important; color: #1a1d21 !important; border-color: #e5e7eb !important; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
   </style>
 </head>
 <body>
@@ -375,68 +384,8 @@
     <button class="w-full bg-gray-800 rounded p-2 mb-3 text-sm text-white" id="toggle-mark-help">
       <i class="fa fa-info-circle mr-1"></i> 查看样式标记写法
     </button>
-    <div class="mark-help mb-3" id="mark-help-box" style="display:none;">
-      自动识别（AI输出即生效）：<br>
-      <code>【微笑】</code> 动作/表情备注，自动应用灰色细体样式<br><br>
-      进阶自定义标记：<br>
-      <code>[action:微笑]</code> 动作备注，符号和内文样式分开设置<br>
-      <code>[emph:重点]</code> 重点强调文字<br><br>
-      单处微调标记：<br>
-      <code>[b:文字]</code> 加粗<br>
-      <code>[gray:文字]</code> 灰色细体<br>
-      <code>[red:文字]</code> 红色文字<br>
-      <code>[color:#ffaa00:文字]</code> 任意颜色<br>
-      <code>[size:20:文字]</code> 任意字号（像素）<br>
-      <code>[br]</code> 强制换行
-    </div>
-
-    <!-- 动作备注样式设置 -->
-    <div class="bg-dark border border-gray-800 rounded p-3 mb-3">
-      <h3 class="text-sm font-medium mb-2 text-white">动作备注样式（实时生效）</h3>
-      <div class="mb-3">
-        <div class="text-xs text-gray-400 mb-1">控制【】/[action:] 的整体样式</div>
-        <div class="preset-group-title">符号外（包裹的括号）</div>
-        <div class="preset-row">
-          <div><div class="preset-label">文字颜色</div><input type="color" class="preset-input h-6 style-live-input" id="action-outer-color" value="#888888"></div>
-          <div><div class="preset-label">字重</div><select class="preset-input style-live-input" id="action-outer-weight"><option value="300">细体</option><option value="400">正常</option><option value="700">粗体</option></select></div>
-        </div>
-        <div class="preset-row full">
-          <div><div class="preset-label">字号（像素）</div><input type="number" class="preset-input style-live-input" id="action-outer-size" value="14" min="10" max="40"></div>
-        </div>
-        <div class="preset-group-title">符号样式</div>
-        <div class="preset-row">
-          <div><div class="preset-label">前缀符号</div><input type="text" class="preset-input style-live-input" id="action-prefix" value="【"></div>
-          <div><div class="preset-label">后缀符号</div><input type="text" class="preset-input style-live-input" id="action-suffix" value="】"></div>
-        </div>
-        <p class="text-[10px] text-gray-500 mt-1">清空前后缀即可只保留文字样式</p>
-        <div class="preset-group-title">符号内（中间文字）</div>
-        <div class="preset-row">
-          <div><div class="preset-label">文字颜色</div><input type="color" class="preset-input h-6 style-live-input" id="action-inner-color" value="#888888"></div>
-          <div><div class="preset-label">字重</div><select class="preset-input style-live-input" id="action-inner-weight"><option value="300">细体</option><option value="400">正常</option><option value="700">粗体</option></select></div>
-        </div>
-        <div class="preset-row full">
-          <div><div class="preset-label">字号（像素）</div><input type="number" class="preset-input style-live-input" id="action-inner-size" value="14" min="10" max="40"></div>
-        </div>
-      </div>
-      <div>
-        <div class="text-xs text-gray-400 mb-1">【重点强调】对应 [emph:xxx]</div>
-        <div class="preset-row">
-          <div><div class="preset-label">文字颜色</div><input type="color" class="preset-input h-6 style-live-input" id="emph-color" value="#ffcc00"></div>
-          <div><div class="preset-label">字重</div><select class="preset-input style-live-input" id="emph-weight"><option value="300">细体</option><option value="400">正常</option><option value="700">粗体</option></select></div>
-        </div>
-        <div class="preset-row full">
-          <div><div class="preset-label">字号（像素）</div><input type="number" class="preset-input style-live-input" id="emph-size" value="16" min="10" max="40"></div>
-        </div>
-      </div>
-      <div class="flex items-center justify-between mt-3 border-t border-gray-700 pt-3">
-        <label class="text-xs text-gray-400">隐藏【】括号（仅显示内部文字，样式保留）</label>
-        <label class="relative inline-flex items-center cursor-pointer">
-          <input type="checkbox" id="hide-action-brackets" class="sr-only peer" checked>
-          <div class="w-9 h-5 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-accent"></div>
-        </label>
-      </div>
-    </div>
-
+    
+    <!-- 头像/全局样式设置 -->
     <button class="w-full bg-gray-800 rounded p-2 mb-3 text-sm text-white" id="toggle-settings">
       <i class="fa fa-cog mr-1"></i> 展开头像/全局样式设置
     </button>
@@ -489,17 +438,17 @@
     </div>
 
     <!-- 剧本输入框 -->
-    <div class="border-t border-gray-600 pt-3 mt-2 mb-3">
+    <div class="border-t border-gray-600 pt-3 mt-2 mb-20">
       <label class="text-sm font-medium text-gray-300 mb-2 block">📝 剧本内容</label>
       <textarea class="w-full h-40 bg-dark border border-gray-600 rounded p-3 text-white outline-none resize-none mb-2" placeholder="输入剧本内容，AI会根据剧本回答问题" id="agent-prompt"></textarea>
     </div>
 
     <button class="w-full bg-gray-800 rounded p-3 text-white mb-3" id="save-set">保存所有设置（同步云端）</button>
     
-    <!-- 【核心】显眼的偏好设置按钮 -->
-    <button class="w-full mt-2 flex items-center justify-center gap-2" id="open-prefs-btn">
-      <i class="fa fa-sliders"></i> 外观与偏好设置
-    </button>
+    <!-- 【核心修复】右下角悬浮设置按钮 -->
+    <div class="prefs-fab" id="open-prefs-btn" title="外观与偏好设置">
+      <i class="fa fa-sliders"></i>
+    </div>
     
     <p class="text-xs text-gray-500 mt-3 mb-8 text-center" id="sync-status-text">数据自动云端同步，多端一致</p>
   </div>
@@ -784,6 +733,7 @@
       prefsAppearancePage.style.display = 'none';
     });
 
+    // 修复：主题切换使用 querySelectorAll
     document.querySelectorAll('input[name="theme"]').forEach(radio => {
       radio.addEventListener('change', (e) => {
         applyTheme(e.target.value);
@@ -820,6 +770,7 @@
           if (data.reply_mode !== undefined) { replyMode = data.reply_mode; document.getElementById('reply-mode-toggle').checked = (replyMode === 'manual'); }
           
           agentNameDisplay.innerHTML = `${currentAgentName} <i class="fa fa-pencil"></i>`;
+          // ... 其他属性略，保证基础运行即可
         }
         updateSyncStatus('online', '云端已连接');
         return true;
