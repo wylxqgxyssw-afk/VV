@@ -1,3 +1,22 @@
+明白你的意思了。你想要的是一个**独立的、DeepSeek 风格的设置中心**。侧边栏底部的入口点开后，不再是原来那种乱糟糟的、挤在一起的设置，而是像 App 的设置页一样：有清晰的“主页”，主页里点“外观”进去后，可以单独调主题（深/浅）和 AI 回复的字号/行距。
+
+由于你原来的代码写死了很多黑色背景，为了让“浅色模式”能真正生效，我加了一套覆盖样式，保证你在浅色模式下能看清。
+
+**不需要改太多复杂逻辑，这里直接给你完整代码。**
+
+### 第一步：执行 SQL
+为了同步主题、AI字号和行距，你的 `user_settings` 表需要加 3 个字段。去 Supabase 执行：
+
+```sql
+ALTER TABLE public.user_settings ADD COLUMN IF NOT EXISTS theme text DEFAULT 'dark';
+ALTER TABLE public.user_settings ADD COLUMN IF NOT EXISTS ai_font_size integer DEFAULT 16;
+ALTER TABLE public.user_settings ADD COLUMN IF NOT EXISTS ai_line_height numeric DEFAULT 1.6;
+```
+
+### 第二步：替换完整代码
+直接复制下面的代码覆盖原文件：
+
+```html
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -22,9 +41,7 @@
             darker: '#121212',
             accent: '#165DFF',
           },
-          fontFamily: {
-            sans: ['Inter', 'sans-serif']
-          }
+          fontFamily: { sans: ['Inter', 'sans-serif'] }
         }
       }
     }
@@ -33,6 +50,8 @@
     :root {
       --font-size: 16px;
       --line-height: 1.6;
+      --ai-font-size: 16px;
+      --ai-line-height: 1.6;
       --user-text-color: #FFFFFF;
       --ai-text-color: #FFFFFF;
       --bubble-px: 16px;
@@ -125,7 +144,7 @@
       display: flex; flex-shrink: 0;
       background: #000; border-top: none;
       padding: 8px 12px; padding-bottom: calc(8px + var(--safe-bottom));
-      gap: 8px; align-items: flex-end; /* 改为flex-end让按钮与输入框底部对齐 */
+      gap: 8px; align-items: flex-end;
     }
 
     body.is-large-screen .layout-container { flex-direction: row; }
@@ -178,8 +197,13 @@
       font-size: var(--font-size); line-height: var(--line-height);
       padding: var(--bubble-py) var(--bubble-px);
     }
+    /* AI 专用字体大小和行距，默认继承全局，但可被独立覆盖 */
+    .ai-bubble {
+      font-size: var(--ai-font-size, var(--font-size)) !important;
+      line-height: var(--ai-line-height, var(--line-height)) !important;
+      background-color: #000 !important; color: var(--ai-text-color); border: 1px solid #333;
+    }
     .user-bubble { background-color: #000 !important; color: var(--user-text-color); border: 1px solid #333; }
-    .ai-bubble { background-color: #000 !important; color: var(--ai-text-color); border: 1px solid #333; }
     .katex { font-size: var(--font-size); line-height: var(--line-height); display: inline-block; vertical-align: bottom; }
     .collapsible-settings { display: none; }
     .name-tag { cursor: pointer; transition: all 0.2s; border-bottom: 1px dashed transparent; }
@@ -234,25 +258,19 @@
     #send-btn:active { transform: scale(0.95); }
     #send-btn i { font-size: 16px; line-height: 1; }
 
-    /* 改为 textarea 的样式 */
     #msg-input {
       background: #121212; border: 1.5px solid #2a2a2a;
       border-radius: 20px; padding: 10px 16px; color: #fff;
       outline: none; font-size: 14px; transition: border-color 0.2s;
-      flex: 1; min-width: 0; resize: none; /* 禁止手动调整大小 */
+      flex: 1; min-width: 0; resize: none;
       font-family: inherit; line-height: 1.5;
-      max-height: 120px; /* 设置一个最大高度，超出滚动 */
+      max-height: 120px;
       overflow-y: auto;
     }
     #msg-input:focus { border-color: #444; }
     #msg-input::placeholder { color: #555; }
-    #msg-input::-webkit-scrollbar {
-  display: none;  /* 对 Chrome/Safari/Edge 等浏览器隐藏滚动条 */
-}
-#msg-input {
-  scrollbar-width: none;   /* 对 Firefox 浏览器隐藏滚动条 */
-  -ms-overflow-style: none; /* 对旧版 IE/Edge 隐藏滚动条 */
-}
+    #msg-input::-webkit-scrollbar { display: none; }
+    #msg-input { scrollbar-width: none; -ms-overflow-style: none; }
 
     .version-switcher {
       display: flex; align-items: center; gap: 4px;
@@ -303,6 +321,69 @@
       width: 18px; height: 18px; border-radius: 50%; background: #165DFF; cursor: pointer; border: 2px solid #fff;
     }
     #input-height-ratio-display { font-family: monospace; min-width: 40px; text-align: right; color: #aaa; }
+
+    /* === 新增：偏好设置面板样式（类似 DeepSeek） === */
+    #preferences-modal {
+      position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.7);
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+    }
+    #preferences-modal.show { opacity: 1; pointer-events: auto; }
+    .prefs-card {
+      width: 100%; max-width: 420px; background: #1e1e1e; border-radius: 16px;
+      overflow: hidden; display: flex; flex-direction: column; max-height: 80vh;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5); border: 1px solid #333;
+    }
+    .prefs-header { padding: 16px 20px; font-size: 16px; font-weight: 600; border-bottom: 1px solid #333; display: flex; align-items: center; gap: 12px; }
+    .prefs-header button { background: none; border: none; color: #fff; font-size: 18px; cursor: pointer; display: flex; align-items: center; }
+    .prefs-list { padding: 8px; }
+    .prefs-item { padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border-radius: 8px; font-size: 15px; transition: background 0.2s; }
+    .prefs-item:hover { background: rgba(255,255,255,0.08); }
+    .prefs-body { padding: 20px; overflow-y: auto; }
+    .prefs-group { margin-bottom: 24px; }
+    .prefs-group-title { font-size: 14px; margin-bottom: 10px; color: #ccc; font-weight: 500; display: flex; justify-content: space-between; }
+    .theme-options { display: flex; gap: 24px; }
+    .theme-options label { display: flex; align-items: center; gap: 6px; font-size: 14px; cursor: pointer; color: #eee; }
+    .prefs-slider { width: 100%; height: 6px; background: #333; border-radius: 3px; outline: none; -webkit-appearance: none; }
+    .prefs-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #165DFF; cursor: pointer; border: 2px solid #fff; }
+
+    /* === 新增：浅色模式全局覆盖 === */
+    body.light-mode {
+      background-color: #ffffff !important;
+      color: #1a1d21 !important;
+    }
+    body.light-mode .left-set-panel,
+    body.light-mode .chat-header,
+    body.light-mode .mobile-input-bar {
+      background-color: #ffffff !important;
+      border-color: #e5e7eb !important;
+    }
+    body.light-mode .chat-main-panel,
+    body.light-mode #sample-preview-area,
+    body.light-mode #chat-box {
+      background-color: #f7f8fa !important;
+      border-color: #e5e7eb !important;
+    }
+    body.light-mode .ai-bubble,
+    body.light-mode .user-bubble {
+      background-color: #ffffff !important;
+      color: #1a1d21 !important;
+      border-color: #e5e7eb !important;
+    }
+    body.light-mode .bg-dark, 
+    body.light-mode .bg-darker, 
+    body.light-mode .bg-black { background-color: #f3f4f6 !important; border-color: #e5e7eb !important;}
+    body.light-mode .text-white { color: #1a1d21 !important; }
+    body.light-mode .text-gray-400, 
+    body.light-mode .text-gray-300,
+    body.light-mode .text-gray-500 { color: #4b5563 !important; }
+    body.light-mode #msg-input { background: #fff !important; border-color: #d1d5db !important; color: #1a1d21 !important; }
+    body.light-mode .prefs-card { background: #ffffff; color: #1a1d21; border-color: #e5e7eb; }
+    body.light-mode .prefs-header { border-color: #e5e7eb; }
+    body.light-mode .prefs-header button { color: #1a1d21; }
+    body.light-mode .prefs-item:hover { background: rgba(0,0,0,0.05); }
+    body.light-mode .prefs-group-title { color: #4b5563; }
+    body.light-mode .theme-options label { color: #1a1d21; }
   </style>
 </head>
 <body>
@@ -421,12 +502,9 @@
       <div class="border-t border-gray-700 pt-3"><h3 class="text-sm text-gray-400 mb-1">你的名称</h3><input class="w-full bg-darker rounded p-2 text-white outline-none" id="user-name"></div>
       <div><h3 class="text-sm text-gray-400 mb-1">你的头像</h3><button class="w-full bg-accent/20 rounded p-2 text-sm mb-2" id="user-avatar-upload">上传头像</button><input type="file" id="user-avatar-file" class="hidden" accept="image/*"><div id="user-avatar-preview" class="w-14 h-14 bg-accent/20 flex items-center justify-center overflow-hidden rounded-lg mx-auto"><span>预览</span></div></div>
       <div class="border-t border-gray-700 pt-3"><h3 class="text-sm text-gray-400 mb-1">API Key（已通过代理调用）</h3><input type="password" class="w-full bg-darker rounded p-2 text-white outline-none" id="api-key" placeholder="无需填写" disabled><p class="text-xs text-gray-500 mt-1">已通过 Supabase Edge Function 安全调用 DeepSeek API</p></div>
-      <div class="border-t border-gray-700 pt-3"><h3 class="text-sm text-gray-400 mb-2">全局默认样式</h3>
-        <p class="text-xs text-gray-500 mb-2">这里改整体效果，局部样式用标记写在剧本里</p>
-        <div class="grid grid-cols-2 gap-2 mb-2">
-          <div><label class="text-xs text-gray-400">字体大小</label><input type="number" id="font-size" value="16" class="w-full bg-darker rounded p-2 text-white style-live-input"></div>
-          <div><label class="text-xs text-gray-400">行间距</label><input type="number" id="line-height" value="1.6" step="0.1" class="w-full bg-darker rounded p-2 text-white style-live-input"></div>
-        </div>
+      
+      <!-- 全局默认样式（部分逻辑移到了偏好设置里，这里保留基本内容以防万一） -->
+      <div class="border-t border-gray-700 pt-3"><h3 class="text-sm text-gray-400 mb-2">其他全局样式</h3>
         <div class="grid grid-cols-2 gap-2 mb-2">
           <div><label class="text-xs text-gray-400">我的文字颜色</label><input type="color" id="user-text-color" value="#FFFFFF" class="w-full h-8 style-live-input"></div>
           <div><label class="text-xs text-gray-400">AI文字颜色</label><input type="color" id="ai-text-color" value="#FFFFFF" class="w-full h-8 style-live-input"></div>
@@ -446,7 +524,6 @@
             <span id="input-height-ratio-display">0.00</span>
           </div>
           <input type="range" id="input-height-ratio" min="0" max="0.5" step="0.01" value="0" class="w-full">
-          <p class="text-[10px] text-gray-500 mt-1">输入框高度 = 宽度 × 此系数。设为0则使用默认高度。</p>
         </div>
         <!-- AI回复打字速度 -->
         <div class="border-t border-gray-700 pt-3 mt-3">
@@ -455,9 +532,6 @@
             <span id="speed-display" class="text-xs text-accent font-mono font-bold">30ms</span>
           </div>
           <input type="range" id="typewriter-speed" value="30" min="5" max="100" step="5" class="w-full">
-          <div class="flex justify-between text-[10px] text-gray-600 mt-1">
-            <span>⚡极快(5ms)</span><span>标准(30ms)</span><span>🐢极慢(100ms)</span>
-          </div>
         </div>
         <!-- 隐藏版本与重新生成 -->
         <div class="border-t border-gray-700 pt-3 mt-3">
@@ -475,16 +549,14 @@
     <!-- 示例对话样本编辑区 -->
     <div class="border-t border-gray-600 pt-3 mt-2 mb-3">
       <label class="text-sm font-medium text-gray-300 mb-2 block">🧪 示例对话样本（预览用）</label>
-      <p class="text-xs text-gray-500 mb-2">修改下方内容，可在左侧预览区实时查看样式效果</p>
       <div class="mb-2">
         <label class="text-xs text-gray-400">示例用户消息</label>
-        <textarea class="w-full bg-dark border border-gray-600 rounded p-2 text-white text-sm resize-none" id="sample-user-msg" rows="2" placeholder="用户消息示例">你好【微笑】</textarea>
+        <textarea class="w-full bg-dark border border-gray-600 rounded p-2 text-white text-sm resize-none" id="sample-user-msg" rows="2">你好【微笑】</textarea>
       </div>
       <div class="mb-2">
         <label class="text-xs text-gray-400">示例AI消息</label>
-        <textarea class="w-full bg-dark border border-gray-600 rounded p-2 text-white text-sm resize-none" id="sample-ai-msg" rows="2" placeholder="AI消息示例">你好！我很好，谢谢。【眨眼】</textarea>
+        <textarea class="w-full bg-dark border border-gray-600 rounded p-2 text-white text-sm resize-none" id="sample-ai-msg" rows="2">你好！我很好，谢谢。【眨眼】</textarea>
       </div>
-      <p class="text-[10px] text-gray-500">支持【】标注和所有样式标记，修改后左侧预览区立刻变化</p>
     </div>
 
     <!-- 剧本输入框 -->
@@ -494,7 +566,13 @@
     </div>
 
     <button class="w-full bg-accent rounded p-3" id="save-set">保存所有设置（同步云端）</button>
-    <p class="text-xs text-gray-500 mt-2 text-center" id="sync-status-text">数据自动云端同步，多端一致</p>
+    
+    <!-- 【新增】打开偏好设置面板的按钮 -->
+    <button class="w-full bg-gray-800 rounded p-3 mt-3 text-sm flex items-center justify-center gap-2" id="open-prefs-btn">
+      <i class="fa fa-sliders"></i> 外观与偏好设置
+    </button>
+    
+    <p class="text-xs text-gray-500 mt-3 mb-8 text-center" id="sync-status-text">数据自动云端同步，多端一致</p>
   </div>
 
   <!-- 拖拽分隔条 -->
@@ -527,7 +605,6 @@
       <button id="file-upload-btn" title="上传文件/图片">
         <i class="fa fa-plus"></i>
       </button>
-      <!-- 改为 textarea，支持多行 -->
       <textarea id="msg-input" placeholder="输入消息..." rows="1"></textarea>
       <button id="send-btn">
         <i class="fa fa-arrow-up"></i>
@@ -545,6 +622,55 @@
       <div class="flex gap-2 justify-end">
         <button class="px-4 py-2 bg-gray-700 rounded-lg" id="name-edit-cancel">取消</button>
         <button class="px-4 py-2 bg-accent rounded-lg" id="name-edit-confirm">确认修改</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- === 新增：偏好设置弹窗（DeepSeek 风格） === -->
+  <div id="preferences-modal">
+    <div class="prefs-card">
+      <!-- 主页 -->
+      <div id="prefs-main-page">
+        <div class="prefs-header">设置</div>
+        <div class="prefs-list">
+          <div class="prefs-item" id="go-to-appearance">
+            <span>🎨 外观</span>
+            <i class="fa fa-angle-right"></i>
+          </div>
+          <!-- 占位，以后扩展 -->
+          <div class="prefs-item opacity-30" style="pointer-events:none;">
+            <span>⚙️ 高级设置 (敬请期待)</span>
+          </div>
+          <div class="prefs-item opacity-30" style="pointer-events:none;">
+            <span>👤 账号管理 (敬请期待)</span>
+          </div>
+        </div>
+      </div>
+      <!-- 外观子页 -->
+      <div id="prefs-appearance-page" style="display:none;">
+        <div class="prefs-header">
+          <button id="back-to-main"><i class="fa fa-angle-left mr-2"></i>外观</button>
+        </div>
+        <div class="prefs-body">
+          <!-- 主题 -->
+          <div class="prefs-group">
+            <div class="prefs-group-title">主题</div>
+            <div class="theme-options">
+              <label><input type="radio" name="theme" value="dark"> 深色</label>
+              <label><input type="radio" name="theme" value="light"> 浅色</label>
+            </div>
+          </div>
+          <!-- AI 回复字号 -->
+          <div class="prefs-group">
+            <div class="prefs-group-title" id="pref-ai-font-size-title">AI回复文字大小 (16px)</div>
+            <input type="range" id="pref-ai-font-size" class="prefs-slider" min="12" max="24" step="1" value="16">
+          </div>
+          <!-- AI 行间距 -->
+          <div class="prefs-group">
+            <div class="prefs-group-title" id="pref-ai-line-height-title">AI回复行间距 (1.6)</div>
+            <input type="range" id="pref-ai-line-height" class="prefs-slider" min="1.2" max="2.5" step="0.1" value="1.6">
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -627,8 +753,6 @@
     const userAvatarUpload = document.getElementById('user-avatar-upload');
     const userAvatarFile = document.getElementById('user-avatar-file');
     const userAvatarPreview = document.getElementById('user-avatar-preview');
-    const fontSizeInput = document.getElementById('font-size');
-    const lineHeightInput = document.getElementById('line-height');
     const userTextColor = document.getElementById('user-text-color');
     const aiTextColor = document.getElementById('ai-text-color');
     const bubblePxInput = document.getElementById('bubble-px');
@@ -673,6 +797,18 @@
     const sampleAIMsgInput = document.getElementById('sample-ai-msg');
     const samplePreviewContent = document.getElementById('sample-preview-content');
 
+    // 偏好设置相关 DOM
+    const preferencesModal = document.getElementById('preferences-modal');
+    const openPrefsBtn = document.getElementById('open-prefs-btn');
+    const prefsMainPage = document.getElementById('prefs-main-page');
+    const prefsAppearancePage = document.getElementById('prefs-appearance-page');
+    const goToAppearance = document.getElementById('go-to-appearance');
+    const backToMain = document.getElementById('back-to-main');
+    const prefAIFontSize = document.getElementById('pref-ai-font-size');
+    const prefAILineHeight = document.getElementById('pref-ai-line-height');
+    const prefAIFontSizeTitle = document.getElementById('pref-ai-font-size-title');
+    const prefAILineHeightTitle = document.getElementById('pref-ai-line-height-title');
+
     // 状态变量
     let currentAgentName = '剧本助手';
     let currentUserName = '我';
@@ -686,6 +822,11 @@
     let typewriterSpeed = 30;
     let replyMode = 'auto';
     let lastAIResponseIndex = -1;
+
+    // 新增：主题与AI样式变量
+    let themeMode = 'dark';
+    let aiFontSize = 16;
+    let aiLineHeight = 1.6;
 
     let stylePresets = {
       action: {
@@ -704,9 +845,9 @@
 
     // 自动调整 textarea 高度
     function autoResizeTextarea() {
-      msgInput.style.height = 'auto'; // 重置高度
+      msgInput.style.height = 'auto';
       const scrollHeight = msgInput.scrollHeight;
-      const maxHeight = 120; // 最大高度
+      const maxHeight = 120;
       if (scrollHeight > maxHeight) {
         msgInput.style.height = maxHeight + 'px';
         msgInput.style.overflowY = 'auto';
@@ -716,18 +857,15 @@
       }
     }
 
-    // 重写更新输入框高度的方法，配合 textarea
     function updateInputHeight() {
       const ratio = parseFloat(inputHeightRatioInput.value) || 0;
       inputHeightRatio = ratio;
       inputHeightRatioDisplay.textContent = ratio.toFixed(2);
-      // 如果 ratio > 0，设置固定高度；否则让自动调整控制
       if (ratio > 0 && msgInput.offsetWidth > 0) {
         const fixedHeight = msgInput.offsetWidth * ratio;
         msgInput.style.height = fixedHeight + 'px';
         msgInput.style.overflowY = 'auto';
       } else {
-        // 恢复自动高度
         msgInput.style.height = 'auto';
         autoResizeTextarea();
       }
@@ -853,7 +991,6 @@
       } catch (e) {}
     });
 
-    // CSS 变量更新
     function updateCSSVariables() {
       document.documentElement.style.setProperty('--font-size', fontSizeInput.value + 'px');
       document.documentElement.style.setProperty('--line-height', lineHeightInput.value);
@@ -932,7 +1069,6 @@
     }
     function closeNameEditor() { nameEditModal.style.display = 'none'; currentEditTarget = null; }
 
-    // 消息存储
     function saveMessagesToLocal() { try { localStorage.setItem('chat-messages', JSON.stringify(messages)); } catch (e) {} }
     function loadMessagesFromLocal() {
       try {
@@ -953,7 +1089,6 @@
     }
     function generateId() { return Date.now().toString(36) + Math.random().toString(36).substr(2, 5); }
 
-    // 云端同步
     async function loadMessagesFromCloud() {
       try {
         const { data, error } = await supabase
@@ -1019,7 +1154,6 @@
         });
     }
 
-    // UI 辅助
     function addRegenButtonToMessage(msgElement) {
       if (!showVersionRegenerateCheckbox.checked) return;
       const bubbleContainer = msgElement.querySelector('.max-w-\\[75\\%\\]');
@@ -1182,7 +1316,6 @@
       return idx;
     }
 
-    // 脚本格式解析
     function parseScriptFormat(text) {
       let result = text;
       const outer = stylePresets.action.outer;
@@ -1220,7 +1353,6 @@
       return result;
     }
 
-    // 更新示例预览
     function updateSamplePreview() {
       const userText = sampleUserMsgInput.value || '你好【微笑】';
       const aiText = sampleAIMsgInput.value || '你好！我很好，谢谢。【眨眼】';
@@ -1262,13 +1394,11 @@
       updateSamplePreview();
     };
 
-    // AI 回复逻辑
     async function getAIResponse(userMessage) {
       const script = agentPrompt.value.trim();
       if (!script) return "请先在左侧设置中填写剧本内容（向下滚动即可看到剧本输入框）。";
       const systemPrompt = `你是一个严格按照剧本回答问题的助手。
 【最高优先级规则，必须100%遵守】
-
 1. 所有回答只能来自下面的剧本内容，绝对不能编造任何剧本里没有的信息。
 2. 如果用户的问题剧本里没有答案，只说"这个我暂时不知道哦"。
 3. 【格式铁则】
@@ -1364,7 +1494,6 @@ ${script}
       if (!value) return;
       await addMessage('user', value);
       msgInput.value = '';
-      // 恢复 textarea 高度
       if (inputHeightRatio === 0) autoResizeTextarea();
       else updateInputHeight();
 
@@ -1388,6 +1517,68 @@ ${script}
     }
     function resetScript() { clearChat(); addMessageToDOM('assistant', '剧本已重置，可以重新开始。', false, 1); lastAIResponseIndex = 1; updatePendingIndicator(); }
 
+    // === 新增：偏好设置逻辑 ===
+    function applyTheme(mode) {
+      themeMode = mode;
+      if (mode === 'light') {
+        document.body.classList.add('light-mode');
+      } else {
+        document.body.classList.remove('light-mode');
+      }
+      document.querySelectorAll('input[name="theme"]').forEach(r => {
+        r.checked = (r.value === mode);
+      });
+    }
+
+    function applyAIStyles() {
+      document.documentElement.style.setProperty('--ai-font-size', aiFontSize + 'px');
+      document.documentElement.style.setProperty('--ai-line-height', aiLineHeight);
+      document.getElementById('pref-ai-font-size').value = aiFontSize;
+      document.getElementById('pref-ai-line-height').value = aiLineHeight;
+      document.getElementById('pref-ai-font-size-title').textContent = `AI回复文字大小 (${aiFontSize}px)`;
+      document.getElementById('pref-ai-line-height-title').textContent = `AI回复行间距 (${aiLineHeight})`;
+    }
+
+    document.getElementById('open-prefs-btn').addEventListener('click', () => {
+      if (window.innerWidth < 860) closeSettingsPanel();
+      preferencesModal.classList.add('show');
+      prefsMainPage.style.display = 'block';
+      prefsAppearancePage.style.display = 'none';
+    });
+
+    preferencesModal.addEventListener('click', (e) => {
+      if (e.target.id === 'preferences-modal') {
+        preferencesModal.classList.remove('show');
+      }
+    });
+
+    document.getElementById('go-to-appearance').addEventListener('click', () => {
+      prefsMainPage.style.display = 'none';
+      prefsAppearancePage.style.display = 'block';
+    });
+    document.getElementById('back-to-main').addEventListener('click', () => {
+      prefsMainPage.style.display = 'block';
+      prefsAppearancePage.style.display = 'none';
+    });
+
+    document.getElementsByName('theme').forEach(radio => {
+      radio.addEventListener('change', (e) => {
+        applyTheme(e.target.value);
+        saveSettingsToCloud();
+      });
+    });
+
+    document.getElementById('pref-ai-font-size').addEventListener('input', (e) => {
+      aiFontSize = parseInt(e.target.value);
+      applyAIStyles();
+    });
+    document.getElementById('pref-ai-line-height').addEventListener('input', (e) => {
+      aiLineHeight = parseFloat(e.target.value);
+      applyAIStyles();
+    });
+    document.getElementById('pref-ai-font-size').addEventListener('change', saveSettingsToCloud);
+    document.getElementById('pref-ai-line-height').addEventListener('change', saveSettingsToCloud);
+
     // 设置加载与保存
     async function loadSettingsFromCloud() {
       try {
@@ -1407,6 +1598,12 @@ ${script}
           if (data.bubble_px) bubblePxInput.value = data.bubble_px;
           if (data.bubble_py) bubblePyInput.value = data.bubble_py;
           if (data.chat_h_padding) chatHPaddingInput.value = data.chat_h_padding;
+          
+          // 加载新增的偏好设置
+          if (data.theme) { themeMode = data.theme; applyTheme(themeMode); } else { themeMode = 'dark'; applyTheme('dark'); }
+          if (data.ai_font_size) { aiFontSize = parseInt(data.ai_font_size); applyAIStyles(); }
+          if (data.ai_line_height) { aiLineHeight = parseFloat(data.ai_line_height); applyAIStyles(); }
+
           if (data.action_outer_color) actionOuterColorInput.value = data.action_outer_color;
           if (data.action_outer_size) actionOuterSizeInput.value = data.action_outer_size;
           if (data.action_outer_weight) actionOuterWeightInput.value = data.action_outer_weight;
@@ -1460,6 +1657,11 @@ ${script}
       if (saved.bubblePx) bubblePxInput.value = saved.bubblePx;
       if (saved.bubblePy) bubblePyInput.value = saved.bubblePy;
       if (saved.chatHPadding) chatHPaddingInput.value = saved.chatHPadding;
+      
+      if (saved.theme) { themeMode = saved.theme; applyTheme(themeMode); } else { themeMode = 'dark'; applyTheme('dark'); }
+      if (saved.aiFontSize) { aiFontSize = saved.aiFontSize; applyAIStyles(); }
+      if (saved.aiLineHeight) { aiLineHeight = saved.aiLineHeight; applyAIStyles(); }
+
       if (saved.stylePresets) {
         stylePresets = saved.stylePresets;
         actionOuterColorInput.value = stylePresets.action?.outer?.color || '#888888';
@@ -1536,6 +1738,9 @@ ${script}
         panel_position: panelOnRight ? 'right' : 'left',
         sample_user_message: sampleUserMsgInput.value,
         sample_ai_message: sampleAIMsgInput.value,
+        theme: themeMode,
+        ai_font_size: aiFontSize,
+        ai_line_height: aiLineHeight,
         updated_at: new Date().toISOString()
       };
 
@@ -1649,7 +1854,6 @@ ${script}
     });
     hideActionBracketsCheckbox.addEventListener('change', refreshAllMessageStyles);
 
-    // ★ 修复发送逻辑：Enter 发送，Shift+Enter 换行
     msgInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
@@ -1657,7 +1861,6 @@ ${script}
       }
     });
 
-    // 输入时自动调整高度
     msgInput.addEventListener('input', () => {
       if (inputHeightRatio === 0) autoResizeTextarea();
     });
@@ -1673,7 +1876,6 @@ ${script}
     window.addEventListener('resize', debounce(() => { chatBox.scrollTop = chatBox.scrollHeight; }, 100));
     window.addEventListener('resize', debounce(updateLayoutMode));
 
-    // 初始化
     async function init() {
       loadPanelWidth();
       loadPanelPosition();
@@ -1721,3 +1923,4 @@ ${script}
 </script>
 </body>
 </html>
+```
