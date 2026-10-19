@@ -1,22 +1,3 @@
-明白你的意思了。你想要的是一个**独立的、DeepSeek 风格的设置中心**。侧边栏底部的入口点开后，不再是原来那种乱糟糟的、挤在一起的设置，而是像 App 的设置页一样：有清晰的“主页”，主页里点“外观”进去后，可以单独调主题（深/浅）和 AI 回复的字号/行距。
-
-由于你原来的代码写死了很多黑色背景，为了让“浅色模式”能真正生效，我加了一套覆盖样式，保证你在浅色模式下能看清。
-
-**不需要改太多复杂逻辑，这里直接给你完整代码。**
-
-### 第一步：执行 SQL
-为了同步主题、AI字号和行距，你的 `user_settings` 表需要加 3 个字段。去 Supabase 执行：
-
-```sql
-ALTER TABLE public.user_settings ADD COLUMN IF NOT EXISTS theme text DEFAULT 'dark';
-ALTER TABLE public.user_settings ADD COLUMN IF NOT EXISTS ai_font_size integer DEFAULT 16;
-ALTER TABLE public.user_settings ADD COLUMN IF NOT EXISTS ai_line_height numeric DEFAULT 1.6;
-```
-
-### 第二步：替换完整代码
-直接复制下面的代码覆盖原文件：
-
-```html
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -1923,4 +1904,3 @@ ${script}
 </script>
 </body>
 </html>
-```
